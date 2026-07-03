@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Конвертер таблиц в Obsidian</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e17;
+    --bg-soft: #1a1825;
+    --card: #211f2e;
+    --card-2: #29273a;
+    --border: #37344a;
+    --border-soft: #2a2838;
+    --accent: #a78bfa;
+    --accent-2: #7c3aed;
+    --accent-glow: rgba(167, 139, 250, 0.25);
+    --text: #f0eefc;
+    --text-dim: #a6a2c2;
+    --text-faint: #6f6b8c;
+    --success: #4ade80;
+    --success-bg: rgba(74, 222, 128, 0.12);
+    --radius: 14px;
+    --radius-sm: 9px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: radial-gradient(ellipse 900px 500px at 20% -10%, rgba(124,58,237,0.25), transparent),
+                radial-gradient(ellipse 800px 500px at 100% 10%, rgba(167,139,250,0.12), transparent),
+                var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 48px 20px;
+  }
+  .wrap { max-width: 620px; margin: 0 auto; }
+
+  .brand {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 6px;
+  }
+  .brand-icon {
+    width: 46px; height: 46px; border-radius: 13px; flex: 0 0 auto;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 24px var(--accent-glow);
+  }
+  .brand-icon svg { width: 24px; height: 24px; }
+  h1 { font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+  .subtitle { color: var(--text-dim); font-size: 14.5px; margin: 8px 0 28px 60px; line-height: 1.5; }
+
+  .lang-select {
+    position: absolute; top: 48px; right: 20px;
+  }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-start; }
+
+  select, input[type=text], textarea {
+    font-family: inherit; color: var(--text); background: var(--card-2);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 10px 12px; font-size: 14px; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  select:focus, input[type=text]:focus, textarea:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  select { cursor: pointer; }
+  textarea { width: 100%; resize: vertical; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.6; }
+
+  .steps { display: flex; align-items: center; gap: 8px; margin-bottom: 26px; }
+  .step-track { height: 5px; flex: 1; border-radius: 3px; background: var(--border-soft); overflow: hidden; position: relative; }
+  .step-track .fill {
+    position: absolute; inset: 0; width: 0%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent-2), var(--accent));
+    transition: width 0.4s cubic-bezier(.4,0,.2,1);
+  }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 26px;
+    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.03) inset;
+  }
+
+  .panel { animation: fadeIn 0.35s ease; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+
+  button {
+    font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+    border-radius: var(--radius-sm); padding: 11px 16px; border: 1px solid var(--border);
+    background: var(--card-2); color: var(--text);
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    transition: all 0.15s ease;
+  }
+  button:hover { background: #322f45; border-color: #4a4664; transform: translateY(-1px); }
+  button:active { transform: translateY(0) scale(0.98); }
+
+  button.primary {
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    border: none; color: #fff; font-weight: 600;
+    box-shadow: 0 8px 24px -8px var(--accent-glow);
+  }
+  button.primary:hover { filter: brightness(1.08); box-shadow: 0 10px 28px -8px var(--accent-glow); }
+  button.icon-only {
+    padding: 11px 18px; font-size: 18px; line-height: 1; color: var(--text);
+    border-color: var(--border-strong, var(--border));
+  }
+  button.icon-only:hover { border-color: var(--accent); color: var(--accent); }
+
+  .row { display: flex; gap: 10px; }
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 7px; font-weight: 500;
+  }
+
+  .box {
+    background: var(--bg-soft); border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 18px;
+  }
+  .box .hint { font-size: 13px; color: var(--text-dim); margin: 0 0 10px; line-height: 1.5; }
+  .col-row {
+    display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 6px 0;
+  }
+  .col-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .col-orig { flex: 1; color: var(--text); }
+  .col-arrow { color: var(--text-faint); font-size: 13px; }
+  .col-tech { flex: 1; font-family: 'JetBrains Mono', monospace; color: var(--accent); font-size: 12px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12.5px; font-weight: 500; padding: 5px 6px 5px 12px; border-radius: 999px;
+    color: #1a0f2e;
+  }
+  .chip i { cursor: pointer; font-size: 15px; opacity: 0.7; }
+  .chip i:hover { opacity: 1; }
+
+  .checkbox-row {
+    display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--text-dim);
+    margin-bottom: 8px; cursor: pointer;
+  }
+  .checkbox-row input { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+
+  .done-badge {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 22px;
+  }
+  .done-icon {
+    width: 38px; height: 38px; border-radius: 50%; flex: 0 0 auto;
+    background: var(--success-bg); display: flex; align-items: center; justify-content: center;
+  }
+  .done-icon i { color: var(--success); font-size: 19px; }
+  .done-text { font-size: 14px; color: var(--text-dim); line-height: 1.5; }
+
+  details { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+  summary { cursor: pointer; margin-bottom: 10px; color: var(--text-dim); }
+  summary:hover { color: var(--text); }
+  .settings-box {
+    background: var(--bg-soft); border-radius: var(--radius-sm); padding: 12px 14px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 2;
+  }
+
+  .ti { font-family: 'tabler-icons'; }
+
+  .howto {
+    margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--border-soft);
+  }
+  .howto summary {
+    display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;
+    color: var(--accent); margin-bottom: 0; list-style: none;
+  }
+  .howto summary::-webkit-details-marker { display: none; }
+  .howto summary i { font-size: 17px; }
+  .howto-body { margin-top: 14px; font-size: 13.5px; color: var(--text-dim); line-height: 1.75; }
+  .howto-body ol { margin: 0; padding-left: 20px; }
+  .howto-body li { margin-bottom: 10px; }
+  .howto-body b { color: var(--text); font-weight: 600; }
+  .howto-body code {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--card-2);
+    padding: 1px 6px; border-radius: 4px; color: var(--accent);
+  }
+  .howto-body a { color: var(--accent); text-decoration: none; }
+  .howto-body a:hover { text-decoration: underline; }
+
+  .preview-table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  .preview-table th, .preview-table td {
+    padding: 6px 10px; text-align: left; white-space: nowrap;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .preview-table th {
+    color: var(--accent); font-family: 'JetBrains Mono', monospace; font-weight: 500;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.02em;
+  }
+  .preview-table td { color: var(--text-dim); }
+  .preview-table tr:last-child td { border-bottom: none; }
+
+  .link-fields-list { display: flex; flex-direction: column; gap: 4px; }
+  .link-field-row {
+    display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--text-dim);
+    padding: 3px 0; cursor: pointer;
+  }
+  .link-field-row input { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+  .link-field-row code {
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--accent);
+  }
+  .footer-credit {
+    text-align: center; font-size: 12px; color: var(--text-faint);
+    margin: 20px 0 0; letter-spacing: 0.02em;
+  }
+  .plugin-link {
+    display: flex; align-items: center; gap: 7px; font-size: 12.5px;
+    color: var(--text-dim); margin: 10px 0 0;
+  }
+  .plugin-link i { font-size: 14px; }
+  .plugin-link a { color: var(--accent); text-decoration: none; font-weight: 500; }
+  .plugin-link a:hover { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      </div>
+      <h1 data-t="title">Конвертер таблиц</h1>
+    </div>
+    <select id="langSelect">
+      <option value="ru">Русский</option>
+      <option value="uk">Українська</option>
+      <option value="en">English</option>
+      <option value="es">Español</option>
+    </select>
+  </div>
+  <p class="subtitle" data-t="subtitle">Вставь таблицу из Excel или загрузи CSV — получишь два готовых файла для импорта.</p>
+
+  <div class="steps">
+    <div class="step-track"><div class="fill" id="fill1" style="width:100%"></div></div>
+    <div class="step-track"><div class="fill" id="fill2"></div></div>
+    <div class="step-track"><div class="fill" id="fill3"></div></div>
+  </div>
+
+  <div class="card">
+
+    <details class="howto">
+      <summary><i class="ti ti-help-circle"></i> <span data-t="howtoTitle">Как этим пользоваться</span></summary>
+      <div class="howto-body" data-t-html="howtoBody"></div>
+    </details>
+
+    <div id="step1" class="panel">
+      <div class="row" style="margin-bottom: 12px;">
+        <button id="pasteBtn" style="flex:1;"><i class="ti ti-clipboard"></i><span data-t="pasteBtn">Вставить из буфера</span></button>
+        <button id="uploadBtn" style="flex:1;"><i class="ti ti-upload"></i><span data-t="uploadBtn">Загрузить файл</span></button>
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none;">
+      </div>
+      <div class="field" id="sheetPicker" style="display:none; margin-bottom: 12px;">
+        <label data-t="sheetLabel">Лист в файле</label>
+        <select id="sheetSelect" style="width: 100%;"></select>
+      </div>
+      <textarea id="rawInput" data-t-placeholder="pasteholder" style="height:150px;"></textarea>
+      <div style="margin-top: 14px;">
+        <button id="parseBtn" class="primary" style="width:100%;"><span data-t="parseBtn">Обработать таблицу</span> <i class="ti ti-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <div id="step2" class="panel" style="display:none;">
+
+      <div class="box">
+        <p class="hint"><span data-t="colFound">Найдено колонок:</span> <b id="colCount" style="color: var(--text);"></b>. <span data-t="colCheck">Так они будут называться технически:</span></p>
+        <div id="colMap"></div>
+      </div>
+
+      <div class="box" id="previewBox" style="display:none;">
+        <p class="hint" data-t="previewLabel">Предпросмотр первых строк:</p>
+        <div style="overflow-x:auto;">
+          <table id="previewTable" class="preview-table"></table>
+        </div>
+      </div>
+
+      <div class="field">
+        <label data-t="titleFieldLabel">Какая колонка станет названием заметки</label>
+        <select id="titleField" style="width: 100%;"></select>
+      </div>
+
+      <div class="field">
+        <label data-t="linkFieldsLabel">Колонки-ссылки [[...]] — создадут связи на графе</label>
+        <div id="linkFieldsList" class="link-fields-list"></div>
+      </div>
+
+      <div class="field">
+        <label data-t="tagLabel">Теги для связей на графе</label>
+        <div id="tagChips" class="chips"></div>
+        <input type="text" id="tagInput" data-t-placeholder="tagPlaceholder" style="width: 100%;">
+      </div>
+
+      <div class="field">
+        <label class="checkbox-row" style="color: var(--text-dim);">
+          <input type="checkbox" id="dynTagToggle">
+          <span data-t="dynTagLabel">Также тег из значения колонки — у каждой заметки будет свой</span>
+        </label>
+        <select id="dynTagField" style="width: 100%; display:none;"></select>
+      </div>
+
+      <div class="field">
+        <label class="checkbox-row" style="color: var(--text-dim);">
+          <input type="checkbox" id="onlyPropsToggle">
+          <span data-t="onlyPropsLabel">Только свойства — без заголовка и таблицы в теле заметки</span>
+        </label>
+      </div>
+
+      <div class="row">
+        <button id="backBtn" class="icon-only" aria-label="Назад" title="Назад" data-t-title="backTitle">←</button>
+        <button id="generateBtn" class="primary" style="flex:1;"><span data-t="generateBtn">Сгенерировать файлы</span> <i class="ti ti-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <div id="step3" class="panel" style="display:none;">
+      <div class="done-badge">
+        <div class="done-icon"><i class="ti ti-check"></i></div>
+        <p class="done-text" data-t="doneMsg">Готово. Скачай оба файла и закинь их в свой vault, затем импортируй через плагин JSON Importer.</p>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:9px; margin-bottom:20px;">
+        <button id="downloadCsv" class="primary"><i class="ti ti-download"></i><span data-t="downloadCsv">Скачать CSV (данные.csv)</span></button>
+        <button id="downloadTemplate"><i class="ti ti-download"></i><span data-t="downloadTemplate">Скачать шаблон (шаблон.md)</span></button>
+      </div>
+
+      <details>
+        <summary data-t="importSettings">Настройки для окна импорта в Obsidian</summary>
+        <div class="settings-box">
+          Field to use as Note name: <span id="fieldNameOut" style="color: var(--accent);"></span><br>
+          Each subfield is a separate note: <span data-t="off">выключено</span><br>
+          Field containing the data: <span data-t="empty">пусто</span>
+        </div>
+        <p class="plugin-link"><i class="ti ti-puzzle"></i> <span data-t="pluginNeeded">Нужен плагин</span> <a href="https://github.com/farling42/obsidian-import-json" target="_blank" rel="noopener">JSON Importer</a></p>
+      </details>
+
+      <button id="restartBtn" style="width:100%; margin-top: 18px;"><i class="ti ti-refresh"></i><span data-t="restartBtn">Обработать новую таблицу</span></button>
+    </div>
+
+  </div>
+
+  <p class="footer-credit">by 011ECHO</p>
+</div>
+
+<script>
+const CHIP_COLORS = ['#c4b5fd', '#7dd3c8', '#fca5a5', '#f9c97c', '#93c5fd'];
+
+const translations = {
+  ru: {
+    title: 'Конвертер таблиц',
+    subtitle: 'Вставь таблицу из Excel или загрузи CSV — получишь два готовых файла для импорта.',
+    pasteBtn: 'Вставить из буфера',
+    uploadBtn: 'Загрузить файл',
+    sheetLabel: 'Лист в файле',
+    pasteholder: 'Вставь таблицу (Ctrl+V) или перетащи сюда файл CSV/XLSX',
+    parseBtn: 'Обработать таблицу',
+    colFound: 'Найдено колонок:',
+    colCheck: 'Так они будут называться технически:',
+    previewLabel: 'Предпросмотр первых строк:',
+    titleFieldLabel: 'Какая колонка станет названием заметки',
+    linkFieldsLabel: 'Колонки-ссылки [[...]] — создадут связи на графе',
+    tagLabel: 'Теги для связей на графе',
+    tagPlaceholder: 'Введи тег и нажми Enter',
+    dynTagLabel: 'Также тег из значения колонки — у каждой заметки будет свой',
+    onlyPropsLabel: 'Только свойства — без заголовка и таблицы в теле заметки',
+    generateBtn: 'Сгенерировать файлы',
+    doneMsg: 'Готово. Скачай оба файла и закинь их в свой vault, затем импортируй через плагин JSON Importer.',
+    downloadCsv: 'Скачать CSV (данные.csv)',
+    downloadTemplate: 'Скачать шаблон (шаблон.md)',
+    importSettings: 'Настройки для окна импорта в Obsidian',
+    pluginNeeded: 'Нужен плагин',
+    backTitle: 'Назад',
+    off: 'выключено', empty: 'пусто',
+    restartBtn: 'Обработать новую таблицу',
+    fieldTitle: 'Поле', valueTitle: 'Значение',
+    dataHeader: 'Данные', notesHeader: 'Заметки',
+    alertNoData: 'Вставь или загрузи таблицу.',
+    alertClipboard: 'Не удалось прочитать буфер обмена — вставь вручную (Ctrl+V) в поле ниже.',
+    howtoTitle: 'Как этим пользоваться',
+    howtoBody: `<ol>
+      <li><b>Добавь таблицу</b> — скопируй ячейки в Excel и вставь сюда (Ctrl+V), или перетащи файл .csv/.xlsx прямо в поле, или загрузи его кнопкой.</li>
+      <li>Нажми <b>«Обработать таблицу»</b>. Конвертор сам покажет, как будут называться колонки технически (без пробелов) — трогать эти названия не нужно, а внизу увидишь предпросмотр первых строк, чтобы сверить, что всё распозналось верно.</li>
+      <li>Выбери, <b>какая колонка станет названием заметки</b> (обычно это имя человека, компании и т.п.).</li>
+      <li>При желании отметь <b>колонки-ссылки [[...]]</b> — например «Компания» или «Менеджер». Такие поля станут кликабельными ссылками на другие заметки, и все записи с одинаковым значением автоматически соединятся между собой на графе.</li>
+      <li>При желании добавь <b>теги</b> — напиши слово и нажми Enter. Теги нужны, чтобы заметки одной категории связались между собой на графе в Obsidian.</li>
+      <li>Нажми <b>«Сгенерировать файлы»</b> и скачай оба файла — CSV с данными и шаблон .md.</li>
+      <li>В Obsidian установи плагин <a href="https://github.com/farling42/obsidian-import-json" target="_blank" rel="noopener"><b>«JSON Importer»</b></a> (Settings → Community plugins → Browse). Скачанные файлы можно оставить где угодно на компьютере (например в Загрузках) — их не обязательно копировать в vault.</li>
+      <li>Если через поиск плагин не находится (иногда так бывает) — установи плагин <a href="https://github.com/TfTHacker/obsidian42-brat" target="_blank" rel="noopener"><b>BRAT</b></a> (тоже через Community plugins → Browse), затем в его настройках выбери <b>«Add beta plugin»</b> и вставь ссылку <code>https://github.com/farling42/obsidian-import-json</code> — BRAT установит JSON Importer напрямую с GitHub.</li>
+      <li>Открой импортёр (иконка лупы слева), выбери скачанные CSV и шаблон, впиши название технической колонки в поле <b>«Field to use as Note name»</b> (оно показано внизу после генерации) и нажми <b>Import</b>.</li>
+    </ol>`,
+  },
+  uk: {
+    title: 'Конвертер таблиць',
+    subtitle: 'Встав таблицю з Excel або завантаж CSV — отримаєш два готових файли для імпорту.',
+    pasteBtn: 'Вставити з буфера',
+    uploadBtn: 'Завантажити файл',
+    sheetLabel: 'Лист у файлі',
+    pasteholder: 'Встав таблицю (Ctrl+V) або перетягни сюди файл CSV/XLSX',
+    parseBtn: 'Обробити таблицю',
+    colFound: 'Знайдено колонок:',
+    colCheck: 'Так вони називатимуться технічно:',
+    previewLabel: 'Попередній перегляд перших рядків:',
+    titleFieldLabel: 'Яка колонка стане назвою нотатки',
+    linkFieldsLabel: 'Колонки-посилання [[...]] — створять зв\u2019язки на графі',
+    tagLabel: 'Теги для зв\u2019язків на графі',
+    tagPlaceholder: 'Введи тег і натисни Enter',
+    dynTagLabel: 'Також тег зі значення колонки — у кожної нотатки буде свій',
+    onlyPropsLabel: 'Лише властивості — без заголовка і таблиці в тілі нотатки',
+    generateBtn: 'Згенерувати файли',
+    doneMsg: 'Готово. Завантаж обидва файли і закинь їх у свій vault, потім імпортуй через плагін JSON Importer.',
+    downloadCsv: 'Завантажити CSV (дані.csv)',
+    downloadTemplate: 'Завантажити шаблон (шаблон.md)',
+    importSettings: 'Налаштування для вікна імпорту в Obsidian',
+    pluginNeeded: 'Потрібен плагін',
+    backTitle: 'Назад',
+    off: 'вимкнено', empty: 'порожньо',
+    restartBtn: 'Обробити нову таблицю',
+    fieldTitle: 'Поле', valueTitle: 'Значення',
+    dataHeader: 'Дані', notesHeader: 'Нотатки',
+    alertNoData: 'Встав або завантаж таблицю.',
+    alertClipboard: 'Не вдалося прочитати буфер обміну — встав вручну (Ctrl+V) у поле нижче.',
+    howtoTitle: 'Як цим користуватись',
+    howtoBody: `<ol>
+      <li><b>Додай таблицю</b> — скопіюй комірки в Excel і встав сюди (Ctrl+V), або перетягни файл .csv/.xlsx прямо в поле, або завантаж його кнопкою.</li>
+      <li>Натисни <b>«Обробити таблицю»</b>. Конвертор сам покаже, як називатимуться колонки технічно (без пробілів) — чіпати ці назви не потрібно, а внизу з'явиться попередній перегляд перших рядків, щоб перевірити, що все розпізналося правильно.</li>
+      <li>Обери, <b>яка колонка стане назвою нотатки</b> (зазвичай це ім'я людини, компанії тощо).</li>
+      <li>За бажанням познач <b>колонки-посилання [[...]]</b> — наприклад «Компанія» або «Менеджер». Такі поля стануть клікабельними посиланнями на інші нотатки, і всі записи з однаковим значенням автоматично з'єднаються між собою на графі.</li>
+      <li>За бажанням додай <b>теги</b> — напиши слово і натисни Enter. Теги потрібні, щоб нотатки однієї категорії зв'язалися між собою на графі в Obsidian.</li>
+      <li>Натисни <b>«Згенерувати файли»</b> і завантаж обидва файли — CSV з даними і шаблон .md.</li>
+      <li>В Obsidian встанови плагін <a href="https://github.com/farling42/obsidian-import-json" target="_blank" rel="noopener"><b>«JSON Importer»</b></a> (Settings → Community plugins → Browse). Завантажені файли можна лишити будь-де на комп'ютері (наприклад у Завантаженнях) — копіювати їх у vault не обов'язково.</li>
+      <li>Якщо через пошук плагін не знаходиться (таке буває) — встанови плагін <a href="https://github.com/TfTHacker/obsidian42-brat" target="_blank" rel="noopener"><b>BRAT</b></a> (також через Community plugins → Browse), потім у його налаштуваннях обери <b>«Add beta plugin»</b> і встав посилання <code>https://github.com/farling42/obsidian-import-json</code> — BRAT встановить JSON Importer напряму з GitHub.</li>
+      <li>Відкрий імпортер (іконка лупи зліва), обери завантажені CSV і шаблон, впиши назву технічної колонки в поле <b>«Field to use as Note name»</b> (воно показане внизу після генерації) і натисни <b>Import</b>.</li>
+    </ol>`,
+  },
+  en: {
+    title: 'Table converter',
+    subtitle: 'Paste a table from Excel or upload a CSV — get two ready-to-import files.',
+    pasteBtn: 'Paste from clipboard',
+    uploadBtn: 'Upload file',
+    sheetLabel: 'Sheet',
+    pasteholder: 'Paste a table (Ctrl+V) or drag a CSV/XLSX file here',
+    parseBtn: 'Process table',
+    colFound: 'Columns found:',
+    colCheck: 'They will be named technically like this:',
+    previewLabel: 'Preview of the first rows:',
+    titleFieldLabel: 'Which column becomes the note title',
+    linkFieldsLabel: 'Link columns [[...]] — will create graph connections',
+    tagLabel: 'Tags for graph connections',
+    tagPlaceholder: 'Type a tag and press Enter',
+    dynTagLabel: 'Also add a tag from a column value — each note gets its own',
+    onlyPropsLabel: 'Properties only — no title or table in the note body',
+    generateBtn: 'Generate files',
+    doneMsg: 'Done. Download both files, drop them into your vault, then import them via the JSON Importer plugin.',
+    downloadCsv: 'Download CSV (data.csv)',
+    downloadTemplate: 'Download template (template.md)',
+    importSettings: 'Settings for the Obsidian import dialog',
+    pluginNeeded: 'Requires the plugin',
+    backTitle: 'Back',
+    off: 'off', empty: 'empty',
+    restartBtn: 'Process a new table',
+    fieldTitle: 'Field', valueTitle: 'Value',
+    dataHeader: 'Data', notesHeader: 'Notes',
+    alertNoData: 'Paste or upload a table.',
+    alertClipboard: 'Could not read the clipboard — paste manually (Ctrl+V) into the field below.',
+    howtoTitle: 'How to use this',
+    howtoBody: `<ol>
+      <li><b>Add your table</b> — copy cells in Excel and paste here (Ctrl+V), drag a .csv/.xlsx file onto the field, or upload it with the button.</li>
+      <li>Click <b>"Process table"</b>. The converter shows you the technical column names (no spaces) — no need to edit these — plus a preview of the first rows, so you can check everything came through correctly.</li>
+      <li>Choose <b>which column becomes the note title</b> (usually a person's or company's name).</li>
+      <li>Optionally check off <b>link columns [[...]]</b> — like "Company" or "Manager". Those fields become clickable links to other notes, and every record sharing the same value connects automatically on the graph.</li>
+      <li>Optionally add <b>tags</b> — type a word and press Enter. Tags let notes of the same category connect to each other on Obsidian's graph.</li>
+      <li>Click <b>"Generate files"</b> and download both — the data CSV and the .md template.</li>
+      <li>In Obsidian, install the <a href="https://github.com/farling42/obsidian-import-json" target="_blank" rel="noopener"><b>"JSON Importer"</b></a> plugin (Settings → Community plugins → Browse). You can leave the downloaded files anywhere on your computer (like Downloads) — no need to copy them into your vault.</li>
+      <li>If the plugin doesn't show up in the search (this happens sometimes) — install <a href="https://github.com/TfTHacker/obsidian42-brat" target="_blank" rel="noopener"><b>BRAT</b></a> instead (also via Community plugins → Browse), then in its settings choose <b>"Add beta plugin"</b> and paste <code>https://github.com/farling42/obsidian-import-json</code> — BRAT will install JSON Importer directly from GitHub.</li>
+      <li>Open the importer (magnifying glass icon on the left), pick the downloaded CSV and template, type the technical column name into <b>"Field to use as Note name"</b> (shown at the bottom after generating) and click <b>Import</b>.</li>
+    </ol>`,
+  },
+  es: {
+    title: 'Conversor de tablas',
+    subtitle: 'Pega una tabla de Excel o sube un CSV — obtén dos archivos listos para importar.',
+    pasteBtn: 'Pegar del portapapeles',
+    uploadBtn: 'Subir archivo',
+    sheetLabel: 'Hoja',
+    pasteholder: 'Pega una tabla (Ctrl+V) o arrastra aquí un archivo CSV/XLSX',
+    parseBtn: 'Procesar tabla',
+    colFound: 'Columnas encontradas:',
+    colCheck: 'Se llamarán técnicamente así:',
+    previewLabel: 'Vista previa de las primeras filas:',
+    titleFieldLabel: 'Qué columna será el título de la nota',
+    linkFieldsLabel: 'Columnas de enlace [[...]] — crearán conexiones en el grafo',
+    tagLabel: 'Etiquetas para conexiones en el grafo',
+    tagPlaceholder: 'Escribe una etiqueta y pulsa Enter',
+    dynTagLabel: 'También una etiqueta desde el valor de una columna — cada nota tendrá la suya',
+    onlyPropsLabel: 'Solo propiedades — sin título ni tabla en el cuerpo de la nota',
+    generateBtn: 'Generar archivos',
+    doneMsg: 'Listo. Descarga ambos archivos, colócalos en tu vault y luego impórtalos con el plugin JSON Importer.',
+    downloadCsv: 'Descargar CSV (datos.csv)',
+    downloadTemplate: 'Descargar plantilla (plantilla.md)',
+    importSettings: 'Ajustes para la ventana de importación de Obsidian',
+    pluginNeeded: 'Requiere el plugin',
+    backTitle: 'Atrás',
+    off: 'desactivado', empty: 'vacío',
+    restartBtn: 'Procesar una nueva tabla',
+    fieldTitle: 'Campo', valueTitle: 'Valor',
+    dataHeader: 'Datos', notesHeader: 'Notas',
+    alertNoData: 'Pega o sube una tabla.',
+    alertClipboard: 'No se pudo leer el portapapeles — pega manualmente (Ctrl+V) en el campo de abajo.',
+    howtoTitle: 'Cómo usarlo',
+    howtoBody: `<ol>
+      <li><b>Añade tu tabla</b> — copia celdas en Excel y pégalas aquí (Ctrl+V), arrastra un archivo .csv/.xlsx al campo, o súbelo con el botón.</li>
+      <li>Pulsa <b>"Procesar tabla"</b>. El conversor muestra los nombres técnicos de las columnas (sin espacios) — no hace falta tocarlos — y una vista previa de las primeras filas, para comprobar que todo se reconoció bien.</li>
+      <li>Elige <b>qué columna será el título de la nota</b> (normalmente el nombre de una persona o empresa).</li>
+      <li>Si quieres, marca <b>columnas de enlace [[...]]</b> — como "Empresa" o "Encargado". Esos campos se convierten en enlaces a otras notas, y todos los registros con el mismo valor se conectan automáticamente en el grafo.</li>
+      <li>Si quieres, añade <b>etiquetas</b> — escribe una palabra y pulsa Enter. Las etiquetas conectan notas de la misma categoría entre sí en el grafo de Obsidian.</li>
+      <li>Pulsa <b>"Generar archivos"</b> y descarga ambos — el CSV con los datos y la plantilla .md.</li>
+      <li>En Obsidian, instala el plugin <a href="https://github.com/farling42/obsidian-import-json" target="_blank" rel="noopener"><b>"JSON Importer"</b></a> (Settings → Community plugins → Browse). Puedes dejar los archivos descargados en cualquier parte de tu ordenador (como Descargas) — no hace falta copiarlos a tu vault.</li>
+      <li>Si el plugin no aparece en la búsqueda (a veces pasa) — instala <a href="https://github.com/TfTHacker/obsidian42-brat" target="_blank" rel="noopener"><b>BRAT</b></a> en su lugar (también vía Community plugins → Browse), luego en sus ajustes elige <b>"Add beta plugin"</b> y pega <code>https://github.com/farling42/obsidian-import-json</code> — BRAT instalará JSON Importer directamente desde GitHub.</li>
+      <li>Abre el importador (icono de lupa a la izquierda), selecciona el CSV y la plantilla descargados, escribe el nombre técnico de la columna en <b>"Field to use as Note name"</b> (se muestra abajo tras generar) y pulsa <b>Import</b>.</li>
+    </ol>`,
+  }
+};
+
+let currentLang = 'ru';
+
+function applyTranslations() {
+  const t = translations[currentLang];
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.getAttribute('data-t');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-t-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-t-placeholder');
+    if (t[key] !== undefined) el.placeholder = t[key];
+  });
+  document.querySelectorAll('[data-t-html]').forEach(el => {
+    const key = el.getAttribute('data-t-html');
+    if (t[key] !== undefined) el.innerHTML = t[key];
+  });
+  document.querySelectorAll('[data-t-title]').forEach(el => {
+    const key = el.getAttribute('data-t-title');
+    if (t[key] !== undefined) { el.title = t[key]; el.setAttribute('aria-label', t[key]); }
+  });
+}
+
+document.getElementById('langSelect').value = currentLang;
+document.getElementById('langSelect').onchange = (e) => {
+  currentLang = e.target.value;
+  applyTranslations();
+};
+applyTranslations();
+
+function setStep(n) {
+  document.getElementById('fill1').style.width = n >= 1 ? '100%' : '0%';
+  document.getElementById('fill2').style.width = n >= 2 ? '100%' : '0%';
+  document.getElementById('fill3').style.width = n >= 3 ? '100%' : '0%';
+}
+
+let headers = [];
+let sanitized = [];
+let rows = [];
+let tagsList = [];
+let linkFields = [];
+
+function sanitizeHeader(h, used) {
+  let s = h.trim()
+    .replace(/[.,]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^\p{L}\p{N}_]/gu, '');
+  if (!s) s = 'field';
+  if (/^[0-9]/.test(s)) s = 'f_' + s;
+  let base = s, i = 2;
+  while (used.has(s)) { s = base + '_' + i; i++; }
+  used.add(s);
+  return s;
+}
+
+function parseCSV(text) {
+  const firstLine = text.replace(/\r/g, '').split('\n')[0];
+  const counts = {
+    '\t': (firstLine.match(/\t/g) || []).length,
+    ';': (firstLine.match(/;/g) || []).length,
+    ',': (firstLine.match(/,/g) || []).length
+  };
+  let delim = '\t';
+  let max = -1;
+  for (const d of ['\t', ';', ',']) {
+    if (counts[d] > max) { max = counts[d]; delim = d; }
+  }
+  const lines = text.replace(/\r/g, '').split('\n').filter(l => l.length > 0);
+  const parseLine = (line) => {
+    if (delim === '\t') return line.split('\t');
+    const out = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQ) {
+        if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+        else if (c === '"') inQ = false;
+        else cur += c;
+      } else {
+        if (c === '"') inQ = true;
+        else if (c === delim) { out.push(cur); cur = ''; }
+        else cur += c;
+      }
+    }
+    out.push(cur);
+    return out;
+  };
+  const parsed = lines.map(parseLine);
+  return { header: parsed[0], data: parsed.slice(1) };
+}
+
+function csvEscape(v) {
+  if (v == null) v = '';
+  v = String(v);
+  if (v.includes(',') || v.includes('"') || v.includes('\n')) {
+    return '"' + v.replace(/"/g, '""') + '"';
+  }
+  return v;
+}
+
+document.getElementById('pasteBtn').onclick = async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    document.getElementById('rawInput').value = text;
+  } catch (e) {
+    alert(translations[currentLang].alertClipboard);
+  }
+};
+
+let currentWorkbook = null;
+
+document.getElementById('uploadBtn').onclick = () => {
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileInput').click();
+};
+document.getElementById('fileInput').onchange = (e) => {
+  const file = e.target.files[0];
+  if (file) handleFile(file);
+};
+
+function handleFile(file) {
+  const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+  const reader = new FileReader();
+
+  if (isExcel) {
+    reader.onload = (ev) => {
+      const buffer = ev.target.result;
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      currentWorkbook = workbook;
+      const sheetPicker = document.getElementById('sheetPicker');
+      const sheetSelect = document.getElementById('sheetSelect');
+      if (workbook.SheetNames.length > 1) {
+        sheetSelect.innerHTML = '';
+        workbook.SheetNames.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name; opt.textContent = name;
+          sheetSelect.appendChild(opt);
+        });
+        sheetPicker.style.display = 'block';
+      } else {
+        sheetPicker.style.display = 'none';
+      }
+      loadSheetIntoTextarea(workbook.SheetNames[0]);
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    document.getElementById('sheetPicker').style.display = 'none';
+    currentWorkbook = null;
+    reader.onload = (ev) => {
+      const buffer = ev.target.result;
+      const utf8Text = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+      const brokenCount = (utf8Text.match(/\uFFFD/g) || []).length;
+      let finalText = utf8Text;
+      if (brokenCount > 0) {
+        try { finalText = new TextDecoder('windows-1251').decode(buffer); } catch (err) {}
+      }
+      document.getElementById('rawInput').value = finalText;
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+function loadSheetIntoTextarea(sheetName) {
+  if (!currentWorkbook) return;
+  const ws = currentWorkbook.Sheets[sheetName];
+  const csv = XLSX.utils.sheet_to_csv(ws, { blankrows: false });
+  document.getElementById('rawInput').value = csv;
+}
+
+document.getElementById('sheetSelect').onchange = (e) => loadSheetIntoTextarea(e.target.value);
+
+const dropZone = document.getElementById('rawInput');
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.style.borderColor = 'var(--accent)';
+  dropZone.style.boxShadow = '0 0 0 3px var(--accent-glow)';
+});
+dropZone.addEventListener('dragleave', () => {
+  dropZone.style.borderColor = '';
+  dropZone.style.boxShadow = '';
+});
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.style.borderColor = '';
+  dropZone.style.boxShadow = '';
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+
+function renderTagChips() {
+  const chips = document.getElementById('tagChips');
+  chips.innerHTML = '';
+  tagsList.forEach((tag, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.style.background = CHIP_COLORS[i % CHIP_COLORS.length];
+    chip.innerHTML = `<span>#${tag}</span>`;
+    const x = document.createElement('i');
+    x.className = 'ti ti-x';
+    x.onclick = () => { tagsList.splice(i, 1); renderTagChips(); };
+    chip.appendChild(x);
+    chips.appendChild(chip);
+  });
+}
+
+document.getElementById('tagInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = e.target.value.trim().replace(/^#/, '').replace(/\s+/g, '-');
+    if (val && !tagsList.includes(val)) {
+      tagsList.push(val);
+      renderTagChips();
+    }
+    e.target.value = '';
+  }
+});
+
+document.getElementById('dynTagToggle').onchange = (e) => {
+  document.getElementById('dynTagField').style.display = e.target.checked ? 'block' : 'none';
+};
+
+document.getElementById('parseBtn').onclick = () => {
+  const raw = document.getElementById('rawInput').value.trim();
+  if (!raw) { alert(translations[currentLang].alertNoData); return; }
+  const { header, data } = parseCSV(raw);
+  headers = header;
+  rows = data;
+  const used = new Set();
+  sanitized = headers.map(h => sanitizeHeader(h, used));
+  tagsList = [];
+  linkFields = [];
+  renderTagChips();
+  document.getElementById('dynTagToggle').checked = false;
+  document.getElementById('dynTagField').style.display = 'none';
+
+  document.getElementById('colCount').textContent = headers.length;
+  const colMap = document.getElementById('colMap');
+  colMap.innerHTML = '';
+  headers.forEach((h, i) => {
+    const row = document.createElement('div');
+    row.className = 'col-row';
+    row.innerHTML = `<span class="col-dot" style="background:${CHIP_COLORS[i % CHIP_COLORS.length]}"></span><span class="col-orig">${h}</span><i class="ti ti-arrow-right col-arrow"></i><span class="col-tech">${sanitized[i]}</span>`;
+    colMap.appendChild(row);
+  });
+
+  const previewBox = document.getElementById('previewBox');
+  const previewTable = document.getElementById('previewTable');
+  if (rows.length > 0) {
+    const sampleRows = rows.slice(0, 3);
+    let html = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+    sampleRows.forEach(r => {
+      html += '<tr>' + headers.map((_, i) => `<td>${r[i] || ''}</td>`).join('') + '</tr>';
+    });
+    previewTable.innerHTML = html;
+    previewBox.style.display = 'block';
+  } else {
+    previewBox.style.display = 'none';
+  }
+
+  const titleField = document.getElementById('titleField');
+  titleField.innerHTML = '';
+  const dynTagField = document.getElementById('dynTagField');
+  dynTagField.innerHTML = '';
+  sanitized.forEach((s, i) => {
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = headers[i] + ' (' + s + ')';
+    titleField.appendChild(opt);
+    dynTagField.appendChild(opt.cloneNode(true));
+  });
+
+  renderLinkFields();
+
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'block';
+  setStep(2);
+};
+
+function renderLinkFields() {
+  const list = document.getElementById('linkFieldsList');
+  const titleField = document.getElementById('titleField').value;
+  list.innerHTML = '';
+  sanitized.forEach((s, i) => {
+    if (s === titleField) return;
+    const row = document.createElement('label');
+    row.className = 'link-field-row';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = linkFields.includes(s);
+    cb.onchange = () => {
+      if (cb.checked) { if (!linkFields.includes(s)) linkFields.push(s); }
+      else { linkFields = linkFields.filter(f => f !== s); }
+    };
+    row.appendChild(cb);
+    const span = document.createElement('span');
+    span.innerHTML = `${headers[i]} <code>{{${s}}}</code>`;
+    row.appendChild(span);
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('titleField').addEventListener('change', renderLinkFields);
+
+document.getElementById('backBtn').onclick = () => {
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step1').style.display = 'block';
+  setStep(1);
+};
+
+let generatedCsv = '', generatedTemplate = '';
+
+document.getElementById('generateBtn').onclick = () => {
+  const t = translations[currentLang];
+  const titleField = document.getElementById('titleField').value;
+  const dynTagOn = document.getElementById('dynTagToggle').checked;
+  const dynTagField = document.getElementById('dynTagField').value;
+  const onlyProps = document.getElementById('onlyPropsToggle').checked;
+
+  const lines = [sanitized.map(csvEscape).join(',')];
+  rows.forEach(r => lines.push(sanitized.map((_, i) => csvEscape(r[i])).join(',')));
+  generatedCsv = lines.join('\n');
+
+  const valueFor = (s) => linkFields.includes(s) ? `[[{{${s}}}]]` : `{{${s}}}`;
+
+  let fm = '---\n';
+  sanitized.forEach((s, i) => {
+    if (s === titleField) return;
+    fm += `${headers[i].trim() || s}: "${valueFor(s)}"\n`;
+  });
+  if (tagsList.length > 0 || dynTagOn) {
+    fm += 'tags:\n';
+    tagsList.forEach(tag => { fm += `  - ${tag}\n`; });
+    if (dynTagOn && dynTagField) fm += `  - "{{${dynTagField}}}"\n`;
+  }
+  fm += '---\n';
+
+  if (onlyProps) {
+    generatedTemplate = fm;
+  } else {
+    let body = `\n# {{${titleField}}}\n\n## ${t.dataHeader}\n\n| ${t.fieldTitle} | ${t.valueTitle} |\n|---|---|\n`;
+    sanitized.forEach((s, i) => {
+      if (s === titleField) return;
+      body += `| ${headers[i].trim() || s} | ${valueFor(s)} |\n`;
+    });
+    body += `\n## ${t.notesHeader}\n`;
+    generatedTemplate = fm + body;
+  }
+
+  document.getElementById('fieldNameOut').textContent = titleField;
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step3').style.display = 'block';
+  setStep(3);
+};
+
+function download(filename, text) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('downloadCsv').onclick = () => {
+  const names = { ru: 'данные.csv', uk: 'дані.csv', en: 'data.csv', es: 'datos.csv' };
+  download(names[currentLang], generatedCsv);
+};
+document.getElementById('downloadTemplate').onclick = () => {
+  const names = { ru: 'шаблон.md', uk: 'шаблон.md', en: 'template.md', es: 'plantilla.md' };
+  download(names[currentLang], generatedTemplate);
+};
+
+document.getElementById('restartBtn').onclick = () => {
+  document.getElementById('rawInput').value = '';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('sheetPicker').style.display = 'none';
+  document.getElementById('dynTagToggle').checked = false;
+  document.getElementById('dynTagField').style.display = 'none';
+  document.getElementById('onlyPropsToggle').checked = false;
+  currentWorkbook = null;
+  tagsList = [];
+  linkFields = [];
+  renderTagChips();
+  document.getElementById('step3').style.display = 'none';
+  document.getElementById('step1').style.display = 'block';
+  setStep(1);
+};
+</script>
+</body>
+</html>
