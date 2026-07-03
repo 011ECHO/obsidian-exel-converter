@@ -172,6 +172,19 @@
   .howto-body { margin-top: 14px; font-size: 13.5px; color: var(--text-dim); line-height: 1.75; }
   .howto-body ol { margin: 0; padding-left: 20px; }
   .howto-body li { margin-bottom: 10px; }
+  .howto-body ul.field-list {
+    list-style: none; margin: 8px 0 0; padding: 0;
+    border-left: 2px solid var(--border-soft); padding-left: 12px;
+  }
+  .howto-body ul.field-list li {
+    margin-bottom: 8px; font-size: 13px;
+  }
+  .howto-body .field-name {
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--text);
+    background: var(--card-2); padding: 1px 6px; border-radius: 4px;
+  }
+  .howto-body .field-fill { color: #7dd3c8; font-weight: 600; }
+  .howto-body .field-skip { color: var(--text-faint); }
   .howto-body b { color: var(--text); font-weight: 600; }
   .howto-body code {
     font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--card-2);
@@ -389,7 +402,20 @@ const translations = {
       <li>Нажми <b>«Сгенерировать файлы»</b> и скачай оба файла — CSV с данными и шаблон .md.</li>
       <li>В Obsidian установи плагин <a href="https://github.com/farling42/obsidian-import-json" target="_blank" rel="noopener"><b>«JSON Importer»</b></a> (Settings → Community plugins → Browse). Скачанные файлы можно оставить где угодно на компьютере (например в Загрузках) — их не обязательно копировать в vault.</li>
       <li>Если через поиск плагин не находится (иногда так бывает) — установи плагин <a href="https://github.com/TfTHacker/obsidian42-brat" target="_blank" rel="noopener"><b>BRAT</b></a> (тоже через Community plugins → Browse), затем в его настройках выбери <b>«Add beta plugin»</b> и вставь ссылку <code>https://github.com/farling42/obsidian-import-json</code> — BRAT установит JSON Importer напрямую с GitHub.</li>
-      <li>Открой импортёр (иконка лупы слева), выбери скачанные CSV и шаблон, впиши название технической колонки в поле <b>«Field to use as Note name»</b> (оно показано внизу после генерации) и нажми <b>Import</b>.</li>
+      <li>Открой импортёр (иконка лупы слева) и заполни поля так:
+        <ul class="field-list">
+          <li><span class="field-fill">✓ Заполнить</span> — <span class="field-name">Choose JSON/CSV File</span>: выбери скачанный CSV.</li>
+          <li><span class="field-fill">✓ Заполнить</span> — <span class="field-name">Choose TEMPLATE File</span>: выбери скачанный шаблон .md.</li>
+          <li><span class="field-skip">— Не трогать</span> — <span class="field-name">Specify URL to JSON data</span>, <span class="field-name">Choose HELPERS File</span>, <span class="field-name">Choose BATCH File</span>, <span class="field-name">Field containing the data</span> — оставь пустыми.</li>
+          <li><span class="field-skip">— Не трогать</span> — <span class="field-name">Data contains multiple JSON objects</span> и <span class="field-name">Each subfield is a separate note</span> — обе галочки должны быть <b>выключены</b>.</li>
+          <li><span class="field-fill">✓ Заполнить</span> — <span class="field-name">Field to use as Note name</span>: впиши название технической колонки (оно показано внизу конвертора после генерации файлов, рядом с «Field to use as Note name»).</li>
+          <li><span class="field-skip">— По желанию</span> — <span class="field-name">Add suffix on duplicate Note Names</span>: можно включить, если боишься случайных совпадений названий.</li>
+          <li><span class="field-skip">— Не трогать</span> — <span class="field-name">Note name prefix/suffix</span> и <span class="field-name">Allow paths in Note name</span> — оставь как есть.</li>
+          <li><span class="field-fill">✓ Обрати внимание</span> — <span class="field-name">How to handle existing Notes</span>: если делаешь импорт заново поверх старых заметок — переключи на <b>REPLACE</b>. Если заметки новые — оставь <b>KEEP</b>.</li>
+          <li><span class="field-fill">✓ Заполнить</span> — <span class="field-name">Name of Destination Folder in Vault</span>: впиши название папки, куда сложить заметки (создастся сама).</li>
+        </ul>
+        В конце нажми <b>IMPORT</b>.
+      </li>
     </ol>`,
   },
   uk: {
@@ -432,7 +458,20 @@ const translations = {
       <li>Натисни <b>«Згенерувати файли»</b> і завантаж обидва файли — CSV з даними і шаблон .md.</li>
       <li>В Obsidian встанови плагін <a href="https://github.com/farling42/obsidian-import-json" target="_blank" rel="noopener"><b>«JSON Importer»</b></a> (Settings → Community plugins → Browse). Завантажені файли можна лишити будь-де на комп'ютері (наприклад у Завантаженнях) — копіювати їх у vault не обов'язково.</li>
       <li>Якщо через пошук плагін не знаходиться (таке буває) — встанови плагін <a href="https://github.com/TfTHacker/obsidian42-brat" target="_blank" rel="noopener"><b>BRAT</b></a> (також через Community plugins → Browse), потім у його налаштуваннях обери <b>«Add beta plugin»</b> і встав посилання <code>https://github.com/farling42/obsidian-import-json</code> — BRAT встановить JSON Importer напряму з GitHub.</li>
-      <li>Відкрий імпортер (іконка лупи зліва), обери завантажені CSV і шаблон, впиши назву технічної колонки в поле <b>«Field to use as Note name»</b> (воно показане внизу після генерації) і натисни <b>Import</b>.</li>
+      <li>Відкрий імпортер (іконка лупи зліва) і заповни поля так:
+        <ul class="field-list">
+          <li><span class="field-fill">✓ Заповнити</span> — <span class="field-name">Choose JSON/CSV File</span>: обери завантажений CSV.</li>
+          <li><span class="field-fill">✓ Заповнити</span> — <span class="field-name">Choose TEMPLATE File</span>: обери завантажений шаблон .md.</li>
+          <li><span class="field-skip">— Не чіпати</span> — <span class="field-name">Specify URL to JSON data</span>, <span class="field-name">Choose HELPERS File</span>, <span class="field-name">Choose BATCH File</span>, <span class="field-name">Field containing the data</span> — залиш порожніми.</li>
+          <li><span class="field-skip">— Не чіпати</span> — <span class="field-name">Data contains multiple JSON objects</span> і <span class="field-name">Each subfield is a separate note</span> — обидва прапорці мають бути <b>вимкнені</b>.</li>
+          <li><span class="field-fill">✓ Заповнити</span> — <span class="field-name">Field to use as Note name</span>: впиши назву технічної колонки (вона показана внизу конвертора після генерації файлів, поруч із «Field to use as Note name»).</li>
+          <li><span class="field-skip">— За бажанням</span> — <span class="field-name">Add suffix on duplicate Note Names</span>: можна увімкнути, якщо боїшся випадкових збігів назв.</li>
+          <li><span class="field-skip">— Не чіпати</span> — <span class="field-name">Note name prefix/suffix</span> і <span class="field-name">Allow paths in Note name</span> — залиш як є.</li>
+          <li><span class="field-fill">✓ Зверни увагу</span> — <span class="field-name">How to handle existing Notes</span>: якщо робиш імпорт заново поверх старих нотаток — перемкни на <b>REPLACE</b>. Якщо нотатки нові — залиш <b>KEEP</b>.</li>
+          <li><span class="field-fill">✓ Заповнити</span> — <span class="field-name">Name of Destination Folder in Vault</span>: впиши назву папки, куди скласти нотатки (створиться сама).</li>
+        </ul>
+        Наприкінці натисни <b>IMPORT</b>.
+      </li>
     </ol>`,
   },
   en: {
@@ -475,7 +514,20 @@ const translations = {
       <li>Click <b>"Generate files"</b> and download both — the data CSV and the .md template.</li>
       <li>In Obsidian, install the <a href="https://github.com/farling42/obsidian-import-json" target="_blank" rel="noopener"><b>"JSON Importer"</b></a> plugin (Settings → Community plugins → Browse). You can leave the downloaded files anywhere on your computer (like Downloads) — no need to copy them into your vault.</li>
       <li>If the plugin doesn't show up in the search (this happens sometimes) — install <a href="https://github.com/TfTHacker/obsidian42-brat" target="_blank" rel="noopener"><b>BRAT</b></a> instead (also via Community plugins → Browse), then in its settings choose <b>"Add beta plugin"</b> and paste <code>https://github.com/farling42/obsidian-import-json</code> — BRAT will install JSON Importer directly from GitHub.</li>
-      <li>Open the importer (magnifying glass icon on the left), pick the downloaded CSV and template, type the technical column name into <b>"Field to use as Note name"</b> (shown at the bottom after generating) and click <b>Import</b>.</li>
+      <li>Open the importer (magnifying glass icon on the left) and fill in the fields like this:
+        <ul class="field-list">
+          <li><span class="field-fill">✓ Fill in</span> — <span class="field-name">Choose JSON/CSV File</span>: pick the downloaded CSV.</li>
+          <li><span class="field-fill">✓ Fill in</span> — <span class="field-name">Choose TEMPLATE File</span>: pick the downloaded .md template.</li>
+          <li><span class="field-skip">— Leave alone</span> — <span class="field-name">Specify URL to JSON data</span>, <span class="field-name">Choose HELPERS File</span>, <span class="field-name">Choose BATCH File</span>, <span class="field-name">Field containing the data</span> — keep these empty.</li>
+          <li><span class="field-skip">— Leave alone</span> — <span class="field-name">Data contains multiple JSON objects</span> and <span class="field-name">Each subfield is a separate note</span> — both checkboxes should stay <b>unchecked</b>.</li>
+          <li><span class="field-fill">✓ Fill in</span> — <span class="field-name">Field to use as Note name</span>: type the technical column name (shown at the bottom of the converter after generating files, next to "Field to use as Note name").</li>
+          <li><span class="field-skip">— Optional</span> — <span class="field-name">Add suffix on duplicate Note Names</span>: turn on if you're worried about accidental name clashes.</li>
+          <li><span class="field-skip">— Leave alone</span> — <span class="field-name">Note name prefix/suffix</span> and <span class="field-name">Allow paths in Note name</span> — leave as is.</li>
+          <li><span class="field-fill">✓ Pay attention</span> — <span class="field-name">How to handle existing Notes</span>: if you're re-importing over existing notes, switch this to <b>REPLACE</b>. For brand new notes, leave it on <b>KEEP</b>.</li>
+          <li><span class="field-fill">✓ Fill in</span> — <span class="field-name">Name of Destination Folder in Vault</span>: type the folder name where notes should go (it gets created automatically).</li>
+        </ul>
+        Then click <b>IMPORT</b>.
+      </li>
     </ol>`,
   },
   es: {
@@ -518,7 +570,20 @@ const translations = {
       <li>Pulsa <b>"Generar archivos"</b> y descarga ambos — el CSV con los datos y la plantilla .md.</li>
       <li>En Obsidian, instala el plugin <a href="https://github.com/farling42/obsidian-import-json" target="_blank" rel="noopener"><b>"JSON Importer"</b></a> (Settings → Community plugins → Browse). Puedes dejar los archivos descargados en cualquier parte de tu ordenador (como Descargas) — no hace falta copiarlos a tu vault.</li>
       <li>Si el plugin no aparece en la búsqueda (a veces pasa) — instala <a href="https://github.com/TfTHacker/obsidian42-brat" target="_blank" rel="noopener"><b>BRAT</b></a> en su lugar (también vía Community plugins → Browse), luego en sus ajustes elige <b>"Add beta plugin"</b> y pega <code>https://github.com/farling42/obsidian-import-json</code> — BRAT instalará JSON Importer directamente desde GitHub.</li>
-      <li>Abre el importador (icono de lupa a la izquierda), selecciona el CSV y la plantilla descargados, escribe el nombre técnico de la columna en <b>"Field to use as Note name"</b> (se muestra abajo tras generar) y pulsa <b>Import</b>.</li>
+      <li>Abre el importador (icono de lupa a la izquierda) y rellena los campos así:
+        <ul class="field-list">
+          <li><span class="field-fill">✓ Rellenar</span> — <span class="field-name">Choose JSON/CSV File</span>: elige el CSV descargado.</li>
+          <li><span class="field-fill">✓ Rellenar</span> — <span class="field-name">Choose TEMPLATE File</span>: elige la plantilla .md descargada.</li>
+          <li><span class="field-skip">— No tocar</span> — <span class="field-name">Specify URL to JSON data</span>, <span class="field-name">Choose HELPERS File</span>, <span class="field-name">Choose BATCH File</span>, <span class="field-name">Field containing the data</span> — déjalos vacíos.</li>
+          <li><span class="field-skip">— No tocar</span> — <span class="field-name">Data contains multiple JSON objects</span> y <span class="field-name">Each subfield is a separate note</span> — ambas casillas deben quedar <b>desmarcadas</b>.</li>
+          <li><span class="field-fill">✓ Rellenar</span> — <span class="field-name">Field to use as Note name</span>: escribe el nombre técnico de la columna (se muestra abajo en el conversor tras generar los archivos, junto a "Field to use as Note name").</li>
+          <li><span class="field-skip">— Opcional</span> — <span class="field-name">Add suffix on duplicate Note Names</span>: actívalo si te preocupan coincidencias de nombres.</li>
+          <li><span class="field-skip">— No tocar</span> — <span class="field-name">Note name prefix/suffix</span> y <span class="field-name">Allow paths in Note name</span> — déjalos como están.</li>
+          <li><span class="field-fill">✓ Presta atención</span> — <span class="field-name">How to handle existing Notes</span>: si vuelves a importar sobre notas ya existentes, cámbialo a <b>REPLACE</b>. Para notas nuevas, deja <b>KEEP</b>.</li>
+          <li><span class="field-fill">✓ Rellenar</span> — <span class="field-name">Name of Destination Folder in Vault</span>: escribe el nombre de la carpeta donde irán las notas (se crea automáticamente).</li>
+        </ul>
+        Al final, pulsa <b>IMPORT</b>.
+      </li>
     </ol>`,
   }
 };
@@ -549,6 +614,7 @@ document.getElementById('langSelect').value = currentLang;
 document.getElementById('langSelect').onchange = (e) => {
   currentLang = e.target.value;
   applyTranslations();
+  if (sanitized.length > 0) renderLinkFields();
 };
 applyTranslations();
 
@@ -800,12 +866,31 @@ document.getElementById('parseBtn').onclick = () => {
   setStep(2);
 };
 
+function isMostlyNumeric(colIndex) {
+  if (rows.length === 0) return false;
+  const sample = rows.slice(0, 20);
+  let numericCount = 0;
+  let nonEmptyCount = 0;
+  sample.forEach(r => {
+    const v = (r[colIndex] || '').trim();
+    if (v === '') return;
+    nonEmptyCount++;
+    if (!isNaN(v.replace(',', '.')) && v !== '') numericCount++;
+  });
+  if (nonEmptyCount === 0) return false;
+  return numericCount / nonEmptyCount > 0.8;
+}
+
 function renderLinkFields() {
   const list = document.getElementById('linkFieldsList');
   const titleField = document.getElementById('titleField').value;
   list.innerHTML = '';
   sanitized.forEach((s, i) => {
     if (s === titleField) return;
+    if (isMostlyNumeric(i)) {
+      linkFields = linkFields.filter(f => f !== s);
+      return;
+    }
     const row = document.createElement('label');
     row.className = 'link-field-row';
     const cb = document.createElement('input');
