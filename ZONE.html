@@ -466,6 +466,7 @@
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
     bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[], transitions:[],
     buildings:[], roads:[], vendor:null, vendorName:'Сидорович', nearVendor:false, interiorKind:'bunker',
+    water:[], mud:[],
     locIndex:0, locData:{},
     suit:'newcomer', suits:['newcomer'],
     scene:'zone', money:600, house:null, returnPos:{x:0,y:0}, nearTrader:false, tradeTab:'buy',
@@ -665,7 +666,7 @@
         ] }},
     {name:'Свалка', difficulty:1,
       pos:{x:0.44,y:0.85}, links:['Кордон','Агропром','Тёмная долина','Росток'],
-      theme:{base:'#1a140c',t1:'#211a10',t2:'#2a2015',s1:'#140d06',s2:'#3a2a1580',border:'#3a2a18'},
+      theme:{base:'#241b12',t1:'#1c150e',t2:'#30221380',s1:'#160f08',s2:'#4a3a2050',border:'#3a2a18'},
       layout:{
         buildings:[
           {x:860,y:1460,w:190,h:140,kind:'hangar',name:'АНГАР'}, {x:1180,y:1360,w:170,h:130,kind:'hangar'},
@@ -682,7 +683,7 @@
                      {x:2960,y:900,target:2,name:'Агропром',entry:{x:2760,y:900}}] }},
     {name:'Агропром', difficulty:2, suit:'antirad',
       pos:{x:0.23,y:0.90}, links:['Свалка'],
-      theme:{base:'#161a18',t1:'#1c211f',t2:'#242a28',s1:'#101413',s2:'#30383680',border:'#333a38'},
+      theme:{base:'#1e2420',t1:'#181d1a',t2:'#26302b80',s1:'#12160f',s2:'#3a463c50',border:'#333a38'},
       layout:{
         buildings:[
           {x:1380,y:1280,w:230,h:170,kind:'factory',name:'ИНСТИТУТ'}, {x:1700,y:1520,w:180,h:130,kind:'factory'},
@@ -697,7 +698,7 @@
                      {x:1500,y:150,target:3,name:'Тёмная долина',entry:{x:1500,y:360}}] }},
     {name:'Тёмная долина', difficulty:2, suit:'merc',
       pos:{x:0.74,y:0.82}, links:['Кордон','Свалка'],
-      theme:{base:'#0f130b',t1:'#12160d',t2:'#171d11',s1:'#0a0e07',s2:'#1a24108a',border:'#22301a'},
+      theme:{base:'#141d10',t1:'#0f160c',t2:'#1c2a1480',s1:'#0b110a',s2:'#2a3a2050',border:'#22301a'},
       layout:{
         buildings:[
           {x:1360,y:1230,w:220,h:160,kind:'factory',name:'БАЗА'}, {x:1720,y:1460,w:150,h:110,kind:'ruin'},
@@ -712,7 +713,7 @@
                      {x:3060,y:950,target:4,name:'Росток',entry:{x:2860,y:950}}] }},
     {name:'Росток', difficulty:2,
       pos:{x:0.42,y:0.72}, links:['Свалка','Дикая территория','Военные склады'],
-      theme:{base:'#181410',t1:'#201a13',t2:'#282019',s1:'#120e08',s2:'#3a2e1a80',border:'#3a3026'},
+      theme:{base:'#221c14',t1:'#1a150f',t2:'#2c231880',s1:'#151009',s2:'#463a2450',border:'#3a3026'},
       layout:{ vendorName:'Бармен',
         bar:{box:{x:1370,y:1160,w:260,h:170}, door:{x:1500,y:1360}},
         buildings:[
@@ -729,7 +730,7 @@
                      {x:3060,y:1000,target:5,name:'Янтарь',entry:{x:2860,y:1000}}] }},
     {name:'Янтарь', difficulty:3,
       pos:{x:0.15,y:0.78}, links:['Дикая территория'],
-      theme:{base:'#181a0c',t1:'#1e2010',t2:'#282a12',s1:'#121405',s2:'#3a3a1080',border:'#3a3a18'},
+      theme:{base:'#262810',t1:'#1c1e0c',t2:'#32361480',s1:'#16180a',s2:'#54581e50',border:'#3a3a18'},
       layout:{
         buildings:[
           {x:1380,y:1160,w:220,h:160,kind:'lab',name:'ЛАБ. X16'}, {x:1720,y:1420,w:170,h:130,kind:'factory'},
@@ -743,7 +744,7 @@
                      {x:1500,y:150,target:6,name:'ЧАЭС',entry:{x:1500,y:360}}] }},
     {name:'Дикая территория', difficulty:3,
       pos:{x:0.30,y:0.70}, links:['Росток','Янтарь'],
-      theme:{base:'#12160e',t1:'#171d12',t2:'#1e2618',s1:'#0c1008',s2:'#22301680',border:'#2a3a1e'},
+      theme:{base:'#1a2410',t1:'#141d0c',t2:'#24321580',s1:'#0e150a',s2:'#3a5a2050',border:'#2a3a1e'},
       layout:{
         buildings:[
           {x:1360,y:1200,w:200,h:150,kind:'factory',name:'ЦЕХ'}, {x:1720,y:1440,w:44,h:120,kind:'tower'},
@@ -754,7 +755,7 @@
                [[1500,1600],[900,1400],[500,1300]]] }},
     {name:'Военные склады', difficulty:3,
       pos:{x:0.50,y:0.62}, links:['Росток','Рыжий лес'],
-      theme:{base:'#181a10',t1:'#1f2114',t2:'#282a18',s1:'#12140a',s2:'#38381e80',border:'#3a3a22'},
+      theme:{base:'#24260f',t1:'#1a1c0c',t2:'#2e321480',s1:'#14160a',s2:'#46481e50',border:'#3a3a22'},
       layout:{
         buildings:[
           {x:1300,y:1200,w:200,h:130,kind:'hangar',name:'СКЛАД'}, {x:1580,y:1360,w:180,h:120,kind:'hangar'},
@@ -765,7 +766,7 @@
                [[1450,1300],[900,1350],[500,1400]]] }},
     {name:'Рыжий лес', difficulty:4,
       pos:{x:0.64,y:0.52}, links:['Военные склады','Припять'],
-      theme:{base:'#1e120c',t1:'#281610',t2:'#331a12',s1:'#160b06',s2:'#5a281880',border:'#4a2418'},
+      theme:{base:'#2a160e',t1:'#1e0f0a',t2:'#3a1e1280',s1:'#180b06',s2:'#6a301850',border:'#4a2418'},
       layout:{
         buildings:[
           {x:1450,y:1300,w:150,h:110,kind:'ruin'}, {x:1200,y:1000,w:44,h:44,kind:'tower'},
@@ -774,7 +775,7 @@
         roads:[[[1500,2700],[1520,1700],[1550,900],[1560,350]]] }},
     {name:'Припять', difficulty:5,
       pos:{x:0.58,y:0.34}, links:['Рыжий лес','ЧАЭС'],
-      theme:{base:'#14171c',t1:'#1a1e24',t2:'#22272e',s1:'#0e1116',s2:'#2c343e80',border:'#333a44'},
+      theme:{base:'#1c2028',t1:'#151a20',t2:'#262c3480',s1:'#0f131a',s2:'#39424e50',border:'#333a44'},
       layout:{
         buildings:[
           {x:1150,y:1000,w:150,h:220,kind:'factory',name:'ДОМ'}, {x:1400,y:900,w:150,h:240,kind:'factory'},
@@ -785,7 +786,7 @@
                [[1500,1300],[1000,1250],[600,1200]]] }},
     {name:'ЧАЭС', difficulty:6, isFinal:true,
       pos:{x:0.42,y:0.10}, links:['Припять'],
-      theme:{base:'#12161c',t1:'#171c22',t2:'#1e252c',s1:'#0d1116',s2:'#26303a80',border:'#2a3a4a'},
+      theme:{base:'#181e26',t1:'#12181f',t2:'#222a3280',s1:'#0d1218',s2:'#30404e50',border:'#2a3a4a'},
       layout:{
         buildings:[
           {x:1420,y:820,w:300,h:210,kind:'sarcophagus',name:'САРКОФАГ'}, {x:1160,y:1420,w:180,h:130,kind:'ruin'},
@@ -812,7 +813,7 @@
     urban:null,
   };
   const LOC_ARRAYS=['anomalies','artItems','radzones','props','bolts_flying','particles',
-                    'bullets','mutants','ammoBoxes','medKits','suitPickups','transitions'];
+                    'bullets','mutants','ammoBoxes','medKits','suitPickups','transitions','water','mud'];
   function applyStatics(i){
     const lay=LOCATIONS[i].layout||{};
     state.roads = lay.roads || [];
@@ -895,13 +896,32 @@
       state.radzones.push({x:rx, y:ry, r:rnd(90,170)});
     }
     const fol=FOLIAGE[L.name];
-    const nProps = (fol==='forest'||fol==='redforest') ? 340 : 130;
+    // ponds / swamp water
+    let nWater = fol==='forest'?2 : fol==='redforest'?1 : 0;
+    if(L.name==='Тёмная долина') nWater=4;
+    for(let i=0;i<nWater;i++){
+      let wx,wy,tries=0;
+      do{ wx=rnd(400,W-400); wy=rnd(400,H-400); tries++; }
+      while((dist(wx,wy,state.px,state.py)<600 || inB(wx,wy,120) || nearHub(wx,wy) ||
+             state.transitions.some(t=>dist(wx,wy,t.x,t.y)<400)) && tries<40);
+      const wr=rnd(100,180);
+      state.water.push({x:wx, y:wy, rx:wr, ry:wr*rnd(0.62,0.85), seed:(Math.random()*1e6)|0});
+    }
+    const inWater=(x,y)=> state.water.some(w=> ((x-w.x)/(w.rx+14))**2 + ((y-w.y)/(w.ry+14))**2 < 1);
+    // grove centres (dense tree patches)
+    const groves=[];
+    if(fol==='forest'||fol==='redforest'){ const ng=6+diff;
+      for(let i=0;i<ng;i++) groves.push({x:rnd(300,W-300), y:rnd(300,H-300), r:rnd(150,260)}); }
+    const nProps = (fol==='forest'||fol==='redforest') ? 360 : 130;
     for(let i=0;i<nProps;i++){
-      const px=rnd(60,W-60), py=rnd(60,H-60);
-      if(dist(px,py,state.px,state.py)<120 || inB(px,py,8)) continue;
+      let px,py;
+      if(groves.length && Math.random()<0.62){ const g=groves[(Math.random()*groves.length)|0];
+        px=clamp(g.x+rnd(-g.r,g.r),60,W-60); py=clamp(g.y+rnd(-g.r,g.r),60,H-60); }
+      else { px=rnd(60,W-60); py=rnd(60,H-60); }
+      if(dist(px,py,state.px,state.py)<120 || inB(px,py,8) || inWater(px,py)) continue;
       const rr=Math.random(); let kind;
-      if(fol==='forest')      kind = rr<0.46?'ftree'  : rr<0.80?'bush' : rr<0.90?'tree':'rock';
-      else if(fol==='redforest') kind = rr<0.52?'redtree' : rr<0.80?'bush' : rr<0.90?'tree':'rock';
+      if(fol==='forest')      kind = rr<0.50?'ftree'  : rr<0.82?'bush' : rr<0.91?'tree':'rock';
+      else if(fol==='redforest') kind = rr<0.55?'redtree' : rr<0.82?'bush' : rr<0.91?'tree':'rock';
       else if(fol==='junk')   kind = rr<0.32?'tree'   : rr<0.68?'rock' : 'debris';
       else if(fol==='urban')  kind = rr<0.50?'debris' : rr<0.76?'rock' : 'tree';
       else                    kind = rr<0.34?'tree'   : rr<0.62?'rock' : rr<0.84?'bush':'debris';
@@ -1107,6 +1127,13 @@
       state.pvx=nx*spd*mag; state.pvy=ny*spd*mag;
       state.walkPhase += dt*10*mag;
     } else { state.pvx*=0.6; state.pvy*=0.6; }
+
+    // wading through water slows you & splashes
+    if(state.water.length){
+      const w=state.water.find(w=> ((state.px-w.x)/w.rx)**2 + ((state.py-w.y)/w.ry)**2 < 1);
+      if(w){ state.pvx*=0.5; state.pvy*=0.5;
+        if(state.moving && Math.random()<0.25) spawnBurst(state.px, state.py+8, '#3a5a5a', 2); }
+    }
 
     let nx=state.px+state.pvx*dt, ny=state.py+state.pvy*dt;
     // prop collision
@@ -1432,6 +1459,8 @@
     drawGround(ox,oy,camX,camY);
     // roads (dirt paths)
     drawRoads(ox,oy);
+    // water (ponds / swamp)
+    drawWater(ox,oy);
 
     // radiation zones
     for(const z of state.radzones){
@@ -1611,6 +1640,12 @@
     // arrow to the nearest transition if off-screen
     const ne2=nearestTransition();
     if(ne2.t) drawExitArrow(ne2.t.x+ox, ne2.t.y+oy);
+
+    // ambient fog / limited visibility centred on the player
+    const pcx=state.px+ox, pcy=state.py+oy;
+    const fg=ctx.createRadialGradient(pcx,pcy,150, pcx,pcy,560);
+    fg.addColorStop(0,'rgba(8,12,8,0)'); fg.addColorStop(0.7,'rgba(8,12,8,0.18)'); fg.addColorStop(1,'rgba(6,10,7,0.5)');
+    ctx.fillStyle=fg; ctx.fillRect(0,0,VW,VH);
   }
 
   function drawGround(ox,oy,camX,camY){
@@ -1705,8 +1740,9 @@
     const suit=SUITS[state.suit]||SUITS.newcomer, p=suit.pal;
     const bob=state.moving? Math.abs(Math.sin(state.walkPhase))*2 : 0;
     sy-=bob;
-    // shadow
-    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(sx,sy+13+bob,8,3,0,0,6.29); ctx.fill();
+    // soft shadow
+    ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(sx,sy+13+bob,10,4,0,0,6.29); ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,0.30)'; ctx.beginPath(); ctx.ellipse(sx,sy+13+bob,7,3,0,0,6.29); ctx.fill();
     ctx.save(); ctx.translate(sx,sy);
     const ls = state.moving? Math.round(Math.sin(state.walkPhase)*2) : 0;
 
@@ -1750,10 +1786,14 @@
       ctx.fillStyle=p.eye;  ctx.fillRect(-3,-12,2,2); ctx.fillRect(1,-12,2,2);
     }
 
-    // facing indicator (weapon nub)
-    const fx=Math.cos(state.facing), fy=Math.sin(state.facing);
-    ctx.fillStyle='#1a1a16';
-    ctx.fillRect(fx*9-2, -1+fy*4, 4,3);
+    // held rifle, aimed toward `facing`
+    ctx.save(); ctx.rotate(state.facing);
+    ctx.fillStyle='#241f18'; ctx.fillRect(3,-2,15,4);     // receiver + barrel
+    ctx.fillStyle='#3a352a'; ctx.fillRect(3,-2,15,1);     // top rail highlight
+    ctx.fillStyle='#12100c'; ctx.fillRect(15,-1,3,2);     // muzzle
+    ctx.fillStyle='#2a1c10'; ctx.fillRect(1,1,5,3);       // grip
+    ctx.fillStyle=p.hand;    ctx.fillRect(7,-3,3,2);      // fore hand
+    ctx.restore();
     ctx.restore();
   }
 
@@ -1793,9 +1833,13 @@
     const M=MUT_TYPES[m.t];
     const mv=Math.hypot(m.vx,m.vy);
     const wob=mv>0.05? Math.sin(m.phase)*2 : 0;
-    // shadow
-    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath();
-    ctx.ellipse(sx,sy+M.r*0.7,M.r*0.9,M.r*0.4,0,0,6.29); ctx.fill();
+    // soft shadow
+    ctx.fillStyle='rgba(0,0,0,0.26)'; ctx.beginPath();
+    ctx.ellipse(sx,sy+M.r*0.75,M.r*1.05,M.r*0.48,0,0,6.29); ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.beginPath();
+    ctx.ellipse(sx,sy+M.r*0.72,M.r*0.8,M.r*0.36,0,0,6.29); ctx.fill();
+    // menacing glow eyes hint when alerted
+    if(m.alerted){ ctx.fillStyle='rgba(200,60,40,0.18)'; ctx.beginPath(); ctx.arc(sx,sy-M.r*0.2,M.r*1.3,0,6.29); ctx.fill(); }
     const face=Math.atan2(m.vy||0.001,m.vx||0.001);
     const fx=Math.cos(face), fy=Math.sin(face);
     const body = m.hurtFlash>0? '#ff8a7a' : M.col;
@@ -1875,6 +1919,24 @@
     state._doorReadyAt=now()+600;   // brief grace so the door doesn't re-trigger
     document.getElementById('btnTrade').style.display='none';
     beep(300,0.09,'sine',0.05);
+  }
+  function drawWater(ox,oy){
+    for(const w of state.water){
+      const sx=w.x+ox, sy=w.y+oy;
+      if(sx+w.rx<-20||sx-w.rx>VW+20||sy+w.ry<-20||sy-w.ry>VH+20) continue;
+      ctx.fillStyle='#2a2416'; ctx.beginPath(); ctx.ellipse(sx,sy,w.rx+11,w.ry+9,0,0,6.29); ctx.fill();   // muddy shore
+      ctx.fillStyle='#35301c'; ctx.beginPath(); ctx.ellipse(sx,sy,w.rx+4,w.ry+3,0,0,6.29); ctx.fill();
+      ctx.fillStyle='#182f31'; ctx.beginPath(); ctx.ellipse(sx,sy,w.rx,w.ry,0,0,6.29); ctx.fill();        // water
+      ctx.fillStyle='#234749'; ctx.beginPath(); ctx.ellipse(sx,sy-2,w.rx*0.9,w.ry*0.84,0,0,6.29); ctx.fill();
+      ctx.strokeStyle='rgba(130,190,190,0.16)'; ctx.lineWidth=1;                                          // ripples
+      for(let i=0;i<3;i++){ const t=(now()/1500+i*0.4)%1; ctx.globalAlpha=(1-t)*0.5;
+        ctx.beginPath(); ctx.ellipse(sx,sy,w.rx*(0.28+t*0.62),w.ry*(0.28+t*0.62),0,0,6.29); ctx.stroke(); }
+      ctx.globalAlpha=1;
+      ctx.fillStyle='rgba(160,205,205,0.22)';                                                             // glints
+      for(let i=0;i<5;i++){ const h=((w.seed*(i+7))>>>0);
+        const gx=sx+((h%200)/100-1)*w.rx*0.7, gy=sy+(((h>>8)%200)/100-1)*w.ry*0.6;
+        ctx.fillRect(gx, gy+Math.sin(now()/500+i)*1, 2,1); }
+    }
   }
   function drawRoads(ox,oy){
     if(!state.roads.length) return;
