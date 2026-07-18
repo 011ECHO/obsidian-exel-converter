@@ -208,6 +208,10 @@
     position:absolute; top:8px; right:8px; font-size:9px; letter-spacing:1px;
     color:#191600; background:var(--amber); padding:1px 6px; border-radius:3px; display:none; }
   .art-card.equipped .etag{ display:block; }
+  .art-card.legend{ border-color:#ff3b6b; background:#1a0e14; padding-bottom:28px; }
+  .art-card.legend.equipped{ box-shadow:0 0 0 1px #ff3b6b inset, 0 0 16px #ff3b6b55; }
+  .art-card .legtag{ position:absolute; bottom:8px; right:8px; font-size:8px; letter-spacing:1px;
+    color:#ff9ab6; border:1px solid #ff3b6b66; padding:1px 5px; border-radius:3px; }
   .inv-empty{ grid-column:1/-1; text-align:center; color:#5a6a48; font-size:13px; padding:24px; }
 </style>
 </head>
@@ -389,6 +393,9 @@
     {name:'Кристалл', col:'#b892ff', glow:'#e0ccff', icon:'◆',
       eff:{resist:0.4, spdMul:0.9, radPassive:0.6},
       pros:['Урон аномалий/мутантов −40%'], cons:['Скорость ×0.9','Радиация +0.6/с']},
+    {name:'Сердце зоны', col:'#ff3b6b', glow:'#ff9ab6', icon:'♥', legendary:true,
+      eff:{radResist:1.0, spdMul:1.5, maxHpBonus:100},
+      pros:['100% защита от радиации','Скорость ×1.5','+100% макс. HP'], cons:[]},
   ];
   function computeMods(){
     const m={regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0};
@@ -397,7 +404,7 @@
       const e=it.type.eff;
       m.regen+=e.regen||0; m.radPassive+=e.radPassive||0;
       m.dmgMul*=(e.dmgMul||1); m.spdMul*=(e.spdMul||1);
-      m.radResist=Math.min(0.85, m.radResist+(e.radResist||0));
+      m.radResist=Math.min(1.0, m.radResist+(e.radResist||0));
       m.maxHpBonus+=e.maxHpBonus||0;
       m.resist=Math.min(0.7, m.resist+(e.resist||0));
     }
@@ -408,6 +415,13 @@
     state.maxHp=Math.max(30, 100+state.mods.maxHpBonus);
     if(state.hp>state.maxHp) state.hp=state.maxHp;
     updateHUD();
+  }
+  const HEART = ARTS.find(a=>a.name==='Сердце зоны');
+  function pickArt(){
+    // this build: «Сердце зоны» выпадает очень часто
+    if(Math.random()<0.6) return HEART;
+    const others=ARTS.filter(a=>a!==HEART);
+    return others[(Math.random()*others.length)|0];
   }
   // mutant kinds
   const MUT_TYPES = {
@@ -445,12 +459,18 @@
       }
       // artifact next to the cluster (70% of clusters)
       if(Math.random()<0.78){
-        const a = ARTS[(Math.random()*ARTS.length)|0];
         state.artItems.push({
           x:ax+rnd(-100,100), y:ay+rnd(-100,100),
-          type:a, taken:false, bob:Math.random()*6.28
+          type:pickArt(), taken:false, bob:Math.random()*6.28
         });
       }
+    }
+    // guaranteed «Сердце зоны» right next to spawn (this build — easy to find)
+    {
+      const ang=rnd(0,6.28), d=rnd(150,240);
+      const hx=clamp(state.px+Math.cos(ang)*d, 80, W-80);
+      const hy=clamp(state.py+Math.sin(ang)*d, 80, H-80);
+      state.artItems.push({x:hx, y:hy, type:HEART, taken:false, bob:Math.random()*6.28});
     }
     // radiation zones
     for(let i=0;i<14;i++){
@@ -947,12 +967,18 @@
       const sx=art.x+ox, sy=art.y+oy;
       if(sx<-30||sx>VW+30||sy<-30||sy>VH+30) continue;
       const bob=Math.sin(art.bob)*3;
+      const leg=art.type.legendary;
+      const gr=leg? 30+6*Math.sin(now()/240) : 20;
       // glow
-      const g=ctx.createRadialGradient(sx,sy+bob,0,sx,sy+bob,20);
-      g.addColorStop(0,art.type.glow+'cc'); g.addColorStop(1,art.type.glow+'00');
-      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy+bob,20,0,6.29); ctx.fill();
+      const g=ctx.createRadialGradient(sx,sy+bob,0,sx,sy+bob,gr);
+      g.addColorStop(0,art.type.glow+(leg?'ee':'cc')); g.addColorStop(1,art.type.glow+'00');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy+bob,gr,0,6.29); ctx.fill();
+      if(leg){ // pulsing ring so it's easy to spot
+        ctx.strokeStyle=art.type.glow+'aa'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.arc(sx,sy+bob,gr-4,0,6.29); ctx.stroke();
+      }
       ctx.fillStyle=art.type.col;
-      ctx.fillRect(sx-4,sy-4+bob,8,8);
+      ctx.fillRect(sx-(leg?5:4),sy-(leg?5:4)+bob,leg?10:8,leg?10:8);
       ctx.fillStyle=art.type.glow;
       ctx.fillRect(sx-2,sy-2+bob,4,4);
       // shadow
@@ -1259,11 +1285,12 @@
     } else {
       for(const it of state.inventory){
         const card=document.createElement('div');
-        card.className='art-card'+(state.equipped.includes(it.id)?' equipped':'');
+        card.className='art-card'+(state.equipped.includes(it.id)?' equipped':'')+(it.type.legendary?' legend':'');
         const pros=it.type.pros.map(p=>'<div class="eff-pro">▲ '+p+'</div>').join('');
         const cons=it.type.cons.map(c=>'<div class="eff-con">▼ '+c+'</div>').join('');
+        const legTag=it.type.legendary?'<span class="legtag">★ ЛЕГЕНДА</span>':'';
         card.innerHTML=
-          '<span class="etag">НАДЕТ</span>'+
+          '<span class="etag">НАДЕТ</span>'+legTag+
           '<div class="ahead"><span class="aic" style="color:'+it.type.glow+'">'+it.type.icon+'</span>'+
           '<span class="anm">'+it.type.name+'</span></div>'+
           '<div class="aeff">'+pros+cons+'</div>';
