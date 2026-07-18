@@ -337,7 +337,7 @@
     dist:0, lastX:0, lastY:0, shootCD:0, firing:false,
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
     bullets:[], mutants:[], ammoBoxes:[], medKits:[],
-    inventory:[], equipped:[], _invId:1, maxHp:100, paused:false,
+    inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
     mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     detBeep:0, detNext:0, hurtCD:0,
   };
@@ -418,6 +418,8 @@
     const delta=state.maxHp-oldMax;
     if(delta>0) state.hp=Math.min(state.maxHp, state.hp+delta); // gaining max HP heals that much
     if(state.hp>state.maxHp) state.hp=state.maxHp;              // losing max HP clamps down
+    state.heartEquipped=state.equipped.some(id=>{
+      const it=state.inventory.find(x=>x.id===id); return it && it.type===HEART; });
     updateHUD();
   }
   const HEART = ARTS.find(a=>a.name==='Сердце зоны');
@@ -1068,6 +1070,9 @@
       ctx.fillStyle='#fff6c8'; ctx.fillRect(sx-1.5,sy-1.5,3,3);
     }
 
+    // heart-of-zone aura (under player)
+    if(state.heartEquipped) drawHeartAura(state.px+ox, state.py+oy);
+
     // player
     drawPlayer(state.px+ox, state.py+oy);
 
@@ -1192,6 +1197,38 @@
     const fx=Math.cos(state.facing), fy=Math.sin(state.facing);
     ctx.fillStyle='#2a2a24';
     ctx.fillRect(fx*7-2, fy*7-2, 4,4);
+    ctx.restore();
+  }
+
+  function drawHeartAura(sx,sy){
+    const t=now()/1000;
+    const cy=sy+2;                         // centre around the body/feet
+    ctx.save();
+    ctx.globalCompositeOperation='lighter';
+    const pulse=0.5+0.5*Math.sin(t*2.4);
+    // soft base glow
+    const R=24+3*pulse;
+    const g=ctx.createRadialGradient(sx,cy,0,sx,cy,R);
+    g.addColorStop(0,'rgba(255,55,85,0)');
+    g.addColorStop(0.5,'rgba(240,40,70,'+(0.09+0.05*pulse).toFixed(3)+')');
+    g.addColorStop(1,'rgba(200,20,50,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,cy,R,0,6.29); ctx.fill();
+    // swirling vortex — 3 spiral arms of fading pixels
+    const arms=3, per=8;
+    for(let a=0;a<arms;a++){
+      const base=t*2.6 + a*(6.283/arms);
+      for(let i=0;i<per;i++){
+        const f=i/(per-1);                 // 0 = outer, 1 = inner
+        const ang=base + f*2.7;            // twist inward
+        const rr=22-f*17;                  // spiral radius
+        const px=sx+Math.cos(ang)*rr;
+        const py=cy+Math.sin(ang)*rr*0.6;  // vertical squash for top-down feel
+        const alpha=0.5*(1-f*0.65)*(0.7+0.3*pulse);
+        const size=1.3+(1-f)*1.7;
+        ctx.fillStyle='rgba(255,'+((70+f*110)|0)+','+((95+f*70)|0)+','+alpha.toFixed(3)+')';
+        ctx.fillRect(px-size/2,py-size/2,size,size);
+      }
+    }
     ctx.restore();
   }
 
@@ -1355,7 +1392,7 @@
       running:true, over:false, hp:100, rad:0, bolts:8, meds:2, artifacts:0,
       ammo:40, kills:0, shootCD:0, firing:false,
       dist:0, hurtCD:0, detNext:0, hpDrain:0, _exitHintT:0,
-      inventory:[], equipped:[], _invId:1, maxHp:100, paused:false,
+      inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
       mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     });
     genWorld();
