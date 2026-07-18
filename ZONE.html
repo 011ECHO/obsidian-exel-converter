@@ -306,7 +306,7 @@
 <!-- Trade modal -->
 <div class="screen hide" id="tradeScreen">
   <div class="inv-panel trade-panel">
-    <div class="inv-head"><span>ТОРГОВЕЦ</span><button class="inv-close" id="tradeClose">✕</button></div>
+    <div class="inv-head"><span>СИДОРОВИЧ</span><button class="inv-close" id="tradeClose">✕</button></div>
     <div class="trade-top">
       <div class="trade-money">💰 <span id="tradeMoney">0</span> ₴</div>
       <div class="trade-tabs">
@@ -356,7 +356,7 @@
     <span style="color:#c9a227">✦ артефакты</span> у аномалий · <b>🎒</b> рюкзак — баффы и <span style="color:#8fbfe0">костюмы</span> ·
     бей <span style="color:#e08a7a">мутантов</span><br>
     находи <span style="color:#8fbfe0">костюмы</span>, <span style="color:#e8e8e0">💊 аптечки</span>, <span style="color:#c9a227">патроны</span> · <b>🔩 болт</b> разряжает аномалию на 3с<br>
-    <span style="color:#ffd24a">🏠 хижина торговца ₴</span> у старта — продавай и покупай · беги от <span style="color:#a8ff33">радиации</span><br>
+    <span style="color:#ffd24a">🏠 бункер Сидоровича ₴</span> у старта — продавай и покупай · беги от <span style="color:#a8ff33">радиации</span><br>
     <span style="color:#8a9877">цель: собрать хотя бы 1 артефакт и дойти до <b style="color:#5cc8ff">ВЫХОДА</b></span>
   </div>
 </div>
@@ -837,7 +837,7 @@
     // trader's hut: step on the door to enter, walls are solid
     if(state.house){
       const h=state.house;
-      if(dist(nx,ny,h.door.x,h.door.y) < 30){ enterHouse(); return; }
+      if(now()>(state._doorReadyAt||0) && dist(nx,ny,h.door.x,h.door.y) < 30){ enterHouse(); return; }
       const dh=dist(nx,ny,h.x,h.y);
       if(dh < 48){ const a=Math.atan2(ny-h.y,nx-h.x); nx=h.x+Math.cos(a)*48; ny=h.y+Math.sin(a)*48; }
     }
@@ -1513,51 +1513,73 @@
   // ---------- Trader hideout ----------
   function enterHouse(){
     state.scene='interior'; state.firing=false; state.paused=false;
-    state.returnPos={x:state.house.x, y:state.house.y+62};
+    // place well below the door so the entry trigger (30px) doesn't fire again
+    state.returnPos={x:state.house.door.x, y:state.house.door.y+52};
     state.px=IW/2; state.py=IH-90; state.pvx=state.pvy=0;
-    toast('Убежище торговца'); beep(440,0.1,'sine',0.05); setTimeout(()=>beep(620,0.1,'sine',0.05),90);
+    toast('Бункер Сидоровича'); beep(440,0.1,'sine',0.05); setTimeout(()=>beep(620,0.1,'sine',0.05),90);
     updateHUD();
   }
   function exitHouse(){
     state.scene='zone'; state.px=state.returnPos.x; state.py=state.returnPos.y;
     state.pvx=state.pvy=0; state.nearTrader=false;
+    state._doorReadyAt=now()+600;   // brief grace so the door doesn't re-trigger
     document.getElementById('btnTrade').style.display='none';
     beep(300,0.09,'sine',0.05);
   }
-  function drawHouse(sx,sy){
-    ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+34,56,12,0,0,6.29); ctx.fill();
-    // walls
-    ctx.fillStyle='#5a4128'; ctx.fillRect(sx-46,sy-22,92,58);
-    ctx.fillStyle='#4a351f'; for(let x=-46;x<46;x+=12) ctx.fillRect(sx+x,sy-22,2,58);
-    ctx.fillStyle='#3a2818'; ctx.fillRect(sx-46,sy+30,92,6);
-    // roof (stacked bands -> pyramid)
-    ctx.fillStyle='#3a2a1a'; ctx.fillRect(sx-54,sy-28,108,10);
-    ctx.fillStyle='#2c1f12'; ctx.fillRect(sx-40,sy-36,80,9);
-    ctx.fillStyle='#241811'; ctx.fillRect(sx-24,sy-42,48,7);
-    // warm window
-    ctx.fillStyle='#ffce5a'; ctx.fillRect(sx-34,sy-8,15,13);
-    ctx.fillStyle='#8a6a1a'; ctx.fillRect(sx-27,sy-8,2,13); ctx.fillRect(sx-34,sy-2,15,2);
-    // door (south)
-    ctx.fillStyle='#241810'; ctx.fillRect(sx-10,sy+8,20,28);
-    ctx.fillStyle='#3a2a1a'; ctx.fillRect(sx-10,sy+8,20,2);
-    ctx.fillStyle='#c9a227'; ctx.fillRect(sx+5,sy+22,2,2);
+  function drawHouse(sx,sy){ // Sidorovich's concrete bunker entrance
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(sx,sy+34,62,14,0,0,6.29); ctx.fill();
+    // concrete blockhouse
+    ctx.fillStyle='#6a6a62'; ctx.fillRect(sx-50,sy-24,100,60);
+    ctx.fillStyle='#787870'; ctx.fillRect(sx-50,sy-24,100,6);
+    ctx.fillStyle='#565650'; ctx.fillRect(sx-50,sy+30,100,6);
+    // panel seams
+    ctx.strokeStyle='#4c4c46'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(sx-50,sy); ctx.lineTo(sx+50,sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx-14,sy-24); ctx.lineTo(sx-14,sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx+20,sy); ctx.lineTo(sx+20,sy+30); ctx.stroke();
+    // roof slab
+    ctx.fillStyle='#55554e'; ctx.fillRect(sx-56,sy-30,112,8);
+    ctx.fillStyle='#3f3f3a'; ctx.fillRect(sx-56,sy-30,112,2);
+    // vent pipe
+    ctx.fillStyle='#4a4a44'; ctx.fillRect(sx+36,sy-40,7,16);
+    ctx.fillStyle='#5a5a54'; ctx.fillRect(sx+34,sy-42,11,4);
+    // heavy metal door (south)
+    ctx.fillStyle='#39413a'; ctx.fillRect(sx-13,sy+6,26,30);
+    ctx.fillStyle='#4a544b'; ctx.fillRect(sx-13,sy+6,26,3);
+    ctx.fillStyle='#28302a'; ctx.fillRect(sx-13,sy+6,3,30); ctx.fillRect(sx+10,sy+6,3,30);
+    ctx.fillStyle='#20261f'; for(let yy=11; yy<34; yy+=6){ ctx.fillRect(sx-9,sy+yy,2,2); ctx.fillRect(sx+7,sy+yy,2,2); }
+    ctx.fillStyle='#c9a227'; ctx.fillRect(sx+3,sy+20,4,4); // wheel-handle
+    // sandbags
+    ctx.fillStyle='#7a6a48'; for(let i=-2;i<=2;i++) ctx.fillRect(sx+i*15-6, sy+30, 13,7);
+    ctx.fillStyle='#6a5a3a'; for(let i=-2;i<=1;i++) ctx.fillRect(sx+i*15, sy+34, 13,6);
+    // warm light slit
+    ctx.fillStyle='#ffce5a'; ctx.fillRect(sx-40,sy-6,12,7);
+    ctx.fillStyle='#8a6a1a'; ctx.fillRect(sx-34,sy-6,2,7);
     // sign
-    ctx.fillStyle='#140f0a'; ctx.fillRect(sx-18,sy-19,36,12);
-    ctx.fillStyle='#ffd24a'; ctx.font='bold 10px monospace'; ctx.textAlign='center'; ctx.fillText('₴ ТОРГ', sx, sy-10);
+    ctx.fillStyle='#141410'; ctx.fillRect(sx-26,sy-20,52,12);
+    ctx.fillStyle='#ffd24a'; ctx.font='bold 9px monospace'; ctx.textAlign='center'; ctx.fillText('СИДОРОВИЧ', sx, sy-11);
   }
-  function drawTrader(x,y){
-    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(x,y+15,11,4,0,0,6.29); ctx.fill();
-    ctx.fillStyle='#2a2018'; ctx.fillRect(x-5,y+7,4,8); ctx.fillRect(x+1,y+7,4,8);   // legs
-    ctx.fillStyle='#6b4a2b'; ctx.fillRect(x-9,y-8,18,17);                              // coat
-    ctx.fillStyle='#7d5836'; ctx.fillRect(x-9,y-8,18,4);
-    ctx.fillStyle='#4a3320'; ctx.fillRect(x-9,y-8,4,17);
-    ctx.fillStyle='#a5432f'; ctx.fillRect(x-7,y-9,14,3);                               // scarf
-    ctx.fillStyle='#c8a074'; ctx.fillRect(x-5,y-19,10,10);                             // face
-    ctx.fillStyle='#9aa0a8'; ctx.fillRect(x-6,y-11,12,3);                              // grey beard
-    ctx.fillStyle='#2a2a30'; ctx.fillRect(x-6,y-21,12,4);                              // cap
-    ctx.fillStyle='#20140a'; ctx.fillRect(x-3,y-16,2,2); ctx.fillRect(x+1,y-16,2,2);   // eyes
+  function drawTrader(x,y){ // Сидорович — bald, heavy, in a khaki vest
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(x,y+16,15,5,0,0,6.29); ctx.fill();
+    // wide vest torso over a grey shirt
+    ctx.fillStyle='#5a5230'; ctx.fillRect(x-13,y-6,26,21);
+    ctx.fillStyle='#6b6238'; ctx.fillRect(x-13,y-6,26,4);
+    ctx.fillStyle='#463f24'; ctx.fillRect(x-13,y-6,4,21); ctx.fillRect(x+9,y-6,4,21);
+    ctx.fillStyle='#8a8578'; ctx.fillRect(x-4,y-6,8,21);                                // shirt
+    ctx.fillStyle='#6e6a5e'; ctx.fillRect(x-2,y-4,1,17);                                // zipper
+    // arms + hands
+    ctx.fillStyle='#5a5230'; ctx.fillRect(x-17,y-4,4,15); ctx.fillRect(x+13,y-4,4,15);
+    ctx.fillStyle='#c8a074'; ctx.fillRect(x-17,y+9,4,3); ctx.fillRect(x+13,y+9,4,3);
+    // wide bald head
+    ctx.fillStyle='#c8a074'; ctx.fillRect(x-8,y-19,16,14);
+    ctx.fillStyle='#d8b487'; ctx.fillRect(x-6,y-19,12,3);                               // bald shine
+    ctx.fillStyle='#b8926a'; ctx.fillRect(x-8,y-8,16,3);                                // jaw
+    ctx.fillStyle='#5a5048'; ctx.fillRect(x-8,y-11,2,4); ctx.fillRect(x+6,y-11,2,4);    // side hair
+    ctx.fillStyle='#6a6058'; ctx.fillRect(x-7,y-8,14,2);                                // stubble
+    ctx.fillStyle='#20140a'; ctx.fillRect(x-4,y-14,2,2); ctx.fillRect(x+2,y-14,2,2);    // eyes
+    ctx.fillStyle='#a07a52'; ctx.fillRect(x-1,y-12,2,2);                                // nose
     const bob=Math.sin(now()/300)*2;
-    ctx.fillStyle='#ffd24a'; ctx.font='bold 14px monospace'; ctx.textAlign='center'; ctx.fillText('₴', x, y-27+bob);
+    ctx.fillStyle='#ffd24a'; ctx.font='bold 14px monospace'; ctx.textAlign='center'; ctx.fillText('₴', x, y-28+bob);
   }
   function updateInterior(dt){
     let ix=0,iy=0;
@@ -1582,33 +1604,45 @@
     if(dist(state.px,state.py,EXITMAT.x,EXITMAT.y)<24){ exitHouse(); return; }
     state.nearTrader = dist(state.px,state.py,TRADER.x,TRADER.y) < 62;
     document.getElementById('btnTrade').style.display = state.nearTrader ? 'flex' : 'none';
-    const distEl=document.getElementById('distTxt'); distEl.textContent='🏠 убежище'; distEl.style.color='#8a9877';
+    const distEl=document.getElementById('distTxt'); distEl.textContent='🏠 бункер'; distEl.style.color='#8a9877';
     updateHUD();
   }
   function renderInterior(){
     ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,VW,VH);
     const ox = IW<=VW ? (VW-IW)/2 : -clamp(state.px-VW/2,0,IW-VW);
     const oy = IH<=VH ? (VH-IH)/2 : -clamp(state.py-VH/2,0,IH-VH);
-    // floor
-    ctx.fillStyle='#241a12'; ctx.fillRect(ox,oy,IW,IH);
-    ctx.strokeStyle='#1b130c'; ctx.lineWidth=2;
-    for(let y=0;y<IH;y+=28){ ctx.beginPath(); ctx.moveTo(ox,oy+y); ctx.lineTo(ox+IW,oy+y); ctx.stroke(); }
-    // walls
-    ctx.fillStyle='#2f2418'; ctx.fillRect(ox,oy,IW,16); ctx.fillRect(ox,oy,16,IH);
+    // concrete floor
+    ctx.fillStyle='#3a3a35'; ctx.fillRect(ox,oy,IW,IH);
+    ctx.strokeStyle='#2f2f2b'; ctx.lineWidth=2;
+    for(let y=30;y<IH;y+=40){ ctx.beginPath(); ctx.moveTo(ox,oy+y); ctx.lineTo(ox+IW,oy+y); ctx.stroke(); }
+    for(let x=40;x<IW;x+=60){ ctx.beginPath(); ctx.moveTo(ox+x,oy); ctx.lineTo(ox+x,oy+IH); ctx.stroke(); }
+    // metal walls
+    ctx.fillStyle='#4a4a44'; ctx.fillRect(ox,oy,IW,16); ctx.fillRect(ox,oy,16,IH);
     ctx.fillRect(ox+IW-16,oy,16,IH); ctx.fillRect(ox,oy+IH-16,IW,16);
-    ctx.fillStyle='#3a2c1c'; ctx.fillRect(ox,oy,IW,5);
+    ctx.fillStyle='#5a5a52'; ctx.fillRect(ox,oy,IW,5);
+    ctx.fillStyle='#33332e';
+    for(let x=24;x<IW-16;x+=40){ ctx.fillRect(ox+x,oy+6,3,3); ctx.fillRect(ox+x,oy+IH-9,3,3); }
+    // overhead pipe
+    ctx.fillStyle='#5c5c54'; ctx.fillRect(ox+16,oy+24,IW-32,6);
+    ctx.fillStyle='#6c6c64'; ctx.fillRect(ox+16,oy+24,IW-32,2);
+    for(let x=50;x<IW-24;x+=72){ ctx.fillStyle='#43433d'; ctx.fillRect(ox+x,oy+22,6,10); }
     // warm lamp glow near trader
     const gx=TRADER.x+ox, gy=TRADER.y+oy;
-    const lg=ctx.createRadialGradient(gx,gy-10,0,gx,gy-10,150);
-    lg.addColorStop(0,'rgba(255,200,90,0.14)'); lg.addColorStop(1,'rgba(255,200,90,0)');
-    ctx.fillStyle=lg; ctx.beginPath(); ctx.arc(gx,gy-10,150,0,6.29); ctx.fill();
-    // crates for ambiance
-    ctx.fillStyle='#4a3722'; ctx.fillRect(ox+30,oy+IH-90,34,30); ctx.fillRect(ox+IW-64,oy+IH-96,32,36);
-    ctx.fillStyle='#5c4630'; ctx.fillRect(ox+30,oy+IH-90,34,5); ctx.fillRect(ox+IW-64,oy+IH-96,32,5);
-    // counter
-    ctx.fillStyle='#4a3722'; ctx.fillRect(gx-72,gy+18,144,16);
-    ctx.fillStyle='#5c4630'; ctx.fillRect(gx-72,gy+18,144,4);
-    ctx.fillStyle='#3a2c1c'; ctx.fillRect(gx-72,gy+30,144,4);
+    const lg=ctx.createRadialGradient(gx,gy-10,0,gx,gy-10,160);
+    lg.addColorStop(0,'rgba(255,200,90,0.16)'); lg.addColorStop(1,'rgba(255,200,90,0)');
+    ctx.fillStyle=lg; ctx.beginPath(); ctx.arc(gx,gy-10,160,0,6.29); ctx.fill();
+    // hanging lamp above Sidorovich
+    ctx.fillStyle='#2a2a26'; ctx.fillRect(gx-1,oy+30,2,gy-58-(oy+30));
+    ctx.fillStyle='#3a3a34'; ctx.fillRect(gx-8,gy-58,16,5);
+    ctx.fillStyle='#ffce5a'; ctx.fillRect(gx-6,gy-53,12,3);
+    // green military crates
+    ctx.fillStyle='#3f4a30'; ctx.fillRect(ox+28,oy+IH-92,36,32); ctx.fillRect(ox+IW-66,oy+IH-98,34,38);
+    ctx.fillStyle='#516039'; ctx.fillRect(ox+28,oy+IH-92,36,5); ctx.fillRect(ox+IW-66,oy+IH-98,34,5);
+    ctx.fillStyle='#2c3420'; ctx.fillRect(ox+42,oy+IH-92,4,32); ctx.fillRect(ox+IW-50,oy+IH-98,4,38);
+    // wooden trade desk
+    ctx.fillStyle='#4a3722'; ctx.fillRect(gx-74,gy+18,148,16);
+    ctx.fillStyle='#5c4630'; ctx.fillRect(gx-74,gy+18,148,4);
+    ctx.fillStyle='#3a2c1c'; ctx.fillRect(gx-74,gy+30,148,4);
     // trader
     drawTrader(gx,gy);
     // exit mat
@@ -1623,7 +1657,7 @@
     // "поговорить" hint above trader when near
     if(state.nearTrader){
       ctx.fillStyle='#ffd24a'; ctx.font='11px monospace'; ctx.textAlign='center';
-      ctx.fillText('нажми ₴ ТОРГ', gx, gy-40);
+      ctx.fillText('₴ говорить с Сидоровичем', gx, gy-42);
     }
   }
 
