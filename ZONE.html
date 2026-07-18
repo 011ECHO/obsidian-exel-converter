@@ -139,7 +139,7 @@
   }
   #toast.show{ opacity:1; }
   .vignette{ position:fixed; inset:0; z-index:9; pointer-events:none;
-    box-shadow:inset 0 0 160px 40px #000, inset 0 0 60px 10px #0007; }
+    box-shadow:inset 0 0 180px 10px #0009, inset 0 0 70px 4px #0004; }
   .radflash{ position:fixed; inset:0; z-index:8; pointer-events:none;
     background:var(--rad); opacity:0; mix-blend-mode:screen; }
   .hurtflash{ position:fixed; inset:0; z-index:8; pointer-events:none;
@@ -628,7 +628,7 @@
   const LOCATIONS = [
     {name:'Кордон', difficulty:0, hasBunker:true, suit:'wanderer',
       pos:{x:0.46,y:0.97}, links:['Свалка','Тёмная долина'],
-      theme:{base:'#141a0e',t1:'#171e10',t2:'#1a2213',s1:'#0f150a',s2:'#20301680',border:'#2a3a18'},
+      theme:{base:'#1e2c12',t1:'#182610',t2:'#26391680',s1:'#17240e',s2:'#3a5a2050',border:'#2a3a18'},
       layout:{ spawn:{x:760,y:2680}, vendorName:'Сидорович',
         bunker:{x:470,y:2560,door:{x:470,y:2606}},
         exits:{ 'Свалка':{x:1500,y:150,entry:{x:1500,y:360}},
@@ -800,6 +800,17 @@
     const a=Math.atan2(towardL.pos.y-fromL.pos.y, towardL.pos.x-fromL.pos.x);
     return {x:clamp(W/2+Math.cos(a)*d, 150, W-150), y:clamp(H/2+Math.sin(a)*d, 150, H-150)};
   }
+  // per-location foliage style (Zero-Sievert-ish terrain)
+  const FOLIAGE={'Кордон':'forest','Свалка':'junk','Агропром':'sparse','Тёмная долина':'forest',
+    'Росток':'junk','Дикая территория':'forest','Янтарь':'sparse','Военные склады':'sparse',
+    'Рыжий лес':'redforest','Припять':'urban','ЧАЭС':'urban'};
+  const FOLIAGE_GRASS={
+    forest:{blades:['#3a5a22','#46692a','#2f4c1c','#527a30'], flower:'#d0c64a'},
+    redforest:{blades:['#5a3a20','#6e4526','#47301a','#7a4a26'], flower:'#c96a4a'},
+    junk:{blades:['#3a3220','#463c26','#2e2818'], flower:null},
+    sparse:{blades:['#333a22','#3e4728','#2a301c'], flower:null},
+    urban:null,
+  };
   const LOC_ARRAYS=['anomalies','artItems','radzones','props','bolts_flying','particles',
                     'bullets','mutants','ammoBoxes','medKits','suitPickups','transitions'];
   function applyStatics(i){
@@ -883,11 +894,19 @@
       while((dist(rx,ry,state.px,state.py)<440 || inB(rx,ry,20) || nearHub(rx,ry)) && tries<30);
       state.radzones.push({x:rx, y:ry, r:rnd(90,170)});
     }
-    for(let i=0;i<120;i++){
+    const fol=FOLIAGE[L.name];
+    const nProps = (fol==='forest'||fol==='redforest') ? 340 : 130;
+    for(let i=0;i<nProps;i++){
       const px=rnd(60,W-60), py=rnd(60,H-60);
       if(dist(px,py,state.px,state.py)<120 || inB(px,py,8)) continue;
-      const kind = Math.random()<0.5?'tree':(Math.random()<0.6?'rock':'debris');
-      state.props.push({x:px,y:py,kind,r:kind==='tree'?14:kind==='rock'?16:10, s:rnd(0.8,1.3)});
+      const rr=Math.random(); let kind;
+      if(fol==='forest')      kind = rr<0.46?'ftree'  : rr<0.80?'bush' : rr<0.90?'tree':'rock';
+      else if(fol==='redforest') kind = rr<0.52?'redtree' : rr<0.80?'bush' : rr<0.90?'tree':'rock';
+      else if(fol==='junk')   kind = rr<0.32?'tree'   : rr<0.68?'rock' : 'debris';
+      else if(fol==='urban')  kind = rr<0.50?'debris' : rr<0.76?'rock' : 'tree';
+      else                    kind = rr<0.34?'tree'   : rr<0.62?'rock' : rr<0.84?'bush':'debris';
+      const r = (kind==='ftree'||kind==='redtree')?15 : kind==='tree'?13 : kind==='rock'?16 : kind==='bush'?8 : 10;
+      state.props.push({x:px,y:py,kind,r, s:rnd(0.8,1.35)});
     }
     for(let i=0;i<8+diff*3;i++){
       let mx,my,tries=0;
@@ -1092,7 +1111,7 @@
     let nx=state.px+state.pvx*dt, ny=state.py+state.pvy*dt;
     // prop collision
     for(const p of state.props){
-      if(p.kind==='debris') continue;
+      if(p.kind==='debris'||p.kind==='bush') continue;
       const d=dist(nx,ny,p.x,p.y);
       if(d < p.r+9){
         const ang=Math.atan2(ny-p.y,nx-p.x);
@@ -1235,7 +1254,7 @@
       // hit solid props
       if(!dead){
         for(const p of state.props){
-          if(p.kind==='debris') continue;
+          if(p.kind==='debris'||p.kind==='bush') continue;
           if(dist(b.x,b.y,p.x,p.y)<p.r){ spawnBurst(b.x,b.y,'#8a7a5a',3); dead=true; break; }
         }
       }
@@ -1273,7 +1292,7 @@
       let mnx=m.x+mvx*sp*dt, mny=m.y+mvy*sp*dt;
       // prop collision (avoid walking through trees/rocks)
       for(const p of state.props){
-        if(p.kind==='debris') continue;
+        if(p.kind==='debris'||p.kind==='bush') continue;
         if(dist(mnx,mny,p.x,p.y) < p.r+M.r){
           const a=Math.atan2(mny-p.y,mnx-p.x);
           mnx=p.x+Math.cos(a)*(p.r+M.r); mny=p.y+Math.sin(a)*(p.r+M.r);
@@ -1595,7 +1614,7 @@
   }
 
   function drawGround(ox,oy,camX,camY){
-    const th=LOCATIONS[state.locIndex].theme;
+    const L=LOCATIONS[state.locIndex], th=L.theme, fol=FOLIAGE_GRASS[FOLIAGE[L.name]];
     ctx.fillStyle=th.base; ctx.fillRect(0,0,VW,VH);
     const T=64;
     const startX=Math.floor(camX/T)*T, startY=Math.floor(camY/T)*T;
@@ -1604,33 +1623,55 @@
         const h=((gx*73856093)^(gy*19349663))>>>0;
         const v=(h%100)/100;
         const sx=gx+ox, sy=gy+oy;
-        if(v<0.25){ ctx.fillStyle=th.t1; ctx.fillRect(sx,sy,T,T); }
-        else if(v<0.5){ ctx.fillStyle=th.t2; ctx.fillRect(sx,sy,T,T); }
-        ctx.fillStyle=th.s1;
-        ctx.fillRect(sx+(h%48), sy+((h>>4)%48), 3,3);
-        ctx.fillStyle=th.s2;
-        ctx.fillRect(sx+((h>>7)%56), sy+((h>>11)%56), 2,2);
+        if(v<0.17){ ctx.fillStyle=th.t1; ctx.fillRect(sx,sy,T,T); }
+        else if(v<0.34){ ctx.fillStyle=th.t2; ctx.fillRect(sx,sy,T,T); }
+        ctx.fillStyle=th.s1; ctx.fillRect(sx+(h%50), sy+((h>>4)%50), 3,3);
+        ctx.fillStyle=th.s2; ctx.fillRect(sx+((h>>7)%56), sy+((h>>11)%56), 2,2);
+        if(fol){ // grass blades / flowers (deterministic per tile)
+          const nb=fol.blades.length;
+          for(let k=0;k<8;k++){
+            const hk=(h*(k*2+3))>>>0;
+            const bx=sx+(hk%61), by=sy+((hk>>6)%59);
+            ctx.fillStyle=fol.blades[hk%nb];
+            ctx.fillRect(bx,by,1,3); ctx.fillRect(bx-1,by+1,1,2); ctx.fillRect(bx+1,by+1,1,2);
+          }
+          if(fol.flower && (h%7===0)){ ctx.fillStyle=fol.flower; const fx=sx+((h>>3)%58), fy=sy+((h>>9)%58);
+            ctx.fillRect(fx,fy,2,2); ctx.fillRect(fx-1,fy+1,1,1); ctx.fillRect(fx+2,fy+1,1,1); }
+        }
       }
     }
-    ctx.strokeStyle=th.border; ctx.lineWidth=4;
-    ctx.strokeRect(ox, oy, W, H);
+    ctx.strokeStyle=th.border; ctx.lineWidth=4; ctx.strokeRect(ox, oy, W, H);
   }
 
   function drawProp(sx,sy,p){
     ctx.save();
     ctx.translate(sx,sy); ctx.scale(p.s,p.s);
-    // shadow
-    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0,4,p.r*0.8,p.r*0.35,0,0,6.29); ctx.fill();
-    if(p.kind==='tree'){
+    ctx.fillStyle='rgba(0,0,0,0.32)'; ctx.beginPath(); ctx.ellipse(0,5,p.r*0.95,p.r*0.42,0,0,6.29); ctx.fill();
+    if(p.kind==='ftree' || p.kind==='redtree'){
+      const red=p.kind==='redtree';
+      ctx.fillStyle='#2e2216'; ctx.fillRect(-2,0,4,10);                 // trunk
+      const c1=red?'#3a1e12':'#20340f', c2=red?'#582a16':'#2c4715', c3=red?'#7a3c1e':'#3a5c1e', hi=red?'#9a5a2c':'#527a30';
+      ctx.fillStyle=c1; ctx.beginPath(); ctx.arc(0,-7,18,0,6.29); ctx.fill();
+      ctx.fillStyle=c2; ctx.beginPath(); ctx.arc(-3,-9,15,0,6.29); ctx.fill();
+      ctx.fillStyle=c3; ctx.beginPath(); ctx.arc(-5,-11,10,0,6.29); ctx.fill();
+      ctx.fillStyle=hi; ctx.beginPath(); ctx.arc(-6,-13,5,0,6.29); ctx.fill();
+      ctx.fillStyle=c1; for(let i=0;i<6;i++){ const a=i*1.05; ctx.fillRect(Math.cos(a)*15-1, -7+Math.sin(a)*13-1, 2,2); }
+    } else if(p.kind==='bush'){
+      const c2='#2c4715', c3='#3a5c1e', hi='#527a30';
+      ctx.fillStyle=c2; ctx.beginPath(); ctx.arc(0,-2,10,0,6.29); ctx.fill();
+      ctx.fillStyle=c2; ctx.beginPath(); ctx.arc(-7,0,7,0,6.29); ctx.fill(); ctx.beginPath(); ctx.arc(7,0,7,0,6.29); ctx.fill();
+      ctx.fillStyle=c3; ctx.beginPath(); ctx.arc(-2,-3,7,0,6.29); ctx.fill();
+      ctx.fillStyle=hi; ctx.fillRect(-4,-6,3,3);
+    } else if(p.kind==='tree'){                                         // dead tree
       ctx.fillStyle='#2a2016'; ctx.fillRect(-3,-6,6,18);
       ctx.fillStyle='#1e1710';
-      // bare branches
       ctx.fillRect(-3,-18,3,14); ctx.fillRect(0,-26,3,20);
       ctx.fillRect(2,-14,8,3); ctx.fillRect(-10,-20,8,3); ctx.fillRect(2,-24,7,3);
     } else if(p.kind==='rock'){
       ctx.fillStyle='#3a3a34'; ctx.fillRect(-12,-8,24,16);
       ctx.fillStyle='#4a4a42'; ctx.fillRect(-12,-8,24,5);
       ctx.fillStyle='#2a2a24'; ctx.fillRect(-12,4,24,4);
+      ctx.fillStyle='#54544c'; ctx.fillRect(-8,-6,6,4);
     } else { // debris
       ctx.fillStyle='#3a2f22'; ctx.fillRect(-8,-3,16,6);
       ctx.fillStyle='#4a3f30'; ctx.fillRect(-8,-3,16,2);
