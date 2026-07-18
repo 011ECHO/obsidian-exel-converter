@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0d09">
+<title>ЗОНА — Исследование</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --bg:#0a0d09; --swamp:#1c2416; --rust:#6b4a2b; --amber:#c9a227;
+    --toxic:#8fbf3f; --danger:#c0392b; --rad:#7fff00; --ink:#c8d0bc;
+    --panel:rgba(12,16,10,0.82);
+  }
+  html,body{
+    height:100%; background:var(--bg); color:var(--ink);
+    font-family:'Courier New',monospace; overflow:hidden;
+    overscroll-behavior:none; touch-action:none; user-select:none;
+  }
+  #game{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  canvas{
+    image-rendering:pixelated; image-rendering:crisp-edges;
+    background:#0d120a; width:100%; height:100%;
+    display:block; touch-action:none;
+  }
+
+  /* ===== HUD ===== */
+  #hud{ position:fixed; inset:0; pointer-events:none; z-index:10; }
+  .stats{
+    position:absolute; top:calc(env(safe-area-inset-top) + 10px); left:10px;
+    display:flex; flex-direction:column; gap:6px; font-size:12px;
+    text-shadow:0 1px 2px #000;
+  }
+  .bar{ width:150px; max-width:38vw; height:14px; border:1px solid #000;
+        background:#000a; position:relative; box-shadow:0 0 0 1px #2a331f; }
+  .bar > span{ position:absolute; inset:0; transition:width .15s linear; }
+  .bar-label{ position:absolute; inset:0; display:flex; align-items:center;
+        justify-content:center; font-size:10px; color:#fff; text-shadow:0 0 3px #000; letter-spacing:1px; }
+  .hp > span{ background:linear-gradient(#e05a4a,#8a2b22); }
+  .rad > span{ background:linear-gradient(#a8ff33,#5f8a00); }
+
+  .top-right{
+    position:absolute; top:calc(env(safe-area-inset-top) + 10px); right:10px;
+    text-align:right; font-size:13px; text-shadow:0 1px 2px #000;
+  }
+  .top-right .k{ color:var(--amber); }
+  .art-count{ font-size:20px; color:var(--amber); }
+
+  /* detector */
+  #detector{
+    position:absolute; left:50%; top:calc(env(safe-area-inset-top) + 8px);
+    transform:translateX(-50%); display:flex; align-items:center; gap:8px;
+    background:var(--panel); border:1px solid #2a331f; padding:6px 12px;
+    border-radius:3px; font-size:11px; letter-spacing:1px;
+  }
+  #detLed{ width:12px; height:12px; border-radius:50%; background:#123; box-shadow:0 0 0 1px #000; }
+  #detTxt{ min-width:70px; text-align:left; }
+
+  /* ===== Touch controls ===== */
+  #joyZone{
+    position:absolute; left:0; bottom:0; width:45%; height:45%;
+    pointer-events:auto; z-index:11;
+  }
+  #joyBase{
+    position:absolute; width:130px; height:130px; border-radius:50%;
+    border:2px solid #3a4a28; background:radial-gradient(circle,#1a2213cc,#0a0d09aa);
+    transform:translate(-50%,-50%); display:none;
+  }
+  #joyStick{
+    position:absolute; width:60px; height:60px; border-radius:50%;
+    background:radial-gradient(circle at 40% 35%,#5c7038,#2a3419);
+    border:2px solid #6b8a3f; transform:translate(-50%,-50%);
+  }
+  #btns{
+    position:absolute; right:14px; bottom:calc(env(safe-area-inset-bottom) + 24px);
+    display:flex; flex-direction:column; gap:14px; align-items:center;
+    pointer-events:auto; z-index:11;
+  }
+  .btn{
+    width:72px; height:72px; border-radius:50%;
+    background:radial-gradient(circle at 40% 35%,#2b3520,#12160c);
+    border:2px solid #4a5a2f; color:var(--ink);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-size:11px; line-height:1.2; text-align:center; letter-spacing:.5px;
+    box-shadow:0 3px 0 #000, inset 0 1px 2px #ffffff10;
+  }
+  .btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #000; background:radial-gradient(circle at 40% 35%,#3b4a2a,#1a2011); }
+  .btn .ico{ font-size:22px; }
+  .btn .n{ font-size:15px; color:var(--amber); font-weight:bold; }
+
+  /* ===== Overlays ===== */
+  .screen{
+    position:fixed; inset:0; z-index:30; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; padding:24px;
+    background:radial-gradient(circle at 50% 30%,#10160c 0%,#05070400 60%),#0a0d09ee;
+    pointer-events:auto;
+  }
+  .screen.hide{ display:none; }
+  h1{ font-size:min(13vw,64px); letter-spacing:8px; color:var(--toxic);
+      text-shadow:0 0 18px #4f6a1f, 0 3px 0 #000; margin-bottom:4px; }
+  .sub{ color:var(--rust); letter-spacing:4px; font-size:13px; margin-bottom:26px; }
+  .flavor{ max-width:520px; font-size:13px; line-height:1.7; color:#9aa88a; margin-bottom:30px; }
+  .cta{
+    pointer-events:auto; cursor:pointer;
+    background:linear-gradient(#3a4a26,#1c2513); color:var(--ink);
+    border:2px solid #6b8a3f; padding:16px 40px; font-family:inherit;
+    font-size:18px; letter-spacing:3px; border-radius:3px;
+    box-shadow:0 4px 0 #000, 0 0 24px #4f6a1f44;
+  }
+  .cta:active{ transform:translateY(2px); box-shadow:0 2px 0 #000; }
+  .cta.small{ font-size:14px; padding:12px 28px; }
+  .legend{ margin-top:24px; font-size:11px; color:#6f7d5f; line-height:1.9; max-width:440px; }
+  .legend b{ color:var(--amber); }
+  .big-stat{ font-size:15px; color:var(--ink); margin:4px 0; }
+  .big-stat .v{ color:var(--amber); font-size:22px; }
+  #toast{
+    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 46%);
+    transform:translateX(-50%); z-index:20; pointer-events:none;
+    background:var(--panel); border:1px solid #3a4a28; padding:8px 16px;
+    border-radius:3px; font-size:13px; letter-spacing:1px; opacity:0;
+    transition:opacity .3s; white-space:nowrap;
+  }
+  #toast.show{ opacity:1; }
+  .vignette{ position:fixed; inset:0; z-index:9; pointer-events:none;
+    box-shadow:inset 0 0 160px 40px #000, inset 0 0 60px 10px #0007; }
+  .radflash{ position:fixed; inset:0; z-index:8; pointer-events:none;
+    background:var(--rad); opacity:0; mix-blend-mode:screen; }
+  .hurtflash{ position:fixed; inset:0; z-index:8; pointer-events:none;
+    background:var(--danger); opacity:0; }
+</style>
+</head>
+<body>
+<div id="game"><canvas id="cv"></canvas></div>
+<div class="vignette"></div>
+<div class="radflash" id="radflash"></div>
+<div class="hurtflash" id="hurtflash"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="stats">
+    <div class="bar hp"><span id="hpBar" style="width:100%"></span><div class="bar-label">ЗДОРОВЬЕ</div></div>
+    <div class="bar rad"><span id="radBar" style="width:0%"></span><div class="bar-label">РАДИАЦИЯ</div></div>
+  </div>
+  <div class="top-right">
+    <div class="art-count">✦ <span id="artNum">0</span></div>
+    <div><span class="k" id="boltNum">8</span> болтов</div>
+    <div style="font-size:11px;color:#8a9877" id="distTxt">выход: —</div>
+  </div>
+  <div id="detector">
+    <div id="detLed"></div>
+    <div id="detTxt">ДЕТЕКТОР</div>
+  </div>
+</div>
+
+<!-- Touch -->
+<div id="joyZone"><div id="joyBase"><div id="joyStick"></div></div></div>
+<div id="btns">
+  <div class="btn" id="btnBolt"><span class="ico">🔩</span><span class="n" id="btnBoltN">8</span></div>
+  <div class="btn" id="btnMed"><span class="ico">💊</span><span class="n" id="btnMedN">2</span></div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Start screen -->
+<div class="screen" id="startScreen">
+  <h1>ЗОНА</h1>
+  <div class="sub">И С С Л Е Д О В А Н И Е</div>
+  <div class="flavor">
+    Ты — сталкер. Где-то в глубине Зоны, среди аномалий и радиоактивных пятен,
+    лежат артефакты. Собери их и найди выход, пока тебя не убила невидимая смерть.
+  </div>
+  <button class="cta" id="startBtn">В ЗОНУ →</button>
+  <div class="legend">
+    <b>Джойстик</b> (левый низ) — движение &nbsp;·&nbsp; <b>🔩</b> — кинуть болт (проявить аномалии)<br>
+    <b>💊</b> — аптечка (лечит + снижает радиацию) &nbsp;·&nbsp; клавиатура: <b>WASD</b>, <b>Пробел</b>, <b>H</b><br>
+    <span style="color:#c9a227">✦ артефакты</span> лежат рядом с аномалиями ·
+    держись подальше от <span style="color:#a8ff33">зелёных пятен</span>
+  </div>
+</div>
+
+<!-- End screen -->
+<div class="screen hide" id="endScreen">
+  <h1 id="endTitle">ВЫХОД</h1>
+  <div class="sub" id="endSub">ЗОНА ОТПУСТИЛА ТЕБЯ</div>
+  <div class="big-stat">Артефактов собрано: <span class="v" id="endArt">0</span></div>
+  <div class="big-stat">Пройдено метров: <span class="v" id="endDist">0</span></div>
+  <div class="big-stat" id="endRankLine">Ранг: <span class="v" id="endRank">—</span></div>
+  <button class="cta small" id="restartBtn" style="margin-top:28px">СНОВА В ЗОНУ</button>
+</div>
+
+<script>
+"use strict";
+(function(){
+  // ---------- Canvas & scaling ----------
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  let VW = 0, VH = 0, DPR = 1;
+  // logical (pixel-art) resolution — world drawn at this scale
+  const SCALE = 3;                // each art-pixel -> SCALE screen px
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio||1, 2);
+    VW = window.innerWidth; VH = window.innerHeight;
+    cv.width = Math.floor(VW*DPR); cv.height = Math.floor(VH*DPR);
+    cv.style.width = VW+'px'; cv.style.height = VH+'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.imageSmoothingEnabled = false;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- Utils ----------
+  const rnd = (a,b)=>a+Math.random()*(b-a);
+  const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+  const dist=(x1,y1,x2,y2)=>Math.hypot(x1-x2,y1-y2);
+  const now=()=>performance.now();
+
+  // ---------- World config ----------
+  const W = 3200, H = 3200;        // world size (px)
+  const EXIT = {x:0,y:0};
+  const state = {
+    running:false, over:false,
+    px:0, py:0, pvx:0, pvy:0, facing:0, walkPhase:0, moving:false,
+    hp:100, rad:0, bolts:8, meds:2, artifacts:0,
+    dist:0, lastX:0, lastY:0,
+    anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
+    detBeep:0, detNext:0, hurtCD:0,
+  };
+
+  // ---------- Audio (WebAudio, no assets) ----------
+  let AC=null;
+  function audioInit(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+  function beep(freq, dur, type, vol){
+    if(!AC) return;
+    try{
+      const o=AC.createOscillator(), g=AC.createGain();
+      o.type=type||'square'; o.frequency.value=freq;
+      g.gain.value=0; o.connect(g); g.connect(AC.destination);
+      const t=AC.currentTime;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(vol||0.05,t+0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.08));
+      o.start(t); o.stop(t+(dur||0.08)+0.02);
+    }catch(e){}
+  }
+  function noiseBurst(dur,vol){
+    if(!AC) return;
+    try{
+      const n=AC.sampleRate*(dur||0.15), buf=AC.createBuffer(1,n,AC.sampleRate), d=buf.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+      const s=AC.createBufferSource(); s.buffer=buf;
+      const g=AC.createGain(); g.gain.value=vol||0.08;
+      s.connect(g); g.connect(AC.destination); s.start();
+    }catch(e){}
+  }
+
+  // ---------- World generation ----------
+  const ANOM_TYPES = {
+    thermal:  {col:'#e0602a', ring:'#ff9a3c', dmg:34, name:'Жарка'},
+    gravity:  {col:'#7a4fd0', ring:'#b892ff', dmg:28, name:'Трамплин'},
+    chemical: {col:'#8fbf3f', ring:'#c8ff5a', dmg:22, name:'Кисель'},
+    electro:  {col:'#3fa8ff', ring:'#9ad4ff', dmg:30, name:'Электра'},
+  };
+  const ARTS = [
+    {name:'Медуза',   col:'#c9a227', glow:'#ffe066'},
+    {name:'Огненный шар', col:'#e0602a', glow:'#ff9a3c'},
+    {name:'Батарейка', col:'#3fa8ff', glow:'#9ad4ff'},
+    {name:'Колобок',  col:'#8fbf3f', glow:'#c8ff5a'},
+    {name:'Кристалл', col:'#b892ff', glow:'#e0ccff'},
+  ];
+
+  function genWorld(){
+    state.anomalies.length=0; state.artItems.length=0;
+    state.radzones.length=0; state.props.length=0;
+    state.bolts_flying.length=0; state.particles.length=0;
+
+    // spawn player near one corner, exit at opposite
+    state.px = 240; state.py = 240;
+    EXIT.x = W-260; EXIT.y = H-260;
+    state.lastX=state.px; state.lastY=state.py;
+
+    const types = Object.keys(ANOM_TYPES);
+    // anomaly clusters — artifacts spawn beside them
+    const CLUSTERS = 18;
+    for(let i=0;i<CLUSTERS;i++){
+      let ax,ay,tries=0;
+      do{
+        ax=rnd(360,W-260); ay=rnd(360,H-260); tries++;
+      }while((dist(ax,ay,state.px,state.py)<520 || dist(ax,ay,EXIT.x,EXIT.y)<420) && tries<40);
+      const n = 1+ (Math.random()<0.6?1:0) + (Math.random()<0.3?1:0);
+      for(let k=0;k<n;k++){
+        const t = types[(Math.random()*types.length)|0];
+        state.anomalies.push({
+          x:ax+rnd(-70,70), y:ay+rnd(-70,70), r:rnd(26,42),
+          t, phase:Math.random()*6.28, active:false, activeT:0
+        });
+      }
+      // artifact next to the cluster (70% of clusters)
+      if(Math.random()<0.78){
+        const a = ARTS[(Math.random()*ARTS.length)|0];
+        state.artItems.push({
+          x:ax+rnd(-100,100), y:ay+rnd(-100,100),
+          type:a, taken:false, bob:Math.random()*6.28
+        });
+      }
+    }
+    // radiation zones
+    for(let i=0;i<14;i++){
+      let rx,ry,tries=0;
+      do{ rx=rnd(300,W-200); ry=rnd(300,H-200); tries++; }
+      while(dist(rx,ry,state.px,state.py)<440 && tries<30);
+      state.radzones.push({x:rx, y:ry, r:rnd(90,170)});
+    }
+    // props (dead trees, rocks, debris) — decorative + collision
+    for(let i=0;i<120;i++){
+      const px=rnd(60,W-60), py=rnd(60,H-60);
+      if(dist(px,py,state.px,state.py)<120) continue;
+      const kind = Math.random()<0.5?'tree':(Math.random()<0.6?'rock':'debris');
+      state.props.push({x:px,y:py,kind,r:kind==='tree'?14:kind==='rock'?16:10, s:rnd(0.8,1.3)});
+    }
+  }
+
+  // ---------- Input ----------
+  const keys={};
+  window.addEventListener('keydown',e=>{
+    keys[e.key.toLowerCase()]=true;
+    if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase())) e.preventDefault();
+    if(e.key===' ') throwBolt();
+    if(e.key.toLowerCase()==='h') useMed();
+  });
+  window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
+
+  // Virtual joystick
+  const joyZone=document.getElementById('joyZone');
+  const joyBase=document.getElementById('joyBase');
+  const joyStick=document.getElementById('joyStick');
+  let joyId=null, joyCx=0, joyCy=0, joyDx=0, joyDy=0, joyActive=false;
+  const JOY_R=58;
+  function joyStart(id,x,y){
+    joyId=id; joyCx=x; joyCy=y; joyActive=true;
+    joyBase.style.display='block';
+    joyBase.style.left=x+'px'; joyBase.style.top=y+'px';
+    joyStick.style.left='50%'; joyStick.style.top='50%';
+  }
+  function joyMove(x,y){
+    let dx=x-joyCx, dy=y-joyCy; const d=Math.hypot(dx,dy);
+    if(d>JOY_R){ dx=dx/d*JOY_R; dy=dy/d*JOY_R; }
+    joyDx=dx/JOY_R; joyDy=dy/JOY_R;
+    joyStick.style.left=(65+dx)+'px'; joyStick.style.top=(65+dy)+'px';
+  }
+  function joyEnd(){ joyActive=false; joyId=null; joyDx=joyDy=0; joyBase.style.display='none'; }
+  joyZone.addEventListener('touchstart',e=>{ e.preventDefault(); audioInit();
+    const t=e.changedTouches[0]; const r=joyZone.getBoundingClientRect();
+    joyStart(t.identifier, t.clientX-r.left, t.clientY-r.top);
+  },{passive:false});
+  joyZone.addEventListener('touchmove',e=>{ e.preventDefault();
+    const r=joyZone.getBoundingClientRect();
+    for(const t of e.changedTouches){ if(t.identifier===joyId) joyMove(t.clientX-r.left,t.clientY-r.top); }
+  },{passive:false});
+  joyZone.addEventListener('touchend',e=>{ e.preventDefault();
+    for(const t of e.changedTouches){ if(t.identifier===joyId) joyEnd(); }
+  },{passive:false});
+  joyZone.addEventListener('touchcancel',joyEnd);
+  // mouse fallback for desktop
+  joyZone.addEventListener('mousedown',e=>{ audioInit(); const r=joyZone.getBoundingClientRect(); joyStart('m',e.clientX-r.left,e.clientY-r.top);
+    const mm=ev=>joyMove(ev.clientX-r.left,ev.clientY-r.top);
+    const mu=()=>{joyEnd();window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',mu);};
+    window.addEventListener('mousemove',mm); window.addEventListener('mouseup',mu);
+  });
+
+  document.getElementById('btnBolt').addEventListener('touchstart',e=>{e.preventDefault();audioInit();throwBolt();},{passive:false});
+  document.getElementById('btnBolt').addEventListener('click',throwBolt);
+  document.getElementById('btnMed').addEventListener('touchstart',e=>{e.preventDefault();audioInit();useMed();},{passive:false});
+  document.getElementById('btnMed').addEventListener('click',useMed);
+
+  // ---------- Actions ----------
+  function throwBolt(){
+    if(!state.running||state.over) return;
+    if(state.bolts<=0){ toast('Болтов нет'); beep(140,0.1,'square',0.05); return; }
+    state.bolts--;
+    let dx=Math.cos(state.facing), dy=Math.sin(state.facing);
+    if(joyActive && (joyDx||joyDy)){ const d=Math.hypot(joyDx,joyDy); dx=joyDx/d; dy=joyDy/d; }
+    state.bolts_flying.push({x:state.px,y:state.py-10,vx:dx*7,vy:dy*7,life:60,z:0,vz:3.2});
+    beep(520,0.05,'triangle',0.05);
+    updateHUD();
+  }
+  function useMed(){
+    if(!state.running||state.over) return;
+    if(state.meds<=0){ toast('Аптечек нет'); beep(140,0.1,'square',0.05); return; }
+    if(state.hp>=100 && state.rad<=0){ toast('Не нужно'); return; }
+    state.meds--;
+    state.hp=clamp(state.hp+45,0,100);
+    state.rad=clamp(state.rad-40,0,100);
+    toast('Аптечка использована');
+    beep(660,0.12,'sine',0.06); beep(880,0.1,'sine',0.05);
+    updateHUD();
+  }
+
+  // ---------- Toast ----------
+  const toastEl=document.getElementById('toast'); let toastT=0;
+  function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); toastT=now()+1600; }
+
+  // ---------- Damage / flash ----------
+  const hurtflash=document.getElementById('hurtflash');
+  const radflash=document.getElementById('radflash');
+  function hurt(amount, msg){
+    if(state.hurtCD>0) return;
+    state.hp=clamp(state.hp-amount,0,100);
+    state.hurtCD=0.5;
+    hurtflash.style.transition='none'; hurtflash.style.opacity='0.5';
+    requestAnimationFrame(()=>{ hurtflash.style.transition='opacity .4s'; hurtflash.style.opacity='0'; });
+    noiseBurst(0.18,0.09); beep(120,0.15,'sawtooth',0.06);
+    if(msg) toast(msg);
+    if(state.hp<=0) endGame(false);
+  }
+
+  // ---------- Game loop ----------
+  let last=now();
+  function loop(){
+    const t=now(); let dt=(t-last)/1000; last=t; dt=Math.min(dt,0.05);
+    if(state.running && !state.over) update(dt);
+    render();
+    // toast auto-hide
+    if(toastT && t>toastT){ toastEl.classList.remove('show'); toastT=0; }
+    requestAnimationFrame(loop);
+  }
+
+  function update(dt){
+    // ----- movement -----
+    let ix=0, iy=0;
+    if(joyActive){ ix=joyDx; iy=joyDy; }
+    if(keys['w']||keys['arrowup']) iy-=1;
+    if(keys['s']||keys['arrowdown']) iy+=1;
+    if(keys['a']||keys['arrowleft']) ix-=1;
+    if(keys['d']||keys['arrowright']) ix+=1;
+    const im=Math.hypot(ix,iy);
+    state.moving = im>0.08;
+    if(im>0.08){
+      const nx=ix/im, ny=iy/im;
+      state.facing=Math.atan2(ny,nx);
+      const spd = 132; // px/s
+      let mag = joyActive? Math.min(im,1) : 1;
+      state.pvx=nx*spd*mag; state.pvy=ny*spd*mag;
+      state.walkPhase += dt*10*mag;
+    } else { state.pvx*=0.6; state.pvy*=0.6; }
+
+    let nx=state.px+state.pvx*dt, ny=state.py+state.pvy*dt;
+    // prop collision
+    for(const p of state.props){
+      if(p.kind==='debris') continue;
+      const d=dist(nx,ny,p.x,p.y);
+      if(d < p.r+9){
+        const ang=Math.atan2(ny-p.y,nx-p.x);
+        nx=p.x+Math.cos(ang)*(p.r+9); ny=p.y+Math.sin(ang)*(p.r+9);
+      }
+    }
+    nx=clamp(nx,20,W-20); ny=clamp(ny,20,H-20);
+    state.px=nx; state.py=ny;
+
+    // distance travelled
+    const dd=dist(state.px,state.py,state.lastX,state.lastY);
+    if(dd>2){ state.dist+=dd; state.lastX=state.px; state.lastY=state.py; }
+
+    // ----- timers -----
+    if(state.hurtCD>0) state.hurtCD-=dt;
+
+    // ----- anomalies -----
+    let nearestAnom=1e9;
+    for(const a of state.anomalies){
+      a.phase+=dt*2;
+      if(a.activeT>0){ a.activeT-=dt; a.active=a.activeT>0; }
+      const d=dist(state.px,state.py,a.x,a.y);
+      nearestAnom=Math.min(nearestAnom,d-a.r);
+      if(d < a.r+8){
+        const info=ANOM_TYPES[a.t];
+        if(a.t==='gravity'){
+          // fling player away
+          const ang=Math.atan2(state.py-a.y,state.px-a.x);
+          state.px+=Math.cos(ang)*40; state.py+=Math.sin(ang)*40;
+          state.px=clamp(state.px,20,W-20); state.py=clamp(state.py,20,H-20);
+        }
+        spawnBurst(state.px,state.py,info.ring,10);
+        hurt(info.dmg, 'Аномалия: '+info.name+'!');
+      }
+    }
+
+    // ----- radiation -----
+    let inRad=false, radStrength=0;
+    for(const z of state.radzones){
+      const d=dist(state.px,state.py,z.x,z.y);
+      if(d<z.r){ inRad=true; radStrength=Math.max(radStrength,1-d/z.r); }
+    }
+    if(inRad){
+      state.rad=clamp(state.rad + radStrength*24*dt, 0,100);
+      radflash.style.opacity=(0.04+0.10*radStrength*(0.5+0.5*Math.sin(now()/120))).toFixed(3);
+      if(now()>state.detNext-100 && Math.random()<0.2) beep(1400,0.03,'square',0.02);
+    } else {
+      state.rad=clamp(state.rad-4*dt,0,100);
+      radflash.style.opacity='0';
+    }
+    // radiation damage over threshold
+    if(state.rad>70){ state.hpDrain=(state.hpDrain||0)+dt;
+      if(state.hpDrain>1){ state.hpDrain=0; state.hp=clamp(state.hp-3,0,100); if(state.hp<=0) endGame(false); }
+    }
+
+    // ----- artifacts -----
+    for(const art of state.artItems){
+      if(art.taken) continue;
+      art.bob+=dt*3;
+      if(dist(state.px,state.py,art.x,art.y)<26){
+        art.taken=true; state.artifacts_taken=(state.artifacts_taken||0);
+        state.artifacts++;
+        spawnBurst(art.x,art.y,art.type.glow,24);
+        toast('Артефакт: '+art.type.name+' ✦');
+        beep(880,0.1,'sine',0.06); beep(1320,0.12,'sine',0.05); setTimeout(()=>beep(1760,0.14,'sine',0.05),90);
+      }
+    }
+
+    // ----- detector -----
+    updateDetector(nearestAnom);
+
+    // ----- flying bolts -----
+    for(let i=state.bolts_flying.length-1;i>=0;i--){
+      const b=state.bolts_flying[i];
+      b.x+=b.vx; b.y+=b.vy; b.z+=b.vz; b.vz-=0.28; b.life--;
+      if(b.z<=0 && b.vz<0){
+        // landed — reveal nearby anomalies
+        for(const a of state.anomalies){
+          if(dist(b.x,b.y,a.x,a.y) < a.r+70){ a.activeT=3.5; a.active=true; }
+        }
+        spawnBurst(b.x,b.y,'#c8d0bc',6);
+        beep(300,0.05,'square',0.04);
+        state.bolts_flying.splice(i,1); continue;
+      }
+      if(b.life<=0) state.bolts_flying.splice(i,1);
+    }
+
+    // ----- particles -----
+    for(let i=state.particles.length-1;i>=0;i--){
+      const p=state.particles[i];
+      p.x+=p.vx; p.y+=p.vy; p.vx*=0.94; p.vy*=0.94; p.life-=dt;
+      if(p.life<=0) state.particles.splice(i,1);
+    }
+
+    // ----- exit -----
+    const exd=dist(state.px,state.py,EXIT.x,EXIT.y);
+    document.getElementById('distTxt').textContent = 'выход: '+Math.round(exd/10)+'м';
+    if(exd<40){
+      if(state.artifacts>0) endGame(true);
+      else toast('Выход рядом — но без артефактов уходить незачем');
+    }
+
+    updateHUD();
+  }
+
+  function spawnBurst(x,y,col,n){
+    for(let i=0;i<n;i++){
+      const a=Math.random()*6.28, s=rnd(0.5,3.2);
+      state.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rnd(0.3,0.9),col,r:rnd(1,3)});
+    }
+  }
+
+  // ---------- Detector ----------
+  const detLed=document.getElementById('detLed'), detTxt=document.getElementById('detTxt');
+  function updateDetector(nearest){
+    let level, color, txt, interval;
+    if(nearest<40){ level=4; color='#ff3b30'; txt='ОПАСНО!'; interval=140; }
+    else if(nearest<110){ level=3; color='#ff9a3c'; txt='БЛИЗКО'; interval=300; }
+    else if(nearest<230){ level=2; color='#c9a227'; txt='рядом'; interval=560; }
+    else if(nearest<380){ level=1; color='#5a7a2a'; txt='...'; interval=1000; }
+    else { level=0; color='#123'; txt='ДЕТЕКТОР'; interval=0; }
+    detTxt.textContent=txt;
+    if(interval>0){
+      const t=now();
+      if(t>state.detNext){
+        state.detNext=t+interval;
+        detLed.style.background=color; detLed.style.boxShadow='0 0 8px '+color;
+        setTimeout(()=>{ detLed.style.background='#123'; detLed.style.boxShadow='0 0 0 1px #000'; }, Math.min(interval*0.4,120));
+        beep(700+level*250,0.04,'square',0.035);
+      }
+    } else { detLed.style.background='#123'; detLed.style.boxShadow='0 0 0 1px #000'; }
+  }
+
+  // ---------- HUD ----------
+  function updateHUD(){
+    document.getElementById('hpBar').style.width=state.hp+'%';
+    document.getElementById('radBar').style.width=state.rad+'%';
+    document.getElementById('artNum').textContent=state.artifacts;
+    document.getElementById('boltNum').textContent=state.bolts;
+    document.getElementById('btnBoltN').textContent=state.bolts;
+    document.getElementById('btnMedN').textContent=state.meds;
+  }
+
+  // ================= RENDER =================
+  function render(){
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.clearRect(0,0,VW,VH);
+    // camera
+    const camX=clamp(state.px-VW/2, 0, W-VW);
+    const camY=clamp(state.py-VH/2, 0, H-VH);
+    const ox=-camX, oy=-camY;
+
+    // ground
+    drawGround(ox,oy,camX,camY);
+
+    // radiation zones
+    for(const z of state.radzones){
+      const sx=z.x+ox, sy=z.y+oy;
+      if(sx+z.r<0||sx-z.r>VW||sy+z.r<0||sy-z.r>VH) continue;
+      const g=ctx.createRadialGradient(sx,sy,0,sx,sy,z.r);
+      g.addColorStop(0,'rgba(140,220,60,0.28)');
+      g.addColorStop(0.6,'rgba(110,180,40,0.14)');
+      g.addColorStop(1,'rgba(80,140,20,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,z.r,0,6.29); ctx.fill();
+      // sparse rad specks
+      ctx.fillStyle='rgba(180,255,90,0.5)';
+      for(let i=0;i<6;i++){
+        const a=(now()/600+i*1.05)%6.28, rr=z.r*(0.3+0.6*((i*0.37)%1));
+        ctx.fillRect(sx+Math.cos(a)*rr, sy+Math.sin(a)*rr,2,2);
+      }
+    }
+
+    // props (behind if above player, simple)
+    for(const p of state.props){
+      const sx=p.x+ox, sy=p.y+oy;
+      if(sx<-40||sx>VW+40||sy<-60||sy>VH+40) continue;
+      drawProp(sx,sy,p);
+    }
+
+    // artifacts
+    for(const art of state.artItems){
+      if(art.taken) continue;
+      const sx=art.x+ox, sy=art.y+oy;
+      if(sx<-30||sx>VW+30||sy<-30||sy>VH+30) continue;
+      const bob=Math.sin(art.bob)*3;
+      // glow
+      const g=ctx.createRadialGradient(sx,sy+bob,0,sx,sy+bob,20);
+      g.addColorStop(0,art.type.glow+'cc'); g.addColorStop(1,art.type.glow+'00');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy+bob,20,0,6.29); ctx.fill();
+      ctx.fillStyle=art.type.col;
+      ctx.fillRect(sx-4,sy-4+bob,8,8);
+      ctx.fillStyle=art.type.glow;
+      ctx.fillRect(sx-2,sy-2+bob,4,4);
+      // shadow
+      ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+10,6,3,0,0,6.29); ctx.fill();
+    }
+
+    // anomalies
+    for(const a of state.anomalies){
+      const sx=a.x+ox, sy=a.y+oy;
+      if(sx+a.r<0||sx-a.r>VW||sy+a.r<0||sy-a.r>VH) continue;
+      drawAnomaly(sx,sy,a);
+    }
+
+    // flying bolts
+    for(const b of state.bolts_flying){
+      const sx=b.x+ox, sy=b.y+oy - b.z;
+      ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(b.x+ox-2,b.y+oy-1,4,2);
+      ctx.fillStyle='#c8d0bc'; ctx.fillRect(sx-2,sy-2,4,4);
+    }
+
+    // player
+    drawPlayer(state.px+ox, state.py+oy);
+
+    // particles
+    for(const p of state.particles){
+      ctx.globalAlpha=clamp(p.life*1.5,0,1);
+      ctx.fillStyle=p.col;
+      ctx.fillRect(p.x+ox-p.r/2, p.y+oy-p.r/2, p.r, p.r);
+    }
+    ctx.globalAlpha=1;
+
+    // exit marker
+    const ex=EXIT.x+ox, ey=EXIT.y+oy;
+    const pulse=0.5+0.5*Math.sin(now()/300);
+    const eg=ctx.createRadialGradient(ex,ey,0,ex,ey,40);
+    eg.addColorStop(0,'rgba(80,200,255,'+(0.25+0.2*pulse)+')'); eg.addColorStop(1,'rgba(80,200,255,0)');
+    ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(ex,ey,40,0,6.29); ctx.fill();
+    ctx.strokeStyle='#5cc8ff'; ctx.lineWidth=2;
+    ctx.strokeRect(ex-14,ey-14,28,28);
+    ctx.fillStyle='#5cc8ff'; ctx.font='10px monospace'; ctx.textAlign='center';
+    ctx.fillText('ВЫХОД', ex, ey+26);
+
+    // off-screen exit arrow
+    drawExitArrow(ex,ey);
+  }
+
+  function drawGround(ox,oy,camX,camY){
+    // base swamp gradient
+    ctx.fillStyle='#141a0e'; ctx.fillRect(0,0,VW,VH);
+    // tiled texture — cheap dithered blotches based on world coords
+    const T=64;
+    const startX=Math.floor(camX/T)*T, startY=Math.floor(camY/T)*T;
+    for(let gx=startX; gx<camX+VW; gx+=T){
+      for(let gy=startY; gy<camY+VH; gy+=T){
+        // pseudo-random per tile
+        const h=((gx*73856093)^(gy*19349663))>>>0;
+        const v=(h%100)/100;
+        const sx=gx+ox, sy=gy+oy;
+        if(v<0.25){ ctx.fillStyle='#171e10'; ctx.fillRect(sx,sy,T,T); }
+        else if(v<0.5){ ctx.fillStyle='#1a2213'; ctx.fillRect(sx,sy,T,T); }
+        // small detail specks
+        ctx.fillStyle='#0f150a';
+        ctx.fillRect(sx+(h%48), sy+((h>>4)%48), 3,3);
+        ctx.fillStyle='#20301680';
+        ctx.fillRect(sx+((h>>7)%56), sy+((h>>11)%56), 2,2);
+      }
+    }
+    // world border
+    ctx.strokeStyle='#2a3a18'; ctx.lineWidth=4;
+    ctx.strokeRect(ox, oy, W, H);
+  }
+
+  function drawProp(sx,sy,p){
+    ctx.save();
+    ctx.translate(sx,sy); ctx.scale(p.s,p.s);
+    // shadow
+    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0,4,p.r*0.8,p.r*0.35,0,0,6.29); ctx.fill();
+    if(p.kind==='tree'){
+      ctx.fillStyle='#2a2016'; ctx.fillRect(-3,-6,6,18);
+      ctx.fillStyle='#1e1710';
+      // bare branches
+      ctx.fillRect(-3,-18,3,14); ctx.fillRect(0,-26,3,20);
+      ctx.fillRect(2,-14,8,3); ctx.fillRect(-10,-20,8,3); ctx.fillRect(2,-24,7,3);
+    } else if(p.kind==='rock'){
+      ctx.fillStyle='#3a3a34'; ctx.fillRect(-12,-8,24,16);
+      ctx.fillStyle='#4a4a42'; ctx.fillRect(-12,-8,24,5);
+      ctx.fillStyle='#2a2a24'; ctx.fillRect(-12,4,24,4);
+    } else { // debris
+      ctx.fillStyle='#3a2f22'; ctx.fillRect(-8,-3,16,6);
+      ctx.fillStyle='#4a3f30'; ctx.fillRect(-8,-3,16,2);
+    }
+    ctx.restore();
+  }
+
+  function drawAnomaly(sx,sy,a){
+    const info=ANOM_TYPES[a.t];
+    const pulse=0.5+0.5*Math.sin(a.phase);
+    const vis = a.active ? 1 : 0.14; // hidden until bolt/near
+    // danger ring (only when active)
+    if(a.active){
+      ctx.strokeStyle=info.ring+'aa'; ctx.lineWidth=2;
+      ctx.setLineDash([6,6]); ctx.lineDashOffset=-now()/40;
+      ctx.beginPath(); ctx.arc(sx,sy,a.r+6,0,6.29); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    const g=ctx.createRadialGradient(sx,sy,0,sx,sy,a.r);
+    g.addColorStop(0, hexA(info.ring, (0.5+0.4*pulse)*vis*2));
+    g.addColorStop(0.5, hexA(info.col, (0.4)*vis*2));
+    g.addColorStop(1, hexA(info.col,0));
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,a.r,0,6.29); ctx.fill();
+    // core distortion pixels
+    if(a.active){
+      ctx.fillStyle=info.ring;
+      for(let i=0;i<5;i++){
+        const ang=a.phase*2+i*1.25, rr=a.r*0.5*(0.4+0.5*((i*0.3+pulse)%1));
+        ctx.fillRect(sx+Math.cos(ang)*rr-1.5, sy+Math.sin(ang)*rr-1.5,3,3);
+      }
+    }
+  }
+
+  function drawPlayer(sx,sy){
+    const bob=state.moving? Math.abs(Math.sin(state.walkPhase))*2 : 0;
+    sy-=bob;
+    // shadow
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(sx,sy+11+bob,7,3,0,0,6.29); ctx.fill();
+    ctx.save(); ctx.translate(sx,sy);
+    // face direction: flip legs a bit via facing
+    const legSwing = state.moving? Math.sin(state.walkPhase)*3 : 0;
+    // legs
+    ctx.fillStyle='#2b2f22';
+    ctx.fillRect(-4,4,3,7+legSwing*0.3); ctx.fillRect(1,4,3,7-legSwing*0.3);
+    // body — green coat
+    ctx.fillStyle='#3a4a26'; ctx.fillRect(-5,-6,10,11);
+    ctx.fillStyle='#4a5c30'; ctx.fillRect(-5,-6,10,3);
+    // backpack
+    ctx.fillStyle='#5a4326'; ctx.fillRect(-6,-4,2,8);
+    // head + gas mask
+    ctx.fillStyle='#6b5a3f'; ctx.fillRect(-4,-13,8,8);
+    ctx.fillStyle='#1a1a14'; ctx.fillRect(-3,-11,6,4); // mask filter dark
+    ctx.fillStyle='#c9a227'; ctx.fillRect(-3,-10,2,2); ctx.fillRect(1,-10,2,2); // eyes glow
+    // facing indicator (gun/hand)
+    const fx=Math.cos(state.facing), fy=Math.sin(state.facing);
+    ctx.fillStyle='#2a2a24';
+    ctx.fillRect(fx*7-2, fy*7-2, 4,4);
+    ctx.restore();
+  }
+
+  function drawExitArrow(ex,ey){
+    // if exit off-screen, draw directional arrow at edge
+    const onScreen = ex>0&&ex<VW&&ey>0&&ey<VH;
+    if(onScreen) return;
+    const cx=VW/2, cy=VH/2;
+    const ang=Math.atan2(ey-cy, ex-cx);
+    const m=70;
+    const ax=clamp(cx+Math.cos(ang)*9999, m, VW-m);
+    const ay=clamp(cy+Math.sin(ang)*9999, m+40, VH-m-120);
+    // proper edge point
+    const px=clamp(cx+Math.cos(ang)*Math.max(VW,VH), m, VW-m);
+    const py=clamp(cy+Math.sin(ang)*Math.max(VW,VH), m+50, VH-m-140);
+    ctx.save(); ctx.translate(px,py); ctx.rotate(ang);
+    ctx.fillStyle='rgba(92,200,255,0.85)';
+    ctx.beginPath(); ctx.moveTo(12,0); ctx.lineTo(-8,-8); ctx.lineTo(-8,8); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  function hexA(hex,a){
+    a=clamp(a,0,1);
+    const h=hex.replace('#','');
+    const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  // ---------- Start / End ----------
+  const startScreen=document.getElementById('startScreen');
+  const endScreen=document.getElementById('endScreen');
+  function startGame(){
+    audioInit(); if(AC&&AC.state==='suspended') AC.resume();
+    Object.assign(state,{
+      running:true, over:false, hp:100, rad:0, bolts:8, meds:2, artifacts:0,
+      dist:0, hurtCD:0, detNext:0, hpDrain:0,
+    });
+    genWorld();
+    updateHUD();
+    startScreen.classList.add('hide');
+    endScreen.classList.add('hide');
+  }
+  function endGame(won){
+    if(state.over) return;
+    state.over=true; state.running=false;
+    document.getElementById('endTitle').textContent = won?'ВЫХОД':'КОНЕЦ';
+    document.getElementById('endSub').textContent = won?'ЗОНА ОТПУСТИЛА ТЕБЯ':'ЗОНА ЗАБРАЛА ТЕБЯ';
+    document.getElementById('endTitle').style.color = won?'var(--toxic)':'var(--danger)';
+    document.getElementById('endArt').textContent=state.artifacts;
+    document.getElementById('endDist').textContent=Math.round(state.dist/10);
+    // rank
+    let rank='Новичок';
+    const a=state.artifacts;
+    if(!won) rank='Пропал без вести';
+    else if(a>=5) rank='Легенда Зоны';
+    else if(a>=3) rank='Опытный сталкер';
+    else if(a>=1) rank='Сталкер';
+    document.getElementById('endRank').textContent=rank;
+    if(won){ beep(660,0.15,'sine',0.06); setTimeout(()=>beep(990,0.2,'sine',0.06),140); }
+    else { noiseBurst(0.4,0.1); beep(90,0.5,'sawtooth',0.07); }
+    endScreen.classList.remove('hide');
+  }
+  document.getElementById('startBtn').addEventListener('click',startGame);
+  document.getElementById('restartBtn').addEventListener('click',startGame);
+
+  // prevent scroll/zoom gestures
+  document.addEventListener('gesturestart',e=>e.preventDefault());
+  document.addEventListener('touchmove',e=>{ if(e.touches.length>1) e.preventDefault(); },{passive:false});
+  document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+
+  loop();
+})();
+</script>
+</body>
+</html>
