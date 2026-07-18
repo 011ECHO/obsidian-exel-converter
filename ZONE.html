@@ -158,6 +158,25 @@
   #btnInv.pulse{ animation:invpulse .45s ease 2; }
   @keyframes invpulse{ 50%{ box-shadow:0 3px 0 #000, 0 0 22px var(--amber); border-color:var(--amber); } }
 
+  #btnMap{
+    position:fixed; left:12px; top:calc(env(safe-area-inset-top) + 156px);
+    z-index:12; pointer-events:auto; width:52px; height:52px; border-radius:10px;
+    background:radial-gradient(circle at 40% 35%,#2b3520,#12160c);
+    border:2px solid #4a5a2f; display:flex; align-items:center; justify-content:center;
+    font-size:24px; box-shadow:0 3px 0 #000, inset 0 1px 2px #ffffff10;
+  }
+  #btnMap:active{ transform:translateY(2px); box-shadow:0 1px 0 #000; }
+  #mapScreen{ background:#05070fee; z-index:36; padding:16px; }
+  .map-panel{ width:100%; max-width:560px; display:flex; flex-direction:column; gap:12px;
+    background:linear-gradient(#131a0e,#0c1109); border:2px solid #2f3a1e; border-radius:8px;
+    padding:16px; box-shadow:0 12px 40px #000a; align-items:center; }
+  .map-panel .inv-head{ width:100%; }
+  #mapCanvas{ image-rendering:pixelated; background:#0e140a; border:1px solid #2f3a1e; border-radius:4px; }
+  .map-legend{ display:flex; flex-wrap:wrap; gap:10px 16px; justify-content:center;
+    font-size:11px; color:#9aa88a; }
+  .map-legend span{ display:flex; align-items:center; gap:5px; }
+  .map-legend i{ width:11px; height:11px; border-radius:2px; display:inline-block; border:1px solid #000; }
+
   #invScreen{ background:#05070fdd; z-index:35; padding:16px; justify-content:flex-start; }
   .inv-panel{
     width:100%; max-width:560px; margin-top:calc(env(safe-area-inset-top) + 12px);
@@ -300,6 +319,24 @@
 <!-- Inventory button -->
 <div id="btnInv">🎒<span class="badge" id="invBadge">0</span></div>
 
+<!-- Map button -->
+<div id="btnMap">🗺️</div>
+
+<!-- Map modal -->
+<div class="screen hide" id="mapScreen">
+  <div class="map-panel">
+    <div class="inv-head"><span>КАРТА ЗОНЫ</span><button class="inv-close" id="mapClose">✕</button></div>
+    <canvas id="mapCanvas"></canvas>
+    <div class="map-legend">
+      <span><i style="background:#ffd24a"></i> Сидорович</span>
+      <span><i style="background:#5cc8ff"></i> выходы</span>
+      <span><i style="background:#8fbf3f"></i> радиация</span>
+      <span><i style="background:#e0602a"></i> аномалии</span>
+      <span><i style="background:#e05a4a"></i> ты</span>
+    </div>
+  </div>
+</div>
+
 <!-- Trade button (interior, near trader) -->
 <div id="btnTrade">💰<span>ТОРГ</span></div>
 
@@ -357,7 +394,8 @@
     бей <span style="color:#e08a7a">мутантов</span><br>
     находи <span style="color:#8fbfe0">костюмы</span>, <span style="color:#e8e8e0">💊 аптечки</span>, <span style="color:#c9a227">патроны</span> · <b>🔩 болт</b> разряжает аномалию на 3с<br>
     <span style="color:#ffd24a">🏠 бункер Сидоровича ₴</span> у старта — продавай и покупай · беги от <span style="color:#a8ff33">радиации</span><br>
-    <span style="color:#8a9877">цель: собрать хотя бы 1 артефакт и дойти до <b style="color:#5cc8ff">ВЫХОДА</b></span>
+    <b>🗺️ карта</b> (кнопка слева / <b>M</b>) — выходы, радиация, бункер<br>
+    <span style="color:#8a9877">цель: собрать хотя бы 1 артефакт и дойти до любого <b style="color:#5cc8ff">ВЫХОДА</b></span>
   </div>
 </div>
 
@@ -401,14 +439,19 @@
 
   // ---------- World config ----------
   const W = 3200, H = 3200;        // world size (px)
-  const EXIT = {x:0,y:0};
+  // multiple exits are populated per run in genWorld; the nearest is the objective
+  function nearestExit(){
+    let best=null, bd=1e9;
+    for(const e of state.exits){ const d=dist(state.px,state.py,e.x,e.y); if(d<bd){ bd=d; best=e; } }
+    return {e:best, d:bd};
+  }
   const state = {
     running:false, over:false,
     px:0, py:0, pvx:0, pvy:0, facing:0, walkPhase:0, moving:false,
     hp:100, rad:0, bolts:8, meds:2, artifacts:0, ammo:40, kills:0,
     dist:0, lastX:0, lastY:0, shootCD:0, firing:false,
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
-    bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[],
+    bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[], exits:[],
     suit:'newcomer', suits:['newcomer'],
     scene:'zone', money:600, house:null, returnPos:{x:0,y:0}, nearTrader:false, tradeTab:'buy',
     inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
@@ -562,9 +605,15 @@
     state.bullets.length=0; state.mutants.length=0; state.ammoBoxes.length=0;
     state.medKits.length=0; state.suitPickups.length=0;
 
-    // spawn player near one corner, exit at opposite
+    // spawn player near one corner; several exits spread around the Zone
     state.px = 240; state.py = 240;
-    EXIT.x = W-260; EXIT.y = H-260;
+    state.exits = [
+      {x:W-260, y:H-260, name:'Кордон'},
+      {x:260,   y:H-260, name:'Свалка'},
+      {x:W-260, y:520,   name:'Агропром'},
+      {x:W/2,   y:H-150, name:'Тёмная долина'},
+      {x:W-150, y:H/2,   name:'Янтарь'},
+    ];
     state.lastX=state.px; state.lastY=state.py;
     // trader's hut near the start; door on its south side
     state.house = {x:470, y:300, door:{x:470, y:344}};
@@ -576,7 +625,7 @@
       let ax,ay,tries=0;
       do{
         ax=rnd(360,W-260); ay=rnd(360,H-260); tries++;
-      }while((dist(ax,ay,state.px,state.py)<520 || dist(ax,ay,EXIT.x,EXIT.y)<420) && tries<40);
+      }while((dist(ax,ay,state.px,state.py)<520 || state.exits.some(e=>dist(ax,ay,e.x,e.y)<300)) && tries<40);
       const n = 1+ (Math.random()<0.6?1:0) + (Math.random()<0.3?1:0);
       for(let k=0;k<n;k++){
         const t = types[(Math.random()*types.length)|0];
@@ -1048,7 +1097,8 @@
     }
 
     // ----- exit -----
-    const exd=dist(state.px,state.py,EXIT.x,EXIT.y);
+    const ne=nearestExit();
+    const exd=ne.d;
     const distEl=document.getElementById('distTxt');
     const haveArt=state.inventory.length>0;
     if(haveArt){
@@ -1269,19 +1319,22 @@
     }
     ctx.globalAlpha=1;
 
-    // exit marker
-    const ex=EXIT.x+ox, ey=EXIT.y+oy;
+    // exit markers (all of them)
     const pulse=0.5+0.5*Math.sin(now()/300);
-    const eg=ctx.createRadialGradient(ex,ey,0,ex,ey,40);
-    eg.addColorStop(0,'rgba(80,200,255,'+(0.25+0.2*pulse)+')'); eg.addColorStop(1,'rgba(80,200,255,0)');
-    ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(ex,ey,40,0,6.29); ctx.fill();
-    ctx.strokeStyle='#5cc8ff'; ctx.lineWidth=2;
-    ctx.strokeRect(ex-14,ey-14,28,28);
-    ctx.fillStyle='#5cc8ff'; ctx.font='10px monospace'; ctx.textAlign='center';
-    ctx.fillText('ВЫХОД', ex, ey+26);
-
-    // off-screen exit arrow
-    drawExitArrow(ex,ey);
+    for(const exit of state.exits){
+      const ex=exit.x+ox, ey=exit.y+oy;
+      if(ex<-60||ex>VW+60||ey<-60||ey>VH+60) continue;
+      const eg=ctx.createRadialGradient(ex,ey,0,ex,ey,40);
+      eg.addColorStop(0,'rgba(80,200,255,'+(0.25+0.2*pulse)+')'); eg.addColorStop(1,'rgba(80,200,255,0)');
+      ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(ex,ey,40,0,6.29); ctx.fill();
+      ctx.strokeStyle='#5cc8ff'; ctx.lineWidth=2; ctx.strokeRect(ex-14,ey-14,28,28);
+      ctx.fillStyle='#5cc8ff'; ctx.font='10px monospace'; ctx.textAlign='center';
+      ctx.fillText('ВЫХОД', ex, ey+26);
+      if(exit.name){ ctx.fillStyle='#8fbfe0'; ctx.font='8px monospace'; ctx.fillText(exit.name, ex, ey+36); }
+    }
+    // arrow to the nearest exit if off-screen
+    const ne2=nearestExit();
+    if(ne2.e) drawExitArrow(ne2.e.x+ox, ne2.e.y+oy);
   }
 
   function drawGround(ox,oy,camX,camY){
@@ -1731,6 +1784,53 @@
   window.addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='e'){ audioInit();
     tradeScreen.classList.contains('hide')?openTrade():closeTrade(); } });
 
+  // ---------- Map (PDA) ----------
+  const mapScreen=document.getElementById('mapScreen');
+  function openMap(){ if(!state.running||state.over) return;
+    state.paused=true; state.firing=false; mapScreen.classList.remove('hide'); renderMap(); }
+  function closeMap(){ state.paused=false; mapScreen.classList.add('hide'); }
+  function renderMap(){
+    const mc=document.getElementById('mapCanvas'), mx=mc.getContext('2d');
+    const S=Math.round(Math.min(VW-52, VH-280, 520));
+    mc.width=S; mc.height=S; mc.style.width=S+'px'; mc.style.height=S+'px';
+    mx.imageSmoothingEnabled=false;
+    const sc=S/W;
+    mx.fillStyle='#0e140a'; mx.fillRect(0,0,S,S);
+    mx.strokeStyle='#1c2614'; mx.lineWidth=1;
+    for(let i=1;i<8;i++){ const p=i*S/8;
+      mx.beginPath(); mx.moveTo(p,0); mx.lineTo(p,S); mx.stroke();
+      mx.beginPath(); mx.moveTo(0,p); mx.lineTo(S,p); mx.stroke(); }
+    // radiation blobs
+    for(const z of state.radzones){ mx.fillStyle='rgba(140,200,60,0.35)';
+      mx.beginPath(); mx.arc(z.x*sc, z.y*sc, Math.max(3,z.r*sc), 0,6.29); mx.fill(); }
+    // anomaly specks
+    mx.fillStyle='rgba(224,96,42,0.55)';
+    for(const a of state.anomalies){ mx.fillRect(a.x*sc-1, a.y*sc-1, 2,2); }
+    // bunker
+    if(state.house){ mx.fillStyle='#ffd24a'; mx.font='bold 13px monospace'; mx.textAlign='center'; mx.textBaseline='middle';
+      mx.fillText('₴', state.house.x*sc, state.house.y*sc); }
+    // exits
+    for(const e of state.exits){
+      mx.fillStyle='#5cc8ff'; mx.fillRect(e.x*sc-4, e.y*sc-4, 8,8);
+      mx.strokeStyle='#0e140a'; mx.lineWidth=1; mx.strokeRect(e.x*sc-4, e.y*sc-4, 8,8);
+      if(e.name){ mx.fillStyle='#7fb4d8'; mx.font='8px monospace'; mx.textBaseline='top';
+        mx.fillText(e.name, clamp(e.x*sc,26,S-26), e.y*sc+6); }
+    }
+    // player marker (interior -> shown at the bunker)
+    const inHouse=state.scene==='interior';
+    const px=(inHouse?state.house.x:state.px)*sc, py=(inHouse?state.house.y:state.py)*sc;
+    mx.save(); mx.translate(px,py); mx.rotate(inHouse?0:state.facing);
+    mx.fillStyle='#e05a4a'; mx.beginPath(); mx.moveTo(7,0); mx.lineTo(-5,-5); mx.lineTo(-5,5); mx.closePath(); mx.fill();
+    mx.restore();
+    mx.strokeStyle='#3a4a28'; mx.lineWidth=2; mx.strokeRect(1,1,S-2,S-2);
+    mx.textBaseline='alphabetic';
+  }
+  document.getElementById('btnMap').addEventListener('click',()=>{ audioInit();
+    mapScreen.classList.contains('hide')?openMap():closeMap(); });
+  document.getElementById('mapClose').addEventListener('click',closeMap);
+  window.addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='m'){ audioInit();
+    mapScreen.classList.contains('hide')?openMap():closeMap(); } });
+
   // ---------- Inventory ----------
   const invScreen=document.getElementById('invScreen');
   const btnInv=document.getElementById('btnInv');
@@ -1858,6 +1958,7 @@
     updateHUD();
     invScreen.classList.add('hide');
     tradeScreen.classList.add('hide');
+    mapScreen.classList.add('hide');
     document.getElementById('btnTrade').style.display='none';
     startScreen.classList.add('hide');
     endScreen.classList.add('hide');
