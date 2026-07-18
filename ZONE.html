@@ -161,9 +161,10 @@
   #invScreen{ background:#05070fdd; z-index:35; padding:16px; justify-content:flex-start; }
   .inv-panel{
     width:100%; max-width:560px; margin-top:calc(env(safe-area-inset-top) + 12px);
-    max-height:88vh; display:flex; flex-direction:column; gap:12px;
+    max-height:86vh; display:flex; flex-direction:column; gap:12px;
     background:linear-gradient(#131a0e,#0c1109); border:2px solid #2f3a1e;
     border-radius:8px; padding:16px; box-shadow:0 12px 40px #000a;
+    overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y;
   }
   .inv-head{ display:flex; align-items:center; justify-content:space-between;
     font-size:20px; letter-spacing:4px; color:var(--toxic); }
@@ -192,7 +193,7 @@
   .eff-pro{ color:#8fd04a; }
   .eff-con{ color:#e07a6a; }
   .inv-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
-    gap:10px; overflow-y:auto; padding:2px; }
+    gap:10px; padding:2px; }
   .art-card{
     pointer-events:auto; border:2px solid #2f3a1e; border-radius:8px; padding:10px;
     background:#101609; display:flex; flex-direction:column; gap:6px; position:relative;
@@ -230,6 +231,37 @@
   .suit-card .wtag{ position:absolute; top:8px; right:8px; font-size:9px; letter-spacing:1px;
     color:#191600; background:var(--amber); padding:1px 6px; border-radius:3px; display:none; }
   .suit-card.worn .wtag{ display:block; }
+
+  /* ===== Trade ===== */
+  #btnTrade{
+    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 130px);
+    transform:translateX(-50%); z-index:13; pointer-events:auto; display:none;
+    align-items:center; gap:6px; padding:12px 22px; border-radius:26px;
+    background:linear-gradient(#7a5a1e,#4a3512); border:2px solid #ffd24a; color:#ffe9a8;
+    font-family:inherit; font-size:15px; letter-spacing:2px; font-weight:bold;
+    box-shadow:0 4px 0 #000, 0 0 22px #ffd24a55;
+  }
+  #btnTrade:active{ transform:translateX(-50%) translateY(2px); box-shadow:0 2px 0 #000; }
+  .trade-panel{ max-width:520px; }
+  .trade-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .trade-money{ font-size:18px; color:#ffd24a; font-weight:bold; }
+  .trade-tabs{ display:flex; gap:6px; }
+  .ttab{ pointer-events:auto; background:#1c2513; border:1px solid #4a5a2f; color:#8a9877;
+    font-family:inherit; font-size:13px; letter-spacing:2px; padding:8px 16px; border-radius:5px; }
+  .ttab.on{ background:#2f3a1e; color:var(--amber); border-color:var(--amber); }
+  .trade-msg{ min-height:0; height:0; overflow:hidden; color:#e07a6a; font-size:12px; text-align:center; transition:height .15s; }
+  .trade-msg.show{ height:18px; }
+  .trade-list{ display:flex; flex-direction:column; gap:6px; }
+  .trade-head{ font-size:10px; letter-spacing:2px; color:#6f7d5f; margin:8px 0 2px; }
+  .trade-empty{ font-size:12px; color:#5a6a48; padding:4px 2px; }
+  .trade-row{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:#101609; border:1px solid #2a331f; border-radius:6px; padding:8px 10px; }
+  .trade-name{ font-size:13px; color:var(--ink); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .trade-btn{ pointer-events:auto; flex:none; background:#3a2a12; border:1px solid #c9a227; color:#ffd24a;
+    font-family:inherit; font-size:12px; font-weight:bold; padding:6px 10px; border-radius:5px; min-width:64px; }
+  .trade-btn.sell{ background:#12321f; border-color:#3fa86a; color:#8fd0a0; }
+  .trade-btn.dis{ opacity:.4; border-color:#555; color:#888; }
+  .trade-btn.owned{ background:transparent; border-color:#3a4a28; color:#6f7d5f; }
 </style>
 </head>
 <body>
@@ -246,6 +278,7 @@
   </div>
   <div class="top-right">
     <div class="art-count">✦ <span id="artNum">0</span></div>
+    <div style="color:#ffd24a">💰 <span id="moneyNum">0</span></div>
     <div><span class="k" id="ammoNum">40</span> патронов</div>
     <div><span class="k" id="boltNum">8</span> болтов</div>
     <div style="font-size:11px;color:#8a9877" id="distTxt">выход: —</div>
@@ -266,6 +299,25 @@
 
 <!-- Inventory button -->
 <div id="btnInv">🎒<span class="badge" id="invBadge">0</span></div>
+
+<!-- Trade button (interior, near trader) -->
+<div id="btnTrade">💰<span>ТОРГ</span></div>
+
+<!-- Trade modal -->
+<div class="screen hide" id="tradeScreen">
+  <div class="inv-panel trade-panel">
+    <div class="inv-head"><span>ТОРГОВЕЦ</span><button class="inv-close" id="tradeClose">✕</button></div>
+    <div class="trade-top">
+      <div class="trade-money">💰 <span id="tradeMoney">0</span> ₴</div>
+      <div class="trade-tabs">
+        <button class="ttab on" id="tabBuy">КУПИТЬ</button>
+        <button class="ttab" id="tabSell">ПРОДАТЬ</button>
+      </div>
+    </div>
+    <div class="trade-msg" id="tradeMsg"></div>
+    <div class="trade-list" id="tradeList"></div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
@@ -303,7 +355,8 @@
     <b>🔩</b> — болт (проявить аномалии) &nbsp;·&nbsp; <b>💊</b> — аптечка &nbsp;·&nbsp; ПК: <b>WASD</b>, <b>F</b>, <b>Пробел</b>, <b>H</b><br>
     <span style="color:#c9a227">✦ артефакты</span> у аномалий · <b>🎒</b> рюкзак — баффы и <span style="color:#8fbfe0">костюмы</span> ·
     бей <span style="color:#e08a7a">мутантов</span><br>
-    находи <span style="color:#8fbfe0">костюмы</span>, <span style="color:#e8e8e0">💊 аптечки</span>, <span style="color:#c9a227">патроны</span> · беги от <span style="color:#a8ff33">радиации</span><br>
+    находи <span style="color:#8fbfe0">костюмы</span>, <span style="color:#e8e8e0">💊 аптечки</span>, <span style="color:#c9a227">патроны</span> · <b>🔩 болт</b> разряжает аномалию на 3с<br>
+    <span style="color:#ffd24a">🏠 хижина торговца ₴</span> у старта — продавай и покупай · беги от <span style="color:#a8ff33">радиации</span><br>
     <span style="color:#8a9877">цель: собрать хотя бы 1 артефакт и дойти до <b style="color:#5cc8ff">ВЫХОДА</b></span>
   </div>
 </div>
@@ -357,6 +410,7 @@
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
     bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[],
     suit:'newcomer', suits:['newcomer'],
+    scene:'zone', money:600, house:null, returnPos:{x:0,y:0}, nearTrader:false, tradeTab:'buy',
     inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
     mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     detBeep:0, detNext:0, hurtCD:0,
@@ -487,6 +541,19 @@
            hand:'#c8b088',legs:'#1a2430',boot:'#101820'} },
   };
   const SUIT_ORDER = ['newcomer','wanderer','antirad','merc'];
+  // economy — buy prices; selling returns 50%
+  const ART_PRICE = {'Медуза':300,'Огненный шар':350,'Батарейка':250,'Колобок':300,'Кристалл':420,'Сердце зоны':1500};
+  const SUIT_PRICE = {newcomer:0, wanderer:450, antirad:700, merc:600};
+  const sellOf = p => Math.round(p*0.5);
+  const GOODS = [
+    {key:'ammo', name:'Патроны ×24', amount:24, price:70,  ico:'🔫'},
+    {key:'med',  name:'Аптечка ×1',  amount:1,  price:130, ico:'💊'},
+    {key:'bolt', name:'Болты ×5',    amount:5,  price:45,  ico:'🔩'},
+  ];
+  // interior (trader hideout) dimensions & key positions
+  const IW=440, IH=620;
+  const TRADER={x:IW/2, y:150};
+  const EXITMAT={x:IW/2, y:IH-38};
 
   function genWorld(){
     state.anomalies.length=0; state.artItems.length=0;
@@ -499,6 +566,8 @@
     state.px = 240; state.py = 240;
     EXIT.x = W-260; EXIT.y = H-260;
     state.lastX=state.px; state.lastY=state.py;
+    // trader's hut near the start; door on its south side
+    state.house = {x:470, y:300, door:{x:470, y:344}};
 
     const types = Object.keys(ANOM_TYPES);
     // anomaly clusters — artifacts spawn beside them
@@ -513,7 +582,7 @@
         const t = types[(Math.random()*types.length)|0];
         state.anomalies.push({
           x:ax+rnd(-70,70), y:ay+rnd(-70,70), r:rnd(26,42),
-          t, phase:Math.random()*6.28, active:false, activeT:0
+          t, phase:Math.random()*6.28, dischargeT:0
         });
       }
       // artifact next to the cluster (70% of clusters)
@@ -656,7 +725,7 @@
 
   // ---------- Actions ----------
   function throwBolt(){
-    if(!state.running||state.over) return;
+    if(!state.running||state.over||state.scene!=='zone') return;
     if(state.bolts<=0){ toast('Болтов нет'); beep(140,0.1,'square',0.05); return; }
     state.bolts--;
     let dx=Math.cos(state.facing), dy=Math.sin(state.facing);
@@ -678,7 +747,7 @@
   }
   const SHOOT_RATE=0.16; // seconds between shots
   function shoot(){
-    if(!state.running||state.over) return;
+    if(!state.running||state.over||state.scene!=='zone') return;
     if(state.shootCD>0) return;
     if(state.ammo<=0){ toast('Магазин пуст'); beep(160,0.06,'square',0.05); state.shootCD=0.3; return; }
     state.ammo--; state.shootCD=SHOOT_RATE;
@@ -727,8 +796,10 @@
   let last=now();
   function loop(){
     const t=now(); let dt=(t-last)/1000; last=t; dt=Math.min(dt,0.05);
-    if(state.running && !state.over && !state.paused) update(dt);
-    render();
+    if(state.running && !state.over && !state.paused){
+      if(state.scene==='interior') updateInterior(dt); else update(dt);
+    }
+    if(state.scene==='interior') renderInterior(); else render();
     // toast auto-hide
     if(toastT && t>toastT){ toastEl.classList.remove('show'); toastT=0; }
     requestAnimationFrame(loop);
@@ -763,6 +834,13 @@
         nx=p.x+Math.cos(ang)*(p.r+9); ny=p.y+Math.sin(ang)*(p.r+9);
       }
     }
+    // trader's hut: step on the door to enter, walls are solid
+    if(state.house){
+      const h=state.house;
+      if(dist(nx,ny,h.door.x,h.door.y) < 30){ enterHouse(); return; }
+      const dh=dist(nx,ny,h.x,h.y);
+      if(dh < 48){ const a=Math.atan2(ny-h.y,nx-h.x); nx=h.x+Math.cos(a)*48; ny=h.y+Math.sin(a)*48; }
+    }
     nx=clamp(nx,20,W-20); ny=clamp(ny,20,H-20);
     state.px=nx; state.py=ny;
 
@@ -783,15 +861,15 @@
     let nearestAnom=1e9;
     for(const a of state.anomalies){
       a.phase+=dt*2;
-      if(a.activeT>0){ a.activeT-=dt; a.active=a.activeT>0; }
+      if(a.dischargeT>0){ a.dischargeT-=dt; continue; } // discharged by a bolt: invisible & safe
       const d=dist(state.px,state.py,a.x,a.y);
       nearestAnom=Math.min(nearestAnom,d-a.r);
-      if(d < a.r+8){
+      const trig = a.t==='gravity' ? a.r-4 : a.r;   // tighter trigger (esp. Трамплин)
+      if(d < trig && state.hurtCD<=0){               // gate by cooldown so gravity doesn't re-fling every frame
         const info=ANOM_TYPES[a.t];
         if(a.t==='gravity'){
-          // fling player away
           const ang=Math.atan2(state.py-a.y,state.px-a.x);
-          state.px+=Math.cos(ang)*40; state.py+=Math.sin(ang)*40;
+          state.px+=Math.cos(ang)*34; state.py+=Math.sin(ang)*34;
           state.px=clamp(state.px,20,W-20); state.py=clamp(state.py,20,H-20);
         }
         spawnBurst(state.px,state.py,info.ring,10);
@@ -841,9 +919,13 @@
       const b=state.bolts_flying[i];
       b.x+=b.vx; b.y+=b.vy; b.z+=b.vz; b.vz-=0.28; b.life--;
       if(b.z<=0 && b.vz<0){
-        // landed — reveal nearby anomalies
+        // landed — discharge nearby anomalies (they vanish for 3s, then return)
         for(const a of state.anomalies){
-          if(dist(b.x,b.y,a.x,a.y) < a.r+70){ a.activeT=3.5; a.active=true; }
+          if(a.dischargeT<=0 && dist(b.x,b.y,a.x,a.y) < a.r+55){
+            a.dischargeT=3.0;
+            spawnBurst(a.x,a.y,ANOM_TYPES[a.t].ring,16);
+            beep(200,0.12,'sawtooth',0.05);
+          }
         }
         spawnBurst(b.x,b.y,'#c8d0bc',6);
         beep(300,0.05,'square',0.04);
@@ -968,7 +1050,8 @@
     // ----- exit -----
     const exd=dist(state.px,state.py,EXIT.x,EXIT.y);
     const distEl=document.getElementById('distTxt');
-    if(state.artifacts>0){
+    const haveArt=state.inventory.length>0;
+    if(haveArt){
       distEl.textContent = 'выход: '+Math.round(exd/10)+'м';
       distEl.style.color='#8a9877';
     } else {
@@ -976,7 +1059,7 @@
       distEl.style.color='#c9a227';
     }
     if(exd<52){
-      if(state.artifacts>0) endGame(true);
+      if(haveArt) endGame(true);
       else if(!state._exitHintT || now()>state._exitHintT){
         state._exitHintT=now()+2500;
         toast('Нужен хотя бы 1 артефакт ✦, чтобы уйти');
@@ -1018,7 +1101,8 @@
   function updateHUD(){
     document.getElementById('hpBar').style.width=clamp(state.hp/state.maxHp*100,0,100)+'%';
     document.getElementById('radBar').style.width=state.rad+'%';
-    document.getElementById('artNum').textContent=state.artifacts;
+    document.getElementById('artNum').textContent=state.inventory.length;
+    document.getElementById('moneyNum').textContent=state.money;
     document.getElementById('ammoNum').textContent=state.ammo;
     document.getElementById('boltNum').textContent=state.bolts;
     document.getElementById('btnBoltN').textContent=state.bolts;
@@ -1061,6 +1145,12 @@
       const sx=p.x+ox, sy=p.y+oy;
       if(sx<-40||sx>VW+40||sy<-60||sy>VH+40) continue;
       drawProp(sx,sy,p);
+    }
+
+    // trader's hut
+    if(state.house){
+      const hx=state.house.x+ox, hy=state.house.y+oy;
+      if(!(hx<-90||hx>VW+90||hy<-90||hy>VH+90)) drawHouse(hx,hy);
     }
 
     // artifacts
@@ -1243,28 +1333,24 @@
   }
 
   function drawAnomaly(sx,sy,a){
+    if(a.dischargeT>0) return;            // discharged: temporarily gone
     const info=ANOM_TYPES[a.t];
     const pulse=0.5+0.5*Math.sin(a.phase);
-    const vis = a.active ? 1 : 0.14; // hidden until bolt/near
-    // danger ring (only when active)
-    if(a.active){
-      ctx.strokeStyle=info.ring+'aa'; ctx.lineWidth=2;
-      ctx.setLineDash([6,6]); ctx.lineDashOffset=-now()/40;
-      ctx.beginPath(); ctx.arc(sx,sy,a.r+6,0,6.29); ctx.stroke();
-      ctx.setLineDash([]);
-    }
+    // danger ring
+    ctx.strokeStyle=info.ring+'aa'; ctx.lineWidth=2;
+    ctx.setLineDash([6,6]); ctx.lineDashOffset=-now()/40;
+    ctx.beginPath(); ctx.arc(sx,sy,a.r+6,0,6.29); ctx.stroke();
+    ctx.setLineDash([]);
     const g=ctx.createRadialGradient(sx,sy,0,sx,sy,a.r);
-    g.addColorStop(0, hexA(info.ring, (0.5+0.4*pulse)*vis*2));
-    g.addColorStop(0.5, hexA(info.col, (0.4)*vis*2));
+    g.addColorStop(0, hexA(info.ring, 0.7+0.3*pulse));
+    g.addColorStop(0.5, hexA(info.col, 0.5));
     g.addColorStop(1, hexA(info.col,0));
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,a.r,0,6.29); ctx.fill();
     // core distortion pixels
-    if(a.active){
-      ctx.fillStyle=info.ring;
-      for(let i=0;i<5;i++){
-        const ang=a.phase*2+i*1.25, rr=a.r*0.5*(0.4+0.5*((i*0.3+pulse)%1));
-        ctx.fillRect(sx+Math.cos(ang)*rr-1.5, sy+Math.sin(ang)*rr-1.5,3,3);
-      }
+    ctx.fillStyle=info.ring;
+    for(let i=0;i<5;i++){
+      const ang=a.phase*2+i*1.25, rr=a.r*0.5*(0.4+0.5*((i*0.3+pulse)%1));
+      ctx.fillRect(sx+Math.cos(ang)*rr-1.5, sy+Math.sin(ang)*rr-1.5,3,3);
     }
   }
 
@@ -1424,6 +1510,193 @@
     return `rgba(${r},${g},${b},${a})`;
   }
 
+  // ---------- Trader hideout ----------
+  function enterHouse(){
+    state.scene='interior'; state.firing=false; state.paused=false;
+    state.returnPos={x:state.house.x, y:state.house.y+62};
+    state.px=IW/2; state.py=IH-90; state.pvx=state.pvy=0;
+    toast('Убежище торговца'); beep(440,0.1,'sine',0.05); setTimeout(()=>beep(620,0.1,'sine',0.05),90);
+    updateHUD();
+  }
+  function exitHouse(){
+    state.scene='zone'; state.px=state.returnPos.x; state.py=state.returnPos.y;
+    state.pvx=state.pvy=0; state.nearTrader=false;
+    document.getElementById('btnTrade').style.display='none';
+    beep(300,0.09,'sine',0.05);
+  }
+  function drawHouse(sx,sy){
+    ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+34,56,12,0,0,6.29); ctx.fill();
+    // walls
+    ctx.fillStyle='#5a4128'; ctx.fillRect(sx-46,sy-22,92,58);
+    ctx.fillStyle='#4a351f'; for(let x=-46;x<46;x+=12) ctx.fillRect(sx+x,sy-22,2,58);
+    ctx.fillStyle='#3a2818'; ctx.fillRect(sx-46,sy+30,92,6);
+    // roof (stacked bands -> pyramid)
+    ctx.fillStyle='#3a2a1a'; ctx.fillRect(sx-54,sy-28,108,10);
+    ctx.fillStyle='#2c1f12'; ctx.fillRect(sx-40,sy-36,80,9);
+    ctx.fillStyle='#241811'; ctx.fillRect(sx-24,sy-42,48,7);
+    // warm window
+    ctx.fillStyle='#ffce5a'; ctx.fillRect(sx-34,sy-8,15,13);
+    ctx.fillStyle='#8a6a1a'; ctx.fillRect(sx-27,sy-8,2,13); ctx.fillRect(sx-34,sy-2,15,2);
+    // door (south)
+    ctx.fillStyle='#241810'; ctx.fillRect(sx-10,sy+8,20,28);
+    ctx.fillStyle='#3a2a1a'; ctx.fillRect(sx-10,sy+8,20,2);
+    ctx.fillStyle='#c9a227'; ctx.fillRect(sx+5,sy+22,2,2);
+    // sign
+    ctx.fillStyle='#140f0a'; ctx.fillRect(sx-18,sy-19,36,12);
+    ctx.fillStyle='#ffd24a'; ctx.font='bold 10px monospace'; ctx.textAlign='center'; ctx.fillText('₴ ТОРГ', sx, sy-10);
+  }
+  function drawTrader(x,y){
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(x,y+15,11,4,0,0,6.29); ctx.fill();
+    ctx.fillStyle='#2a2018'; ctx.fillRect(x-5,y+7,4,8); ctx.fillRect(x+1,y+7,4,8);   // legs
+    ctx.fillStyle='#6b4a2b'; ctx.fillRect(x-9,y-8,18,17);                              // coat
+    ctx.fillStyle='#7d5836'; ctx.fillRect(x-9,y-8,18,4);
+    ctx.fillStyle='#4a3320'; ctx.fillRect(x-9,y-8,4,17);
+    ctx.fillStyle='#a5432f'; ctx.fillRect(x-7,y-9,14,3);                               // scarf
+    ctx.fillStyle='#c8a074'; ctx.fillRect(x-5,y-19,10,10);                             // face
+    ctx.fillStyle='#9aa0a8'; ctx.fillRect(x-6,y-11,12,3);                              // grey beard
+    ctx.fillStyle='#2a2a30'; ctx.fillRect(x-6,y-21,12,4);                              // cap
+    ctx.fillStyle='#20140a'; ctx.fillRect(x-3,y-16,2,2); ctx.fillRect(x+1,y-16,2,2);   // eyes
+    const bob=Math.sin(now()/300)*2;
+    ctx.fillStyle='#ffd24a'; ctx.font='bold 14px monospace'; ctx.textAlign='center'; ctx.fillText('₴', x, y-27+bob);
+  }
+  function updateInterior(dt){
+    let ix=0,iy=0;
+    if(joyActive){ ix=joyDx; iy=joyDy; }
+    if(keys['w']||keys['arrowup']) iy-=1;
+    if(keys['s']||keys['arrowdown']) iy+=1;
+    if(keys['a']||keys['arrowleft']) ix-=1;
+    if(keys['d']||keys['arrowright']) ix+=1;
+    const im=Math.hypot(ix,iy);
+    state.moving=im>0.08;
+    if(im>0.08){
+      const dx=ix/im, dy=iy/im;
+      state.facing=Math.atan2(dy,dx);
+      const spd=120*state.mods.spdMul, mag=joyActive?Math.min(im,1):1;
+      state.pvx=dx*spd*mag; state.pvy=dy*spd*mag; state.walkPhase+=dt*10*mag;
+    } else { state.pvx*=0.6; state.pvy*=0.6; }
+    let nx=state.px+state.pvx*dt, ny=state.py+state.pvy*dt;
+    if(dist(nx,ny,TRADER.x,TRADER.y)<24){ const a=Math.atan2(ny-TRADER.y,nx-TRADER.x);
+      nx=TRADER.x+Math.cos(a)*24; ny=TRADER.y+Math.sin(a)*24; }
+    nx=clamp(nx,22,IW-22); ny=clamp(ny,42,IH-22);
+    state.px=nx; state.py=ny;
+    if(dist(state.px,state.py,EXITMAT.x,EXITMAT.y)<24){ exitHouse(); return; }
+    state.nearTrader = dist(state.px,state.py,TRADER.x,TRADER.y) < 62;
+    document.getElementById('btnTrade').style.display = state.nearTrader ? 'flex' : 'none';
+    const distEl=document.getElementById('distTxt'); distEl.textContent='🏠 убежище'; distEl.style.color='#8a9877';
+    updateHUD();
+  }
+  function renderInterior(){
+    ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,VW,VH);
+    const ox = IW<=VW ? (VW-IW)/2 : -clamp(state.px-VW/2,0,IW-VW);
+    const oy = IH<=VH ? (VH-IH)/2 : -clamp(state.py-VH/2,0,IH-VH);
+    // floor
+    ctx.fillStyle='#241a12'; ctx.fillRect(ox,oy,IW,IH);
+    ctx.strokeStyle='#1b130c'; ctx.lineWidth=2;
+    for(let y=0;y<IH;y+=28){ ctx.beginPath(); ctx.moveTo(ox,oy+y); ctx.lineTo(ox+IW,oy+y); ctx.stroke(); }
+    // walls
+    ctx.fillStyle='#2f2418'; ctx.fillRect(ox,oy,IW,16); ctx.fillRect(ox,oy,16,IH);
+    ctx.fillRect(ox+IW-16,oy,16,IH); ctx.fillRect(ox,oy+IH-16,IW,16);
+    ctx.fillStyle='#3a2c1c'; ctx.fillRect(ox,oy,IW,5);
+    // warm lamp glow near trader
+    const gx=TRADER.x+ox, gy=TRADER.y+oy;
+    const lg=ctx.createRadialGradient(gx,gy-10,0,gx,gy-10,150);
+    lg.addColorStop(0,'rgba(255,200,90,0.14)'); lg.addColorStop(1,'rgba(255,200,90,0)');
+    ctx.fillStyle=lg; ctx.beginPath(); ctx.arc(gx,gy-10,150,0,6.29); ctx.fill();
+    // crates for ambiance
+    ctx.fillStyle='#4a3722'; ctx.fillRect(ox+30,oy+IH-90,34,30); ctx.fillRect(ox+IW-64,oy+IH-96,32,36);
+    ctx.fillStyle='#5c4630'; ctx.fillRect(ox+30,oy+IH-90,34,5); ctx.fillRect(ox+IW-64,oy+IH-96,32,5);
+    // counter
+    ctx.fillStyle='#4a3722'; ctx.fillRect(gx-72,gy+18,144,16);
+    ctx.fillStyle='#5c4630'; ctx.fillRect(gx-72,gy+18,144,4);
+    ctx.fillStyle='#3a2c1c'; ctx.fillRect(gx-72,gy+30,144,4);
+    // trader
+    drawTrader(gx,gy);
+    // exit mat
+    const ex=EXITMAT.x+ox, ey=EXITMAT.y+oy;
+    const pulse=0.5+0.5*Math.sin(now()/300);
+    ctx.fillStyle='rgba(80,200,255,'+(0.12+0.12*pulse)+')'; ctx.fillRect(ex-28,ey-13,56,26);
+    ctx.strokeStyle='#5cc8ff'; ctx.lineWidth=2; ctx.strokeRect(ex-28,ey-13,56,26);
+    ctx.fillStyle='#5cc8ff'; ctx.font='10px monospace'; ctx.textAlign='center'; ctx.fillText('ВЫХОД ↓', ex, ey+3);
+    // aura + player
+    if(state.heartEquipped) drawHeartAura(state.px+ox, state.py+oy);
+    drawPlayer(state.px+ox, state.py+oy);
+    // "поговорить" hint above trader when near
+    if(state.nearTrader){
+      ctx.fillStyle='#ffd24a'; ctx.font='11px monospace'; ctx.textAlign='center';
+      ctx.fillText('нажми ₴ ТОРГ', gx, gy-40);
+    }
+  }
+
+  // ---------- Trade ----------
+  const tradeScreen=document.getElementById('tradeScreen');
+  let tradeMsgT=0;
+  function tradeMsg(t){ const e=document.getElementById('tradeMsg'); e.textContent=t; e.classList.add('show');
+    clearTimeout(tradeMsgT); tradeMsgT=setTimeout(()=>e.classList.remove('show'),1400); }
+  function openTrade(){ if(state.scene!=='interior'||!state.nearTrader) return;
+    state.paused=true; state.firing=false; tradeScreen.classList.remove('hide'); renderTrade(); }
+  function closeTrade(){ state.paused=false; tradeScreen.classList.add('hide'); }
+  function setTradeTab(t){ state.tradeTab=t; renderTrade(); }
+  function buyGood(key){ const g=GOODS.find(x=>x.key===key);
+    if(state.money<g.price){ tradeMsg('Недостаточно монет'); beep(160,0.08,'square',0.05); return; }
+    state.money-=g.price;
+    if(key==='ammo') state.ammo+=g.amount; else if(key==='med') state.meds+=g.amount; else if(key==='bolt') state.bolts+=g.amount;
+    beep(700,0.06,'square',0.05); renderTrade(); updateHUD(); }
+  function buySuit(id){ if(state.suits.includes(id)) return; const price=SUIT_PRICE[id];
+    if(state.money<price){ tradeMsg('Недостаточно монет'); beep(160,0.08,'square',0.05); return; }
+    state.money-=price; state.suits.push(id); beep(600,0.08,'triangle',0.05); tradeMsg('Куплен костюм'); renderTrade(); updateHUD(); }
+  function buyArt(name){ const price=ART_PRICE[name];
+    if(state.money<price){ tradeMsg('Недостаточно монет'); beep(160,0.08,'square',0.05); return; }
+    state.money-=price; state.inventory.push({id:state._invId++, type:ARTS.find(a=>a.name===name)});
+    beep(880,0.08,'sine',0.05); tradeMsg('Куплен артефакт'); renderTrade(); updateHUD(); }
+  function sellArt(id){ const idx=state.inventory.findIndex(x=>x.id===id); if(idx<0) return;
+    const it=state.inventory[idx]; const eq=state.equipped.indexOf(id); if(eq>=0) state.equipped.splice(eq,1);
+    state.inventory.splice(idx,1); state.money+=sellOf(ART_PRICE[it.type.name]||100);
+    recomputeMods(); beep(520,0.07,'square',0.05); renderTrade(); updateHUD(); }
+  function sellSuit(id){ if(id==='newcomer'||!state.suits.includes(id)) return;
+    state.suits.splice(state.suits.indexOf(id),1);
+    if(state.suit===id){ state.suit='newcomer'; recomputeMods(); }
+    state.money+=sellOf(SUIT_PRICE[id]||100); beep(520,0.07,'square',0.05); renderTrade(); updateHUD(); }
+  function trHead(list,txt){ const d=document.createElement('div'); d.className='trade-head'; d.textContent=txt; list.appendChild(d); }
+  function trEmpty(list,txt){ const d=document.createElement('div'); d.className='trade-empty'; d.textContent=txt; list.appendChild(d); }
+  function trRow(list,label,price,onClick,enabled,note,sell){
+    const row=document.createElement('div'); row.className='trade-row';
+    const l=document.createElement('div'); l.className='trade-name'; l.textContent=label;
+    const b=document.createElement('button'); b.className='trade-btn'+(sell?' sell':'');
+    if(note){ b.textContent=note; b.disabled=true; b.classList.add('owned'); }
+    else { b.textContent=(sell?'+':'−')+price+'₴'; b.disabled=!enabled; if(!enabled) b.classList.add('dis'); if(enabled) b.onclick=onClick; }
+    row.appendChild(l); row.appendChild(b); list.appendChild(row);
+  }
+  function renderTrade(){
+    document.getElementById('tradeMoney').textContent=state.money;
+    document.getElementById('tabBuy').classList.toggle('on', state.tradeTab==='buy');
+    document.getElementById('tabSell').classList.toggle('on', state.tradeTab==='sell');
+    const list=document.getElementById('tradeList'); list.innerHTML='';
+    if(state.tradeTab==='buy'){
+      trHead(list,'ПРИПАСЫ');
+      for(const g of GOODS) trRow(list, g.ico+' '+g.name, g.price, ()=>buyGood(g.key), state.money>=g.price);
+      trHead(list,'КОСТЮМЫ');
+      for(const id of SUIT_ORDER){ if(id==='newcomer') continue; const owned=state.suits.includes(id);
+        trRow(list, '🧥 '+SUITS[id].name, SUIT_PRICE[id], ()=>buySuit(id), !owned&&state.money>=SUIT_PRICE[id], owned?'есть':null); }
+      trHead(list,'АРТЕФАКТЫ');
+      for(const a of ARTS) trRow(list, a.icon+' '+a.name, ART_PRICE[a.name], ()=>buyArt(a.name), state.money>=ART_PRICE[a.name]);
+    } else {
+      trHead(list,'АРТЕФАКТЫ (продажа)');
+      if(state.inventory.length===0) trEmpty(list,'нет артефактов');
+      for(const it of state.inventory){ const price=sellOf(ART_PRICE[it.type.name]||100);
+        trRow(list, it.type.icon+' '+it.type.name+(state.equipped.includes(it.id)?' •':''), price, ()=>sellArt(it.id), true, null, true); }
+      trHead(list,'КОСТЮМЫ (продажа)');
+      const spare=state.suits.filter(s=>s!=='newcomer');
+      if(spare.length===0) trEmpty(list,'нет лишних костюмов');
+      for(const id of spare) trRow(list, '🧥 '+SUITS[id].name+(state.suit===id?' •':''), sellOf(SUIT_PRICE[id]), ()=>sellSuit(id), true, null, true);
+    }
+  }
+  document.getElementById('btnTrade').addEventListener('click',()=>{ audioInit(); openTrade(); });
+  document.getElementById('tradeClose').addEventListener('click',closeTrade);
+  document.getElementById('tabBuy').addEventListener('click',()=>setTradeTab('buy'));
+  document.getElementById('tabSell').addEventListener('click',()=>setTradeTab('sell'));
+  window.addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='e'){ audioInit();
+    tradeScreen.classList.contains('hide')?openTrade():closeTrade(); } });
+
   // ---------- Inventory ----------
   const invScreen=document.getElementById('invScreen');
   const btnInv=document.getElementById('btnInv');
@@ -1544,11 +1817,14 @@
       dist:0, hurtCD:0, detNext:0, hpDrain:0, _exitHintT:0,
       inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
       suit:'newcomer', suits:['newcomer'],
+      scene:'zone', money:600, nearTrader:false, tradeTab:'buy',
       mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     });
     genWorld();
     updateHUD();
     invScreen.classList.add('hide');
+    tradeScreen.classList.add('hide');
+    document.getElementById('btnTrade').style.display='none';
     startScreen.classList.add('hide');
     endScreen.classList.add('hide');
   }
