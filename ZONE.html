@@ -282,8 +282,9 @@
   <div class="legend">
     <b>Джойстик</b> (левый низ) — движение и прицел &nbsp;·&nbsp; <b>🔫</b> — стрелять (держи для очереди)<br>
     <b>🔩</b> — болт (проявить аномалии) &nbsp;·&nbsp; <b>💊</b> — аптечка &nbsp;·&nbsp; ПК: <b>WASD</b>, <b>F</b>, <b>Пробел</b>, <b>H</b><br>
-    <span style="color:#c9a227">✦ артефакты</span> у аномалий · <b>🎒</b> рюкзак — экипируй их ради баффов ·
-    бей <span style="color:#e08a7a">мутантов</span> · беги от <span style="color:#a8ff33">радиации</span><br>
+    <span style="color:#c9a227">✦ артефакты</span> у аномалий · <b>🎒</b> рюкзак — экипируй ради баффов ·
+    бей <span style="color:#e08a7a">мутантов</span><br>
+    подбирай <span style="color:#e8e8e0">💊 аптечки</span> и <span style="color:#c9a227">ящики патронов</span> · беги от <span style="color:#a8ff33">радиации</span><br>
     <span style="color:#8a9877">цель: собрать хотя бы 1 артефакт и дойти до <b style="color:#5cc8ff">ВЫХОДА</b></span>
   </div>
 </div>
@@ -335,7 +336,7 @@
     hp:100, rad:0, bolts:8, meds:2, artifacts:0, ammo:40, kills:0,
     dist:0, lastX:0, lastY:0, shootCD:0, firing:false,
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
-    bullets:[], mutants:[], ammoBoxes:[],
+    bullets:[], mutants:[], ammoBoxes:[], medKits:[],
     inventory:[], equipped:[], _invId:1, maxHp:100, paused:false,
     mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     detBeep:0, detNext:0, hurtCD:0,
@@ -411,9 +412,12 @@
     return m;
   }
   function recomputeMods(){
+    const oldMax=state.maxHp||100;
     state.mods=computeMods();
     state.maxHp=Math.max(30, 100+state.mods.maxHpBonus);
-    if(state.hp>state.maxHp) state.hp=state.maxHp;
+    const delta=state.maxHp-oldMax;
+    if(delta>0) state.hp=Math.min(state.maxHp, state.hp+delta); // gaining max HP heals that much
+    if(state.hp>state.maxHp) state.hp=state.maxHp;              // losing max HP clamps down
     updateHUD();
   }
   const HEART = ARTS.find(a=>a.name==='Сердце зоны');
@@ -435,6 +439,7 @@
     state.radzones.length=0; state.props.length=0;
     state.bolts_flying.length=0; state.particles.length=0;
     state.bullets.length=0; state.mutants.length=0; state.ammoBoxes.length=0;
+    state.medKits.length=0;
 
     // spawn player near one corner, exit at opposite
     state.px = 240; state.py = 240;
@@ -502,6 +507,18 @@
       do{ bx=rnd(150,W-100); by=rnd(150,H-100); tries++; }
       while(dist(bx,by,state.px,state.py)<260 && tries<30);
       state.ammoBoxes.push({x:bx,y:by,amount:20,taken:false});
+    }
+    // medkits scattered around (one guaranteed near spawn)
+    for(let i=0;i<7;i++){
+      let bx,by,tries=0;
+      do{ bx=rnd(150,W-100); by=rnd(150,H-100); tries++; }
+      while(dist(bx,by,state.px,state.py)<220 && tries<30);
+      state.medKits.push({x:bx,y:by,amount:1,taken:false});
+    }
+    {
+      const ang=rnd(0,6.28), d=rnd(200,300);
+      state.medKits.push({x:clamp(state.px+Math.cos(ang)*d,80,W-80),
+                          y:clamp(state.py+Math.sin(ang)*d,80,H-80), amount:1, taken:false});
     }
   }
   function spawnMutant(x,y,t){
@@ -590,7 +607,7 @@
   function useMed(){
     if(!state.running||state.over) return;
     if(state.meds<=0){ toast('Аптечек нет'); beep(140,0.1,'square',0.05); return; }
-    if(state.hp>=100 && state.rad<=0){ toast('Не нужно'); return; }
+    if(state.hp>=state.maxHp && state.rad<=0){ toast('Не нужно'); return; }
     state.meds--;
     state.hp=clamp(state.hp+45,0,state.maxHp);
     state.rad=clamp(state.rad-40,0,100);
@@ -813,6 +830,7 @@
         state.kills++;
         beep(150,0.18,'sawtooth',0.06); noiseBurst(0.14,0.06);
         if(Math.random()<0.35) state.ammoBoxes.push({x:m.x,y:m.y,amount:12,taken:false,drop:true});
+        else if(Math.random()<0.18) state.medKits.push({x:m.x,y:m.y,amount:1,taken:false,drop:true});
         state.mutants.splice(i,1); continue;
       }
       const d=dist(state.px,state.py,m.x,m.y);
@@ -853,6 +871,16 @@
         box.taken=true; state.ammo+=box.amount;
         toast('+'+box.amount+' патронов');
         beep(600,0.06,'square',0.05); beep(760,0.06,'square',0.04);
+      }
+    }
+
+    // ----- medkits -----
+    for(const mk of state.medKits){
+      if(mk.taken) continue;
+      if(dist(state.px,state.py,mk.x,mk.y)<24){
+        mk.taken=true; state.meds+=mk.amount;
+        toast('+'+mk.amount+' аптечка 💊');
+        beep(700,0.07,'sine',0.05); beep(920,0.08,'sine',0.04);
       }
     }
 
@@ -996,6 +1024,19 @@
       ctx.fillStyle='#c9a227'; ctx.fillRect(sx-2,sy-4,4,8); // latch
       ctx.fillStyle='#e0c86a'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
       ctx.fillText('АМ', sx, sy+2);
+    }
+
+    // medkits
+    for(const mk of state.medKits){
+      if(mk.taken) continue;
+      const sx=mk.x+ox, sy=mk.y+oy;
+      if(sx<-20||sx>VW+20||sy<-20||sy>VH+20) continue;
+      const bob=Math.sin(now()/400+mk.x)*1.5;
+      ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+8,7,3,0,0,6.29); ctx.fill();
+      ctx.fillStyle='#e8e8e0'; ctx.fillRect(sx-7,sy-6+bob,14,12);   // white case
+      ctx.fillStyle='#c8c8c0'; ctx.fillRect(sx-7,sy+2+bob,14,4);    // lower shade
+      ctx.fillStyle='#c0392b';                                       // red cross
+      ctx.fillRect(sx-1.5,sy-4+bob,3,8); ctx.fillRect(sx-4,sy-1.5+bob,8,3);
     }
 
     // anomalies
