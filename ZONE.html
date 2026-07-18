@@ -467,7 +467,7 @@
     dist:0, lastX:0, lastY:0, shootCD:0, firing:false,
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
     bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[], transitions:[],
-    buildings:[], roads:[], vendor:null, vendorName:'Сидорович', nearVendor:false,
+    buildings:[], roads:[], vendor:null, vendorName:'Сидорович', nearVendor:false, interiorKind:'bunker',
     locIndex:0, locData:{},
     suit:'newcomer', suits:['newcomer'],
     scene:'zone', money:600, house:null, returnPos:{x:0,y:0}, nearTrader:false, tradeTab:'buy',
@@ -636,8 +636,10 @@
           {x:460,y:2690,w:120,h:90,kind:'house'}, {x:730,y:2760,w:100,h:80,kind:'house'},
           {x:430,y:2430,w:90,h:80,kind:'ruin'},   {x:790,y:2470,w:110,h:80,kind:'house'},
           {x:600,y:860,w:190,h:140,kind:'barn',name:'ФЕРМА'}, {x:930,y:980,w:90,h:80,kind:'house'},
-          {x:1470,y:1500,w:150,h:110,kind:'checkpoint',name:'БЛОКПОСТ'}, {x:1750,y:1410,w:120,h:90,kind:'hangar'},
-          {x:1490,y:350,w:150,h:100,kind:'hangar'},
+          {x:1470,y:1500,w:150,h:110,kind:'checkpoint',name:'БЛОКПОСТ'},
+          {x:1710,y:1470,w:70,h:44,kind:'wreck'}, {x:1360,y:1460,w:44,h:44,kind:'tower'},
+          {x:1440,y:1640,w:130,h:16,kind:'wall'}, {x:1490,y:360,w:80,h:46,kind:'wreck'},
+          {x:900,y:1720,w:70,h:40,kind:'rubble'},
         ],
         roads:[
           [[600,2610],[720,2300],[930,2000],[1130,1720],[1360,1520],[1470,1120],[1560,700],[1600,180]],
@@ -650,8 +652,10 @@
       layout:{
         buildings:[
           {x:860,y:1460,w:190,h:140,kind:'hangar',name:'АНГАР'}, {x:1180,y:1360,w:170,h:130,kind:'hangar'},
-          {x:1480,y:1580,w:160,h:120,kind:'factory'}, {x:1300,y:960,w:150,h:110,kind:'ruin'},
-          {x:2000,y:1180,w:170,h:130,kind:'hangar'},
+          {x:1480,y:1580,w:70,h:44,kind:'wreck'}, {x:1570,y:1560,w:80,h:46,kind:'wreck'},
+          {x:1300,y:960,w:150,h:110,kind:'ruin'}, {x:2000,y:1180,w:170,h:130,kind:'hangar'},
+          {x:1360,y:1720,w:80,h:44,kind:'wreck'}, {x:1000,y:1300,w:70,h:40,kind:'rubble'},
+          {x:1720,y:1300,w:44,h:44,kind:'tower'},
         ],
         roads:[
           [[1600,3060],[1500,2400],[1320,1800],[1420,1200],[1900,1010],[2500,950],[2960,900]],
@@ -675,17 +679,34 @@
                      {x:1500,y:150,target:3,name:'Тёмная долина',entry:{x:1500,y:360}}] }},
     {name:'Тёмная долина', difficulty:3, suit:'merc',
       theme:{base:'#0f130b',t1:'#12160d',t2:'#171d11',s1:'#0a0e07',s2:'#1a24108a',border:'#22301a'},
-      layout:{ vendor:{x:1500,y:1360,name:'Бармен'},
+      layout:{
         buildings:[
           {x:1360,y:1230,w:220,h:160,kind:'factory',name:'БАЗА'}, {x:1720,y:1460,w:150,h:110,kind:'ruin'},
-          {x:1080,y:1620,w:150,h:110,kind:'ruin'}, {x:1920,y:1080,w:170,h:130,kind:'hangar'},
+          {x:1080,y:1620,w:80,h:44,kind:'wreck'}, {x:1920,y:1080,w:170,h:130,kind:'hangar'},
+          {x:1300,y:1420,w:44,h:44,kind:'tower'}, {x:1600,y:1660,w:70,h:40,kind:'rubble'},
         ],
         roads:[
           [[1600,3060],[1500,2400],[1460,1700],[1600,1320],[2100,1120],[2700,1000],[3060,950]],
           [[1460,1700],[1000,1500],[700,1300]],
         ],
         transitions:[{x:1600,y:3060,target:2,name:'Агропром',entry:{x:1600,y:2860}},
-                     {x:3060,y:950,target:4,name:'Янтарь',entry:{x:2860,y:950}}] }},
+                     {x:3060,y:950,target:4,name:'Росток',entry:{x:2860,y:950}}] }},
+    {name:'Росток', difficulty:4,
+      theme:{base:'#181410',t1:'#201a13',t2:'#282019',s1:'#120e08',s2:'#3a2e1a80',border:'#3a3026'},
+      layout:{ vendorName:'Бармен',
+        bar:{box:{x:1370,y:1160,w:260,h:170}, door:{x:1500,y:1360}},
+        buildings:[
+          {x:1750,y:1420,w:200,h:150,kind:'factory',name:'ЗАВОД'}, {x:1080,y:1360,w:170,h:130,kind:'factory'},
+          {x:980,y:860,w:150,h:110,kind:'ruin'}, {x:1900,y:980,w:80,h:44,kind:'wreck'},
+          {x:1280,y:1560,w:44,h:44,kind:'tower'}, {x:1640,y:900,w:70,h:40,kind:'rubble'},
+          {x:1150,y:1620,w:120,h:16,kind:'wall'},
+        ],
+        roads:[
+          [[1600,3060],[1500,2400],[1500,1600],[1500,1380],[2000,1200],[2600,1050],[3060,1000]],
+          [[1500,1600],[1000,1420],[700,1200]],
+        ],
+        transitions:[{x:1600,y:3060,target:3,name:'Тёмная долина',entry:{x:1600,y:2860}},
+                     {x:3060,y:1000,target:5,name:'Янтарь',entry:{x:2860,y:1000}}] }},
     {name:'Янтарь', difficulty:4,
       theme:{base:'#181a0c',t1:'#1e2010',t2:'#282a12',s1:'#121405',s2:'#3a3a1080',border:'#3a3a18'},
       layout:{
@@ -697,8 +718,8 @@
           [[140,1500],[700,1400],[1200,1300],[1500,1220],[1600,700],[1550,300],[1500,140]],
           [[1200,1300],[1150,1900],[1100,2400]],
         ],
-        transitions:[{x:150,y:1500,target:3,name:'Тёмная долина',entry:{x:360,y:1500}},
-                     {x:1500,y:150,target:5,name:'ЧАЭС',entry:{x:1500,y:360}}] }},
+        transitions:[{x:150,y:1500,target:4,name:'Росток',entry:{x:360,y:1500}},
+                     {x:1500,y:150,target:6,name:'ЧАЭС',entry:{x:1500,y:360}}] }},
     {name:'ЧАЭС', difficulty:5, isFinal:true,
       theme:{base:'#12161c',t1:'#171c22',t2:'#1e252c',s1:'#0d1116',s2:'#26303a80',border:'#2a3a4a'},
       layout:{
@@ -707,7 +728,7 @@
           {x:1820,y:1520,w:160,h:120,kind:'ruin'},
         ],
         roads:[[[1600,3060],[1550,2200],[1500,1400],[1520,700],[1560,300]]],
-        transitions:[{x:1600,y:3060,target:4,name:'Янтарь',entry:{x:1600,y:2860}},
+        transitions:[{x:1600,y:3060,target:5,name:'Янтарь',entry:{x:1600,y:2860}},
                      {x:1560,y:150,win:true,name:'ПОБЕГ ⚑'}] }},
   ];
   const LOC_ARRAYS=['anomalies','artItems','radzones','props','bolts_flying','particles',
@@ -717,7 +738,9 @@
     state.roads = lay.roads || [];
     state.buildings = lay.buildings || [];
     state.vendor = lay.vendor || null;
-    state.house = lay.bunker ? {x:lay.bunker.x, y:lay.bunker.y, door:lay.bunker.door} : null;
+    if(lay.bunker) state.house={kind:'bunker', vendorName:'Сидорович', x:lay.bunker.x, y:lay.bunker.y, r:48, door:lay.bunker.door};
+    else if(lay.bar){ const b=lay.bar.box; state.house={kind:'bar', vendorName:'Бармен', box:b, x:b.x+b.w/2, y:b.y+b.h/2, door:lay.bar.door}; }
+    else state.house=null;
     state.vendorName = lay.vendorName || (lay.vendor?lay.vendor.name:'Торговец');
   }
   function saveLoc(i){ const d={}; for(const k of LOC_ARRAYS) d[k]=state[k]; state.locData[i]=d; }
@@ -1006,8 +1029,9 @@
         nx=p.x+Math.cos(ang)*(p.r+9); ny=p.y+Math.sin(ang)*(p.r+9);
       }
     }
-    // building collision (solid AABBs)
+    // building collision (solid AABBs; rubble is passable)
     for(const b of state.buildings){
+      if(b.kind==='rubble') continue;
       const pad=9;
       if(nx>b.x-pad && nx<b.x+b.w+pad && ny>b.y-pad && ny<b.y+b.h+pad){
         const dl=nx-(b.x-pad), dr=(b.x+b.w+pad)-nx, dt=ny-(b.y-pad), db=(b.y+b.h+pad)-ny;
@@ -1015,12 +1039,18 @@
         if(m===dl) nx=b.x-pad; else if(m===dr) nx=b.x+b.w+pad; else if(m===dt) ny=b.y-pad; else ny=b.y+b.h+pad;
       }
     }
-    // trader's bunker: step on the door to enter, walls are solid
+    // enterable (Sidorovich bunker / Бар «100 рентген»): door enters, walls solid
     if(state.house){
       const h=state.house;
       if(now()>(state._doorReadyAt||0) && dist(nx,ny,h.door.x,h.door.y) < 30){ enterHouse(); return; }
-      const dh=dist(nx,ny,h.x,h.y);
-      if(dh < 48){ const a=Math.atan2(ny-h.y,nx-h.x); nx=h.x+Math.cos(a)*48; ny=h.y+Math.sin(a)*48; }
+      if(h.box){ const b=h.box, pad=9;
+        if(nx>b.x-pad&&nx<b.x+b.w+pad&&ny>b.y-pad&&ny<b.y+b.h+pad){
+          const dl=nx-(b.x-pad),dr=(b.x+b.w+pad)-nx,dt=ny-(b.y-pad),db=(b.y+b.h+pad)-ny;
+          const m=Math.min(dl,dr,dt,db);
+          if(m===dl)nx=b.x-pad; else if(m===dr)nx=b.x+b.w+pad; else if(m===dt)ny=b.y-pad; else ny=b.y+b.h+pad;
+        }
+      } else { const r=h.r||48, dh=dist(nx,ny,h.x,h.y);
+        if(dh<r){ const a=Math.atan2(ny-h.y,nx-h.x); nx=h.x+Math.cos(a)*r; ny=h.y+Math.sin(a)*r; } }
     }
     nx=clamp(nx,20,W-20); ny=clamp(ny,20,H-20);
     state.px=nx; state.py=ny;
@@ -1296,7 +1326,8 @@
     document.getElementById('btnFireN').textContent=state.ammo;
     document.getElementById('invBadge').textContent=state.inventory.length;
     document.getElementById('locBanner').textContent=
-      state.scene==='interior' ? 'Бункер Сидоровича' : (LOCATIONS[state.locIndex]?LOCATIONS[state.locIndex].name:'');
+      state.scene==='interior' ? (state.interiorKind==='bar'?'Бар «100 рентген»':'Бункер Сидоровича')
+                               : (LOCATIONS[state.locIndex]?LOCATIONS[state.locIndex].name:'');
   }
 
   // ================= RENDER =================
@@ -1342,10 +1373,12 @@
       if(b.x+b.w+ox<-20||b.x+ox>VW+20||b.y+b.h+oy<-20||b.y+oy>VH+20) continue;
       drawBuilding(b,ox,oy);
     }
-    // trader's bunker
+    // enterable vendor building (bunker / bar)
     if(state.house){
       const hx=state.house.x+ox, hy=state.house.y+oy;
-      if(!(hx<-90||hx>VW+90||hy<-90||hy>VH+90)) drawHouse(hx,hy);
+      if(!(hx<-180||hx>VW+180||hy<-180||hy>VH+180)){
+        if(state.house.kind==='bar') drawBar(state.house,ox,oy); else drawHouse(hx,hy);
+      }
     }
     // outdoor vendor
     if(state.vendor){
@@ -1716,10 +1749,13 @@
   // ---------- Trader hideout ----------
   function enterHouse(){
     state.scene='interior'; state.firing=false; state.paused=false;
+    state.interiorKind = state.house.kind || 'bunker';
+    state.vendorName = state.house.vendorName || 'Сидорович';
     // place well below the door so the entry trigger (30px) doesn't fire again
     state.returnPos={x:state.house.door.x, y:state.house.door.y+52};
     state.px=IW/2; state.py=IH-90; state.pvx=state.pvy=0;
-    toast('Бункер Сидоровича'); beep(440,0.1,'sine',0.05); setTimeout(()=>beep(620,0.1,'sine',0.05),90);
+    toast(state.interiorKind==='bar' ? 'Бар «100 рентген»' : 'Бункер Сидоровича');
+    beep(440,0.1,'sine',0.05); setTimeout(()=>beep(620,0.1,'sine',0.05),90);
     updateHUD();
   }
   function exitHouse(){
@@ -1740,8 +1776,63 @@
     stroke(11,'#473c29');   // worn centre
     ctx.lineCap='butt'; ctx.lineJoin='miter';
   }
+  function drawWreck(x,y,w,h){
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(x+4,y+h-2,w,6);
+    ctx.fillStyle='#5a3a2a'; ctx.fillRect(x,y+h*0.32,w,h*0.68);
+    ctx.fillStyle='#6b4a35'; ctx.fillRect(x,y+h*0.32,w,4);
+    ctx.fillStyle='#33251c'; ctx.fillRect(x,y+h-6,w,6);
+    ctx.fillStyle='#2a2420'; ctx.fillRect(x+w*0.18,y,w*0.64,h*0.4);
+    ctx.fillStyle='#3f4a54'; ctx.fillRect(x+w*0.26,y+4,w*0.48,h*0.22);
+    ctx.fillStyle='#141210'; ctx.fillRect(x+5,y+h-5,9,5); ctx.fillRect(x+w-14,y+h-5,9,5);
+    ctx.fillStyle='#7a4a28'; for(let i=0;i<4;i++) ctx.fillRect(x+8+i*(w-16)/4, y+h*0.5+((i*7)%8), 3,3);
+  }
+  function drawTower(x,y,w,h){
+    const cx=x+w/2;
+    ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(cx,y+h,w*0.55,5,0,0,6.29); ctx.fill();
+    ctx.strokeStyle='#2e2214'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(x+6,y+h); ctx.lineTo(x+w-6,y+18); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+w-6,y+h); ctx.lineTo(x+6,y+18); ctx.stroke();
+    ctx.fillStyle='#3a2c1a'; ctx.fillRect(x+4,y+12,4,h-12); ctx.fillRect(x+w-8,y+12,4,h-12);
+    ctx.fillStyle='#4a3826'; ctx.fillRect(x-3,y+4,w+6,12);
+    ctx.fillStyle='#5c4834'; ctx.fillRect(x-3,y+4,w+6,3);
+    ctx.fillStyle='#2e2214'; ctx.fillRect(x+2,y-7,w-4,9);
+  }
+  function drawWall(x,y,w,h){
+    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(x+3,y+h,w,4);
+    ctx.fillStyle='#6a6258'; ctx.fillRect(x,y,w,h);
+    ctx.fillStyle='#7a7268'; ctx.fillRect(x,y,w,3);
+    ctx.fillStyle='#48423a'; ctx.fillRect(x,y+h-3,w,3);
+    ctx.fillStyle='#544e46'; for(let sx=x+12; sx<x+w-6; sx+=18) ctx.fillRect(sx,y,2,h);
+  }
+  function drawRubble(x,y,w,h){
+    ctx.fillStyle='#39342b';
+    for(let i=0;i<7;i++){ const rx=x+((i*13)%Math.max(1,w-8)), ry=y+((i*7)%Math.max(1,h-6)); ctx.fillRect(rx,ry, 7+((i*5)%9), 5+((i*3)%7)); }
+    ctx.fillStyle='#4a4438';
+    for(let i=0;i<5;i++){ const rx=x+((i*17+5)%Math.max(1,w-6)), ry=y+((i*11+3)%Math.max(1,h-5)); ctx.fillRect(rx,ry,5,4); }
+  }
+  function drawBar(h,ox,oy){
+    const b=h.box, x=b.x+ox, y=b.y+oy, w=b.w, hh=b.h, dx=h.door.x+ox;
+    ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(x+8,y+hh-2,w,12);
+    ctx.fillStyle='#5a3a2e'; ctx.fillRect(x,y,w,hh);
+    ctx.fillStyle='#6b473a'; ctx.fillRect(x,y,w,8);
+    ctx.fillStyle='#3e2820'; ctx.fillRect(x,y+hh-12,w,12);
+    ctx.strokeStyle='#472e24'; ctx.lineWidth=1;
+    for(let by=y+16; by<y+hh-12; by+=14){ ctx.beginPath(); ctx.moveTo(x,by); ctx.lineTo(x+w,by); ctx.stroke(); }
+    ctx.fillStyle='#33251a'; ctx.fillRect(x-6,y-8,w+12,12);
+    ctx.fillStyle='#ffce5a'; for(let wx=x+22; wx<x+w-22; wx+=46){ ctx.fillRect(wx,y+22,20,16); }
+    ctx.fillStyle='#2a1c10'; ctx.fillRect(dx-16,y+hh-30,32,30);
+    ctx.fillStyle='#ffce5a'; ctx.fillRect(dx-14,y+hh-30,28,5);
+    ctx.fillStyle='#7a6a48'; for(let i=-1;i<=1;i++) ctx.fillRect(dx+i*22-8,y+hh-2,16,7);
+    ctx.fillStyle='#101014'; ctx.fillRect(x+w/2-74,y-9,148,14);
+    ctx.fillStyle='#7fff9a'; ctx.font='bold 10px monospace'; ctx.textAlign='center'; ctx.fillText('БАР «100 РЕНТГЕН»', x+w/2, y+1);
+  }
   function drawBuilding(b,ox,oy){
-    const x=b.x+ox, y=b.y+oy, w=b.w, h=b.h, C=BKIND[b.kind]||BKIND.house;
+    const x=b.x+ox, y=b.y+oy, w=b.w, h=b.h;
+    if(b.kind==='rubble'){ drawRubble(x,y,w,h); return; }
+    if(b.kind==='wreck'){ drawWreck(x,y,w,h); return; }
+    if(b.kind==='tower'){ drawTower(x,y,w,h); return; }
+    if(b.kind==='wall'){ drawWall(x,y,w,h); return; }
+    const C=BKIND[b.kind]||BKIND.house;
     ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(x+6,y+h-2,w,10);      // ground shadow
     ctx.fillStyle=C.wall; ctx.fillRect(x,y,w,h);
     ctx.fillStyle=C.wallHi; ctx.fillRect(x,y,w,7);
@@ -1839,6 +1930,21 @@
     const bob=Math.sin(now()/300)*2;
     ctx.fillStyle='#ffd24a'; ctx.font='bold 14px monospace'; ctx.textAlign='center'; ctx.fillText('₴', x, y-28+bob);
   }
+  function drawBarman(x,y){ // Бармен — heavyset, apron, bald with side hair
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(x,y+16,15,5,0,0,6.29); ctx.fill();
+    ctx.fillStyle='#3a3a42'; ctx.fillRect(x-13,y-6,26,21);                          // dark shirt
+    ctx.fillStyle='#8a8578'; ctx.fillRect(x-9,y-4,18,17);                            // apron
+    ctx.fillStyle='#6e6a5e'; ctx.fillRect(x-9,y-4,18,3);
+    ctx.fillStyle='#3a3a42'; ctx.fillRect(x-17,y-4,4,15); ctx.fillRect(x+13,y-4,4,15); // arms
+    ctx.fillStyle='#c8a074'; ctx.fillRect(x-17,y+9,4,3); ctx.fillRect(x+13,y+9,4,3);
+    ctx.fillStyle='#c8a074'; ctx.fillRect(x-8,y-19,16,14);                           // head
+    ctx.fillStyle='#d8b487'; ctx.fillRect(x-6,y-19,12,3);                            // bald shine
+    ctx.fillStyle='#4a4038'; ctx.fillRect(x-8,y-11,2,4); ctx.fillRect(x+6,y-11,2,4); // side hair
+    ctx.fillStyle='#6a6058'; ctx.fillRect(x-7,y-8,14,2);                             // stubble
+    ctx.fillStyle='#20140a'; ctx.fillRect(x-4,y-14,2,2); ctx.fillRect(x+2,y-14,2,2);
+    const bob=Math.sin(now()/300)*2;
+    ctx.fillStyle='#ffd24a'; ctx.font='bold 14px monospace'; ctx.textAlign='center'; ctx.fillText('₴', x, y-28+bob);
+  }
   function updateInterior(dt){
     let ix=0,iy=0;
     if(joyActive){ ix=joyDx; iy=joyDy; }
@@ -1862,47 +1968,57 @@
     if(dist(state.px,state.py,EXITMAT.x,EXITMAT.y)<24){ exitHouse(); return; }
     state.nearTrader = dist(state.px,state.py,TRADER.x,TRADER.y) < 62;
     document.getElementById('btnTrade').style.display = state.nearTrader ? 'flex' : 'none';
-    const distEl=document.getElementById('distTxt'); distEl.textContent='🏠 бункер'; distEl.style.color='#8a9877';
+    const distEl=document.getElementById('distTxt'); distEl.textContent=state.interiorKind==='bar'?'🍺 бар':'🏠 бункер'; distEl.style.color='#8a9877';
     updateHUD();
   }
   function renderInterior(){
     ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,VW,VH);
     const ox = IW<=VW ? (VW-IW)/2 : -clamp(state.px-VW/2,0,IW-VW);
     const oy = IH<=VH ? (VH-IH)/2 : -clamp(state.py-VH/2,0,IH-VH);
-    // concrete floor
-    ctx.fillStyle='#3a3a35'; ctx.fillRect(ox,oy,IW,IH);
-    ctx.strokeStyle='#2f2f2b'; ctx.lineWidth=2;
-    for(let y=30;y<IH;y+=40){ ctx.beginPath(); ctx.moveTo(ox,oy+y); ctx.lineTo(ox+IW,oy+y); ctx.stroke(); }
-    for(let x=40;x<IW;x+=60){ ctx.beginPath(); ctx.moveTo(ox+x,oy); ctx.lineTo(ox+x,oy+IH); ctx.stroke(); }
-    // metal walls
-    ctx.fillStyle='#4a4a44'; ctx.fillRect(ox,oy,IW,16); ctx.fillRect(ox,oy,16,IH);
+    const bar = state.interiorKind==='bar';
+    // floor
+    ctx.fillStyle = bar?'#2e2016':'#3a3a35'; ctx.fillRect(ox,oy,IW,IH);
+    ctx.strokeStyle = bar?'#241a10':'#2f2f2b'; ctx.lineWidth=2;
+    for(let y=30;y<IH;y+=(bar?24:40)){ ctx.beginPath(); ctx.moveTo(ox,oy+y); ctx.lineTo(ox+IW,oy+y); ctx.stroke(); }
+    if(!bar) for(let x=40;x<IW;x+=60){ ctx.beginPath(); ctx.moveTo(ox+x,oy); ctx.lineTo(ox+x,oy+IH); ctx.stroke(); }
+    // walls
+    ctx.fillStyle = bar?'#4a2e22':'#4a4a44'; ctx.fillRect(ox,oy,IW,16); ctx.fillRect(ox,oy,16,IH);
     ctx.fillRect(ox+IW-16,oy,16,IH); ctx.fillRect(ox,oy+IH-16,IW,16);
-    ctx.fillStyle='#5a5a52'; ctx.fillRect(ox,oy,IW,5);
-    ctx.fillStyle='#33332e';
-    for(let x=24;x<IW-16;x+=40){ ctx.fillRect(ox+x,oy+6,3,3); ctx.fillRect(ox+x,oy+IH-9,3,3); }
-    // overhead pipe
-    ctx.fillStyle='#5c5c54'; ctx.fillRect(ox+16,oy+24,IW-32,6);
-    ctx.fillStyle='#6c6c64'; ctx.fillRect(ox+16,oy+24,IW-32,2);
-    for(let x=50;x<IW-24;x+=72){ ctx.fillStyle='#43433d'; ctx.fillRect(ox+x,oy+22,6,10); }
-    // warm lamp glow near trader
+    ctx.fillStyle = bar?'#5a3a2c':'#5a5a52'; ctx.fillRect(ox,oy,IW,5);
+    if(bar){ ctx.strokeStyle='#3a241a'; ctx.lineWidth=1;
+      for(let by=oy+22; by<oy+IH-16; by+=13){ ctx.beginPath(); ctx.moveTo(ox+16,by); ctx.lineTo(ox+IW-16,by); ctx.stroke(); } }
+    else { ctx.fillStyle='#33332e';
+      for(let x=24;x<IW-16;x+=40){ ctx.fillRect(ox+x,oy+6,3,3); ctx.fillRect(ox+x,oy+IH-9,3,3); }
+      ctx.fillStyle='#5c5c54'; ctx.fillRect(ox+16,oy+24,IW-32,6);
+      ctx.fillStyle='#6c6c64'; ctx.fillRect(ox+16,oy+24,IW-32,2);
+      for(let x=50;x<IW-24;x+=72){ ctx.fillStyle='#43433d'; ctx.fillRect(ox+x,oy+22,6,10); } }
+    // warm lamp glow
     const gx=TRADER.x+ox, gy=TRADER.y+oy;
     const lg=ctx.createRadialGradient(gx,gy-10,0,gx,gy-10,160);
-    lg.addColorStop(0,'rgba(255,200,90,0.16)'); lg.addColorStop(1,'rgba(255,200,90,0)');
+    lg.addColorStop(0, bar?'rgba(255,180,80,0.20)':'rgba(255,200,90,0.16)'); lg.addColorStop(1,'rgba(255,200,90,0)');
     ctx.fillStyle=lg; ctx.beginPath(); ctx.arc(gx,gy-10,160,0,6.29); ctx.fill();
-    // hanging lamp above Sidorovich
     ctx.fillStyle='#2a2a26'; ctx.fillRect(gx-1,oy+30,2,gy-58-(oy+30));
     ctx.fillStyle='#3a3a34'; ctx.fillRect(gx-8,gy-58,16,5);
     ctx.fillStyle='#ffce5a'; ctx.fillRect(gx-6,gy-53,12,3);
-    // green military crates
-    ctx.fillStyle='#3f4a30'; ctx.fillRect(ox+28,oy+IH-92,36,32); ctx.fillRect(ox+IW-66,oy+IH-98,34,38);
-    ctx.fillStyle='#516039'; ctx.fillRect(ox+28,oy+IH-92,36,5); ctx.fillRect(ox+IW-66,oy+IH-98,34,5);
-    ctx.fillStyle='#2c3420'; ctx.fillRect(ox+42,oy+IH-92,4,32); ctx.fillRect(ox+IW-50,oy+IH-98,4,38);
-    // wooden trade desk
+    if(bar){ // kegs / barrels
+      ctx.fillStyle='#5a3a22'; ctx.fillRect(ox+30,oy+IH-88,30,34); ctx.fillRect(ox+IW-62,oy+IH-92,30,38);
+      ctx.fillStyle='#6b4a2b'; ctx.fillRect(ox+30,oy+IH-88,30,5); ctx.fillRect(ox+IW-62,oy+IH-92,30,5);
+      ctx.fillStyle='#3a2616'; ctx.fillRect(ox+30,oy+IH-72,30,3); ctx.fillRect(ox+IW-62,oy+IH-74,30,3);
+    } else { // military crates
+      ctx.fillStyle='#3f4a30'; ctx.fillRect(ox+28,oy+IH-92,36,32); ctx.fillRect(ox+IW-66,oy+IH-98,34,38);
+      ctx.fillStyle='#516039'; ctx.fillRect(ox+28,oy+IH-92,36,5); ctx.fillRect(ox+IW-66,oy+IH-98,34,5);
+      ctx.fillStyle='#2c3420'; ctx.fillRect(ox+42,oy+IH-92,4,32); ctx.fillRect(ox+IW-50,oy+IH-98,4,38);
+    }
+    // trade desk / bar counter
     ctx.fillStyle='#4a3722'; ctx.fillRect(gx-74,gy+18,148,16);
-    ctx.fillStyle='#5c4630'; ctx.fillRect(gx-74,gy+18,148,4);
+    ctx.fillStyle = bar?'#6b4a2b':'#5c4630'; ctx.fillRect(gx-74,gy+18,148,4);
     ctx.fillStyle='#3a2c1c'; ctx.fillRect(gx-74,gy+30,148,4);
+    if(bar){ // bottles on the counter
+      const bc=['#8fbf3f','#e0602a','#3fa8ff','#c9a227','#b892ff'];
+      for(let i=0;i<7;i++){ ctx.fillStyle=bc[i%bc.length]; ctx.fillRect(gx-64+i*18, gy+12, 4,8); ctx.fillStyle='#1a1a14'; ctx.fillRect(gx-63+i*18, gy+10, 2,2); }
+    }
     // trader
-    drawTrader(gx,gy);
+    if(bar) drawBarman(gx,gy); else drawTrader(gx,gy);
     // exit mat
     const ex=EXITMAT.x+ox, ey=EXITMAT.y+oy;
     const pulse=0.5+0.5*Math.sin(now()/300);
@@ -1912,10 +2028,9 @@
     // aura + player
     if(state.heartEquipped) drawHeartAura(state.px+ox, state.py+oy);
     drawPlayer(state.px+ox, state.py+oy);
-    // "поговорить" hint above trader when near
     if(state.nearTrader){
       ctx.fillStyle='#ffd24a'; ctx.font='11px monospace'; ctx.textAlign='center';
-      ctx.fillText('₴ говорить с Сидоровичем', gx, gy-42);
+      ctx.fillText('₴ говорить с '+(bar?'Барменом':'Сидоровичем'), gx, gy-42);
     }
   }
 
@@ -2177,7 +2292,7 @@
       inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
       suit:'newcomer', suits:['newcomer'],
       scene:'zone', money:600, nearTrader:false, tradeTab:'buy',
-      locIndex:0, locData:{}, px:LOCATIONS[0].layout.spawn.x, py:LOCATIONS[0].layout.spawn.y, nearVendor:false,
+      locIndex:0, locData:{}, px:LOCATIONS[0].layout.spawn.x, py:LOCATIONS[0].layout.spawn.y, nearVendor:false, interiorKind:'bunker',
       mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     });
     genWorld();
