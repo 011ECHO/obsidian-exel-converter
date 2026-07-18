@@ -139,6 +139,76 @@
     background:var(--rad); opacity:0; mix-blend-mode:screen; }
   .hurtflash{ position:fixed; inset:0; z-index:8; pointer-events:none;
     background:var(--danger); opacity:0; }
+
+  /* ===== Inventory ===== */
+  #btnInv{
+    position:fixed; left:12px; top:calc(env(safe-area-inset-top) + 96px);
+    z-index:12; pointer-events:auto; width:52px; height:52px; border-radius:10px;
+    background:radial-gradient(circle at 40% 35%,#2b3520,#12160c);
+    border:2px solid #4a5a2f; display:flex; align-items:center; justify-content:center;
+    font-size:24px; box-shadow:0 3px 0 #000, inset 0 1px 2px #ffffff10;
+  }
+  #btnInv:active{ transform:translateY(2px); box-shadow:0 1px 0 #000; }
+  #btnInv .badge{
+    position:absolute; top:-7px; right:-7px; min-width:20px; height:20px;
+    border-radius:10px; background:var(--amber); color:#191600; font-size:12px;
+    font-weight:bold; display:flex; align-items:center; justify-content:center;
+    padding:0 5px; border:1px solid #000; box-sizing:border-box;
+  }
+  #btnInv.pulse{ animation:invpulse .45s ease 2; }
+  @keyframes invpulse{ 50%{ box-shadow:0 3px 0 #000, 0 0 22px var(--amber); border-color:var(--amber); } }
+
+  #invScreen{ background:#05070fdd; z-index:35; padding:16px; justify-content:flex-start; }
+  .inv-panel{
+    width:100%; max-width:560px; margin-top:calc(env(safe-area-inset-top) + 12px);
+    max-height:88vh; display:flex; flex-direction:column; gap:12px;
+    background:linear-gradient(#131a0e,#0c1109); border:2px solid #2f3a1e;
+    border-radius:8px; padding:16px; box-shadow:0 12px 40px #000a;
+  }
+  .inv-head{ display:flex; align-items:center; justify-content:space-between;
+    font-size:20px; letter-spacing:4px; color:var(--toxic); }
+  .inv-close{ pointer-events:auto; background:#1c2513; border:1px solid #4a5a2f;
+    color:var(--ink); width:38px; height:38px; border-radius:6px; font-size:18px;
+    font-family:inherit; }
+  .inv-close:active{ background:#2b3520; }
+  .inv-sub{ font-size:12px; color:#8a9877; line-height:1.5; }
+  .inv-sub b{ color:var(--amber); }
+  .inv-slots{ display:flex; gap:10px; }
+  .inv-slots.nope{ animation:shake .3s; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+  .slot{
+    flex:1; aspect-ratio:1/1; max-width:96px; border:2px dashed #3a4a28; border-radius:8px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:#0e140880; color:#5a6a48; position:relative; pointer-events:auto;
+  }
+  .slot.filled{ border-style:solid; }
+  .slot .sico{ font-size:26px; line-height:1; }
+  .slot .snm{ font-size:9px; margin-top:3px; text-align:center; color:var(--ink); letter-spacing:.5px; }
+  .slot .empty{ font-size:11px; }
+  .inv-active-wrap{ background:#0e140880; border:1px solid #2a331f; border-radius:6px; padding:10px; }
+  .inv-active-title, .inv-grid-title{ font-size:10px; letter-spacing:2px; color:#6f7d5f; margin-bottom:6px; }
+  .inv-active{ display:flex; flex-direction:column; gap:3px; font-size:12px; }
+  .inv-active .muted{ color:#5a6a48; }
+  .eff-pro{ color:#8fd04a; }
+  .eff-con{ color:#e07a6a; }
+  .inv-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:10px; overflow-y:auto; padding:2px; }
+  .art-card{
+    pointer-events:auto; border:2px solid #2f3a1e; border-radius:8px; padding:10px;
+    background:#101609; display:flex; flex-direction:column; gap:6px; position:relative;
+    cursor:pointer; transition:border-color .12s, background .12s;
+  }
+  .art-card:active{ transform:scale(.98); }
+  .art-card.equipped{ border-color:var(--amber); background:#1a2210; box-shadow:0 0 0 1px var(--amber) inset; }
+  .art-card .ahead{ display:flex; align-items:center; gap:8px; padding-right:52px; }
+  .art-card .aic{ font-size:22px; line-height:1; }
+  .art-card .anm{ font-size:14px; color:var(--ink); font-weight:bold; }
+  .art-card .aeff{ font-size:11px; line-height:1.5; }
+  .art-card .etag{
+    position:absolute; top:8px; right:8px; font-size:9px; letter-spacing:1px;
+    color:#191600; background:var(--amber); padding:1px 6px; border-radius:3px; display:none; }
+  .art-card.equipped .etag{ display:block; }
+  .inv-empty{ grid-column:1/-1; text-align:center; color:#5a6a48; font-size:13px; padding:24px; }
 </style>
 </head>
 <body>
@@ -173,7 +243,28 @@
   <div class="btn fire" id="btnFire"><span class="ico">🔫</span><span class="n" id="btnFireN">40</span></div>
 </div>
 
+<!-- Inventory button -->
+<div id="btnInv">🎒<span class="badge" id="invBadge">0</span></div>
+
 <div id="toast"></div>
+
+<!-- Inventory modal -->
+<div class="screen hide" id="invScreen">
+  <div class="inv-panel">
+    <div class="inv-head">
+      <span>РЮКЗАК</span>
+      <button class="inv-close" id="invClose">✕</button>
+    </div>
+    <div class="inv-sub">Пояс — экипируй артефакты (до <b id="invMax">3</b>). Нажми на артефакт, чтобы надеть/снять.</div>
+    <div class="inv-slots" id="invSlots"></div>
+    <div class="inv-active-wrap">
+      <div class="inv-active-title">АКТИВНЫЕ ЭФФЕКТЫ</div>
+      <div class="inv-active" id="invActive"><span class="muted">ничего не экипировано</span></div>
+    </div>
+    <div class="inv-grid-title">СОБРАНО</div>
+    <div class="inv-grid" id="invGrid"></div>
+  </div>
+</div>
 
 <!-- Start screen -->
 <div class="screen" id="startScreen">
@@ -187,8 +278,8 @@
   <div class="legend">
     <b>Джойстик</b> (левый низ) — движение и прицел &nbsp;·&nbsp; <b>🔫</b> — стрелять (держи для очереди)<br>
     <b>🔩</b> — болт (проявить аномалии) &nbsp;·&nbsp; <b>💊</b> — аптечка &nbsp;·&nbsp; ПК: <b>WASD</b>, <b>F</b>, <b>Пробел</b>, <b>H</b><br>
-    <span style="color:#c9a227">✦ артефакты</span> у аномалий · бей <span style="color:#e08a7a">мутантов</span> ·
-    бери <span style="color:#c9a227">ящики с патронами</span> · беги от <span style="color:#a8ff33">радиации</span><br>
+    <span style="color:#c9a227">✦ артефакты</span> у аномалий · <b>🎒</b> рюкзак — экипируй их ради баффов ·
+    бей <span style="color:#e08a7a">мутантов</span> · беги от <span style="color:#a8ff33">радиации</span><br>
     <span style="color:#8a9877">цель: собрать хотя бы 1 артефакт и дойти до <b style="color:#5cc8ff">ВЫХОДА</b></span>
   </div>
 </div>
@@ -241,8 +332,11 @@
     dist:0, lastX:0, lastY:0, shootCD:0, firing:false,
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
     bullets:[], mutants:[], ammoBoxes:[],
+    inventory:[], equipped:[], _invId:1, maxHp:100, paused:false,
+    mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     detBeep:0, detNext:0, hurtCD:0,
   };
+  const EQUIP_SLOTS = 3;
 
   // ---------- Audio (WebAudio, no assets) ----------
   let AC=null;
@@ -278,13 +372,43 @@
     chemical: {col:'#8fbf3f', ring:'#c8ff5a', dmg:22, name:'Кисель'},
     electro:  {col:'#3fa8ff', ring:'#9ad4ff', dmg:30, name:'Электра'},
   };
+  // artifacts — each grants signature buff(s) with a real downside
   const ARTS = [
-    {name:'Медуза',   col:'#c9a227', glow:'#ffe066'},
-    {name:'Огненный шар', col:'#e0602a', glow:'#ff9a3c'},
-    {name:'Батарейка', col:'#3fa8ff', glow:'#9ad4ff'},
-    {name:'Колобок',  col:'#8fbf3f', glow:'#c8ff5a'},
-    {name:'Кристалл', col:'#b892ff', glow:'#e0ccff'},
+    {name:'Медуза',   col:'#c9a227', glow:'#ffe066', icon:'✦',
+      eff:{regen:1.4, radPassive:1.0},
+      pros:['Регенерация HP +1.4/с'], cons:['Излучает радиацию +1.0/с']},
+    {name:'Огненный шар', col:'#e0602a', glow:'#ff9a3c', icon:'✸',
+      eff:{dmgMul:1.5, radPassive:1.4},
+      pros:['Урон оружия ×1.5'], cons:['Излучает радиацию +1.4/с']},
+    {name:'Батарейка', col:'#3fa8ff', glow:'#9ad4ff', icon:'▮',
+      eff:{spdMul:1.22, maxHpBonus:-15},
+      pros:['Скорость ×1.22'], cons:['Макс. HP −15']},
+    {name:'Колобок',  col:'#8fbf3f', glow:'#c8ff5a', icon:'●',
+      eff:{radResist:0.6, spdMul:0.9},
+      pros:['Защита от радиации 60%'], cons:['Скорость ×0.9']},
+    {name:'Кристалл', col:'#b892ff', glow:'#e0ccff', icon:'◆',
+      eff:{resist:0.4, spdMul:0.9, radPassive:0.6},
+      pros:['Урон аномалий/мутантов −40%'], cons:['Скорость ×0.9','Радиация +0.6/с']},
   ];
+  function computeMods(){
+    const m={regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0};
+    for(const id of state.equipped){
+      const it=state.inventory.find(x=>x.id===id); if(!it) continue;
+      const e=it.type.eff;
+      m.regen+=e.regen||0; m.radPassive+=e.radPassive||0;
+      m.dmgMul*=(e.dmgMul||1); m.spdMul*=(e.spdMul||1);
+      m.radResist=Math.min(0.85, m.radResist+(e.radResist||0));
+      m.maxHpBonus+=e.maxHpBonus||0;
+      m.resist=Math.min(0.7, m.resist+(e.resist||0));
+    }
+    return m;
+  }
+  function recomputeMods(){
+    state.mods=computeMods();
+    state.maxHp=Math.max(30, 100+state.mods.maxHpBonus);
+    if(state.hp>state.maxHp) state.hp=state.maxHp;
+    updateHUD();
+  }
   // mutant kinds
   const MUT_TYPES = {
     dog:   {hp:16, dmg:7,  spd:104, r:10, det:320, name:'Слепой пёс', col:'#5b4a33', dark:'#3a2f20'},
@@ -448,7 +572,7 @@
     if(state.meds<=0){ toast('Аптечек нет'); beep(140,0.1,'square',0.05); return; }
     if(state.hp>=100 && state.rad<=0){ toast('Не нужно'); return; }
     state.meds--;
-    state.hp=clamp(state.hp+45,0,100);
+    state.hp=clamp(state.hp+45,0,state.maxHp);
     state.rad=clamp(state.rad-40,0,100);
     toast('Аптечка использована');
     beep(660,0.12,'sine',0.06); beep(880,0.1,'sine',0.05);
@@ -465,7 +589,7 @@
     const spread=rnd(-0.05,0.05), ca=Math.cos(spread), sa=Math.sin(spread);
     const bx=dx*ca-dy*sa, by=dx*sa+dy*ca;
     const spd=520;
-    state.bullets.push({x:state.px+bx*10, y:state.py-6+by*10, vx:bx*spd, vy:by*spd, life:0.9});
+    state.bullets.push({x:state.px+bx*10, y:state.py-6+by*10, vx:bx*spd, vy:by*spd, life:0.9, dmg:22*state.mods.dmgMul});
     // muzzle flash
     state.particles.push({x:state.px+bx*14, y:state.py-6+by*14, vx:bx*2, vy:by*2, life:0.06, col:'#ffe066', r:4});
     beep(240,0.05,'square',0.05); noiseBurst(0.04,0.05);
@@ -473,7 +597,8 @@
   }
   // direct damage (used by mutants — no global cooldown, each attacker self-limits)
   function damagePlayer(amount,msg){
-    state.hp=clamp(state.hp-amount,0,100);
+    amount*=(1-state.mods.resist);
+    state.hp=clamp(state.hp-amount,0,state.maxHp);
     hurtflash.style.transition='none'; hurtflash.style.opacity='0.45';
     requestAnimationFrame(()=>{ hurtflash.style.transition='opacity .4s'; hurtflash.style.opacity='0'; });
     beep(130,0.12,'sawtooth',0.06);
@@ -490,7 +615,8 @@
   const radflash=document.getElementById('radflash');
   function hurt(amount, msg){
     if(state.hurtCD>0) return;
-    state.hp=clamp(state.hp-amount,0,100);
+    amount*=(1-state.mods.resist);
+    state.hp=clamp(state.hp-amount,0,state.maxHp);
     state.hurtCD=0.5;
     hurtflash.style.transition='none'; hurtflash.style.opacity='0.5';
     requestAnimationFrame(()=>{ hurtflash.style.transition='opacity .4s'; hurtflash.style.opacity='0'; });
@@ -503,7 +629,7 @@
   let last=now();
   function loop(){
     const t=now(); let dt=(t-last)/1000; last=t; dt=Math.min(dt,0.05);
-    if(state.running && !state.over) update(dt);
+    if(state.running && !state.over && !state.paused) update(dt);
     render();
     // toast auto-hide
     if(toastT && t>toastT){ toastEl.classList.remove('show'); toastT=0; }
@@ -523,7 +649,7 @@
     if(im>0.08){
       const nx=ix/im, ny=iy/im;
       state.facing=Math.atan2(ny,nx);
-      const spd = 132; // px/s
+      const spd = 132*state.mods.spdMul; // px/s
       let mag = joyActive? Math.min(im,1) : 1;
       state.pvx=nx*spd*mag; state.pvy=ny*spd*mag;
       state.walkPhase += dt*10*mag;
@@ -550,6 +676,10 @@
     if(state.hurtCD>0) state.hurtCD-=dt;
     if(state.shootCD>0) state.shootCD-=dt;
     if(state.firing) shoot();
+
+    // ----- artifact passive effects -----
+    if(state.mods.regen) state.hp=clamp(state.hp+state.mods.regen*dt,0,state.maxHp);
+    if(state.mods.radPassive) state.rad=clamp(state.rad+state.mods.radPassive*dt,0,100);
 
     // ----- anomalies -----
     let nearestAnom=1e9;
@@ -578,7 +708,7 @@
       if(d<z.r){ inRad=true; radStrength=Math.max(radStrength,1-d/z.r); }
     }
     if(inRad){
-      state.rad=clamp(state.rad + radStrength*24*dt, 0,100);
+      state.rad=clamp(state.rad + radStrength*24*dt*(1-state.mods.radResist), 0,100);
       radflash.style.opacity=(0.04+0.10*radStrength*(0.5+0.5*Math.sin(now()/120))).toFixed(3);
       if(now()>state.detNext-100 && Math.random()<0.2) beep(1400,0.03,'square',0.02);
     } else {
@@ -587,7 +717,7 @@
     }
     // radiation damage over threshold
     if(state.rad>70){ state.hpDrain=(state.hpDrain||0)+dt;
-      if(state.hpDrain>1){ state.hpDrain=0; state.hp=clamp(state.hp-3,0,100); if(state.hp<=0) endGame(false); }
+      if(state.hpDrain>1){ state.hpDrain=0; state.hp=clamp(state.hp-3,0,state.maxHp); if(state.hp<=0) endGame(false); }
     }
 
     // ----- artifacts -----
@@ -595,10 +725,12 @@
       if(art.taken) continue;
       art.bob+=dt*3;
       if(dist(state.px,state.py,art.x,art.y)<26){
-        art.taken=true; state.artifacts_taken=(state.artifacts_taken||0);
+        art.taken=true;
         state.artifacts++;
+        state.inventory.push({id:state._invId++, type:art.type});
+        pulseInvBtn();
         spawnBurst(art.x,art.y,art.type.glow,24);
-        toast('Артефакт: '+art.type.name+' ✦');
+        toast(art.type.name+' ✦ — в рюкзаке (🎒 экипировать)');
         beep(880,0.1,'sine',0.06); beep(1320,0.12,'sine',0.05); setTimeout(()=>beep(1760,0.14,'sine',0.05),90);
       }
     }
@@ -632,7 +764,7 @@
         for(const m of state.mutants){
           const M=MUT_TYPES[m.t];
           if(dist(b.x,b.y,m.x,m.y) < M.r+3){
-            m.hp-=22; m.hurtFlash=0.12; m.alerted=true;
+            m.hp-=b.dmg; m.hurtFlash=0.12; m.alerted=true;
             spawnBurst(b.x,b.y,'#a83232',5);
             beep(200,0.03,'square',0.03);
             dead=true; break;
@@ -762,7 +894,7 @@
 
   // ---------- HUD ----------
   function updateHUD(){
-    document.getElementById('hpBar').style.width=state.hp+'%';
+    document.getElementById('hpBar').style.width=clamp(state.hp/state.maxHp*100,0,100)+'%';
     document.getElementById('radBar').style.width=state.rad+'%';
     document.getElementById('artNum').textContent=state.artifacts;
     document.getElementById('ammoNum').textContent=state.ammo;
@@ -770,6 +902,7 @@
     document.getElementById('btnBoltN').textContent=state.bolts;
     document.getElementById('btnMedN').textContent=state.meds;
     document.getElementById('btnFireN').textContent=state.ammo;
+    document.getElementById('invBadge').textContent=state.inventory.length;
   }
 
   // ================= RENDER =================
@@ -1063,6 +1196,88 @@
     return `rgba(${r},${g},${b},${a})`;
   }
 
+  // ---------- Inventory ----------
+  const invScreen=document.getElementById('invScreen');
+  const btnInv=document.getElementById('btnInv');
+  const invSlotsEl=document.getElementById('invSlots');
+  const invActiveEl=document.getElementById('invActive');
+  const invGridEl=document.getElementById('invGrid');
+  function pulseInvBtn(){ btnInv.classList.remove('pulse'); void btnInv.offsetWidth; btnInv.classList.add('pulse'); }
+  function openInv(){
+    if(!state.running||state.over) return;
+    state.paused=true; state.firing=false;
+    invScreen.classList.remove('hide');
+    renderInv();
+  }
+  function closeInv(){ state.paused=false; invScreen.classList.add('hide'); }
+  function toggleEquip(id){
+    const idx=state.equipped.indexOf(id);
+    if(idx>=0){ state.equipped.splice(idx,1); beep(300,0.06,'square',0.04); }
+    else if(state.equipped.length>=EQUIP_SLOTS){
+      invSlotsEl.classList.remove('nope'); void invSlotsEl.offsetWidth; invSlotsEl.classList.add('nope');
+      beep(160,0.08,'square',0.05); return;
+    } else { state.equipped.push(id); beep(560,0.06,'sine',0.05); beep(760,0.06,'sine',0.04); }
+    recomputeMods(); renderInv();
+  }
+  function renderInv(){
+    // slots
+    invSlotsEl.innerHTML='';
+    for(let i=0;i<EQUIP_SLOTS;i++){
+      const id=state.equipped[i];
+      const cell=document.createElement('div'); cell.className='slot';
+      if(id!=null){
+        const it=state.inventory.find(x=>x.id===id);
+        if(it){
+          cell.classList.add('filled');
+          cell.style.borderColor=it.type.glow;
+          cell.innerHTML='<div class="sico" style="color:'+it.type.glow+'">'+it.type.icon+'</div><div class="snm">'+it.type.name+'</div>';
+          cell.onclick=()=>toggleEquip(id);
+        }
+      } else {
+        cell.innerHTML='<div class="empty">пусто</div>';
+      }
+      invSlotsEl.appendChild(cell);
+    }
+    // active effects (aggregate)
+    const m=state.mods;
+    const lines=[];
+    if(state.equipped.length===0){ invActiveEl.innerHTML='<span class="muted">ничего не экипировано</span>'; }
+    else {
+      if(m.maxHpBonus) lines.push(tag(m.maxHpBonus>0?'pro':'con', (m.maxHpBonus>0?'+':'')+m.maxHpBonus+' макс. HP'));
+      if(m.regen) lines.push(tag('pro','Реген HP +'+m.regen.toFixed(1)+'/с'));
+      if(m.dmgMul!==1) lines.push(tag(m.dmgMul>1?'pro':'con','Урон ×'+m.dmgMul.toFixed(2)));
+      if(m.spdMul!==1) lines.push(tag(m.spdMul>1?'pro':'con','Скорость ×'+m.spdMul.toFixed(2)));
+      if(m.radResist) lines.push(tag('pro','Защита от радиации '+Math.round(m.radResist*100)+'%'));
+      if(m.resist) lines.push(tag('pro','Урон аномалий/мутантов −'+Math.round(m.resist*100)+'%'));
+      if(m.radPassive) lines.push(tag('con','Излучение +'+m.radPassive.toFixed(1)+'/с'));
+      invActiveEl.innerHTML=lines.join('');
+    }
+    // grid of collected
+    invGridEl.innerHTML='';
+    if(state.inventory.length===0){
+      invGridEl.innerHTML='<div class="inv-empty">Рюкзак пуст. Собери артефакты ✦ у аномалий.</div>';
+    } else {
+      for(const it of state.inventory){
+        const card=document.createElement('div');
+        card.className='art-card'+(state.equipped.includes(it.id)?' equipped':'');
+        const pros=it.type.pros.map(p=>'<div class="eff-pro">▲ '+p+'</div>').join('');
+        const cons=it.type.cons.map(c=>'<div class="eff-con">▼ '+c+'</div>').join('');
+        card.innerHTML=
+          '<span class="etag">НАДЕТ</span>'+
+          '<div class="ahead"><span class="aic" style="color:'+it.type.glow+'">'+it.type.icon+'</span>'+
+          '<span class="anm">'+it.type.name+'</span></div>'+
+          '<div class="aeff">'+pros+cons+'</div>';
+        card.onclick=()=>toggleEquip(it.id);
+        invGridEl.appendChild(card);
+      }
+    }
+    updateHUD();
+  }
+  function tag(kind,txt){ return '<div class="eff-'+(kind==='pro'?'pro':'con')+'">'+(kind==='pro'?'▲ ':'▼ ')+txt+'</div>'; }
+  btnInv.addEventListener('click',()=>{ audioInit(); invScreen.classList.contains('hide')?openInv():closeInv(); });
+  document.getElementById('invClose').addEventListener('click',closeInv);
+  window.addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='i'){ audioInit(); invScreen.classList.contains('hide')?openInv():closeInv(); } });
+
   // ---------- Start / End ----------
   const startScreen=document.getElementById('startScreen');
   const endScreen=document.getElementById('endScreen');
@@ -1072,9 +1287,12 @@
       running:true, over:false, hp:100, rad:0, bolts:8, meds:2, artifacts:0,
       ammo:40, kills:0, shootCD:0, firing:false,
       dist:0, hurtCD:0, detNext:0, hpDrain:0, _exitHintT:0,
+      inventory:[], equipped:[], _invId:1, maxHp:100, paused:false,
+      mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     });
     genWorld();
     updateHUD();
+    invScreen.classList.add('hide');
     startScreen.classList.add('hide');
     endScreen.classList.add('hide');
   }
