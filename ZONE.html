@@ -88,6 +88,17 @@
   .btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #000; background:radial-gradient(circle at 40% 35%,#3b4a2a,#1a2011); }
   .btn .ico{ font-size:22px; }
   .btn .n{ font-size:15px; color:var(--amber); font-weight:bold; }
+  .btn.tiny{ width:58px; height:58px; }
+  .btn.tiny .ico{ font-size:18px; }
+  .btn.tiny .n{ font-size:13px; }
+  .btn.fire{
+    width:86px; height:86px;
+    background:radial-gradient(circle at 40% 35%,#5a2320,#2a0f0d);
+    border-color:#a0463c;
+    box-shadow:0 3px 0 #000, inset 0 1px 2px #ffffff18, 0 0 20px #c0392b44;
+  }
+  .btn.fire:active{ background:radial-gradient(circle at 40% 35%,#7a302a,#3a1512); }
+  .btn.fire .ico{ font-size:28px; }
 
   /* ===== Overlays ===== */
   .screen{
@@ -144,6 +155,7 @@
   </div>
   <div class="top-right">
     <div class="art-count">✦ <span id="artNum">0</span></div>
+    <div><span class="k" id="ammoNum">40</span> патронов</div>
     <div><span class="k" id="boltNum">8</span> болтов</div>
     <div style="font-size:11px;color:#8a9877" id="distTxt">выход: —</div>
   </div>
@@ -156,8 +168,9 @@
 <!-- Touch -->
 <div id="joyZone"><div id="joyBase"><div id="joyStick"></div></div></div>
 <div id="btns">
-  <div class="btn" id="btnBolt"><span class="ico">🔩</span><span class="n" id="btnBoltN">8</span></div>
-  <div class="btn" id="btnMed"><span class="ico">💊</span><span class="n" id="btnMedN">2</span></div>
+  <div class="btn tiny" id="btnMed"><span class="ico">💊</span><span class="n" id="btnMedN">2</span></div>
+  <div class="btn tiny" id="btnBolt"><span class="ico">🔩</span><span class="n" id="btnBoltN">8</span></div>
+  <div class="btn fire" id="btnFire"><span class="ico">🔫</span><span class="n" id="btnFireN">40</span></div>
 </div>
 
 <div id="toast"></div>
@@ -172,10 +185,11 @@
   </div>
   <button class="cta" id="startBtn">В ЗОНУ →</button>
   <div class="legend">
-    <b>Джойстик</b> (левый низ) — движение &nbsp;·&nbsp; <b>🔩</b> — кинуть болт (проявить аномалии)<br>
-    <b>💊</b> — аптечка (лечит + снижает радиацию) &nbsp;·&nbsp; клавиатура: <b>WASD</b>, <b>Пробел</b>, <b>H</b><br>
-    <span style="color:#c9a227">✦ артефакты</span> лежат рядом с аномалиями ·
-    держись подальше от <span style="color:#a8ff33">зелёных пятен</span>
+    <b>Джойстик</b> (левый низ) — движение и прицел &nbsp;·&nbsp; <b>🔫</b> — стрелять (держи для очереди)<br>
+    <b>🔩</b> — болт (проявить аномалии) &nbsp;·&nbsp; <b>💊</b> — аптечка &nbsp;·&nbsp; ПК: <b>WASD</b>, <b>F</b>, <b>Пробел</b>, <b>H</b><br>
+    <span style="color:#c9a227">✦ артефакты</span> у аномалий · бей <span style="color:#e08a7a">мутантов</span> ·
+    бери <span style="color:#c9a227">ящики с патронами</span> · беги от <span style="color:#a8ff33">радиации</span><br>
+    <span style="color:#8a9877">цель: собрать хотя бы 1 артефакт и дойти до <b style="color:#5cc8ff">ВЫХОДА</b></span>
   </div>
 </div>
 
@@ -184,6 +198,7 @@
   <h1 id="endTitle">ВЫХОД</h1>
   <div class="sub" id="endSub">ЗОНА ОТПУСТИЛА ТЕБЯ</div>
   <div class="big-stat">Артефактов собрано: <span class="v" id="endArt">0</span></div>
+  <div class="big-stat">Мутантов убито: <span class="v" id="endKills">0</span></div>
   <div class="big-stat">Пройдено метров: <span class="v" id="endDist">0</span></div>
   <div class="big-stat" id="endRankLine">Ранг: <span class="v" id="endRank">—</span></div>
   <button class="cta small" id="restartBtn" style="margin-top:28px">СНОВА В ЗОНУ</button>
@@ -222,9 +237,10 @@
   const state = {
     running:false, over:false,
     px:0, py:0, pvx:0, pvy:0, facing:0, walkPhase:0, moving:false,
-    hp:100, rad:0, bolts:8, meds:2, artifacts:0,
-    dist:0, lastX:0, lastY:0,
+    hp:100, rad:0, bolts:8, meds:2, artifacts:0, ammo:40, kills:0,
+    dist:0, lastX:0, lastY:0, shootCD:0, firing:false,
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
+    bullets:[], mutants:[], ammoBoxes:[],
     detBeep:0, detNext:0, hurtCD:0,
   };
 
@@ -269,11 +285,18 @@
     {name:'Колобок',  col:'#8fbf3f', glow:'#c8ff5a'},
     {name:'Кристалл', col:'#b892ff', glow:'#e0ccff'},
   ];
+  // mutant kinds
+  const MUT_TYPES = {
+    dog:   {hp:16, dmg:7,  spd:104, r:10, det:320, name:'Слепой пёс', col:'#5b4a33', dark:'#3a2f20'},
+    flesh: {hp:32, dmg:12, spd:74,  r:13, det:250, name:'Плоть',      col:'#7a4444', dark:'#4a2626'},
+    boar:  {hp:58, dmg:22, spd:64,  r:16, det:230, name:'Кабан',      col:'#4d3d2b', dark:'#2e2418'},
+  };
 
   function genWorld(){
     state.anomalies.length=0; state.artItems.length=0;
     state.radzones.length=0; state.props.length=0;
     state.bolts_flying.length=0; state.particles.length=0;
+    state.bullets.length=0; state.mutants.length=0; state.ammoBoxes.length=0;
 
     // spawn player near one corner, exit at opposite
     state.px = 240; state.py = 240;
@@ -319,6 +342,31 @@
       const kind = Math.random()<0.5?'tree':(Math.random()<0.6?'rock':'debris');
       state.props.push({x:px,y:py,kind,r:kind==='tree'?14:kind==='rock'?16:10, s:rnd(0.8,1.3)});
     }
+    // mutants — dogs spawn in small packs
+    const mtypes=Object.keys(MUT_TYPES);
+    for(let i=0;i<11;i++){
+      let mx,my,tries=0;
+      do{ mx=rnd(200,W-100); my=rnd(200,H-100); tries++; }
+      while(dist(mx,my,state.px,state.py)<500 && tries<40);
+      const t = Math.random()<0.5?'dog':(Math.random()<0.7?'flesh':'boar');
+      const packN = t==='dog'? 1+((Math.random()*3)|0) : 1;
+      for(let k=0;k<packN;k++) spawnMutant(mx+rnd(-40,40), my+rnd(-40,40), t);
+    }
+    // ammo boxes scattered around
+    for(let i=0;i<9;i++){
+      let bx,by,tries=0;
+      do{ bx=rnd(150,W-100); by=rnd(150,H-100); tries++; }
+      while(dist(bx,by,state.px,state.py)<260 && tries<30);
+      state.ammoBoxes.push({x:bx,y:by,amount:20,taken:false});
+    }
+  }
+  function spawnMutant(x,y,t){
+    const M=MUT_TYPES[t];
+    state.mutants.push({
+      x, y, t, hp:M.hp, maxhp:M.hp, vx:0, vy:0,
+      hitCD:0, wanderAng:Math.random()*6.28, wanderT:rnd(0.5,2), alerted:false,
+      phase:Math.random()*6.28, hurtFlash:0
+    });
   }
 
   // ---------- Input ----------
@@ -328,8 +376,11 @@
     if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase())) e.preventDefault();
     if(e.key===' ') throwBolt();
     if(e.key.toLowerCase()==='h') useMed();
+    if(e.key.toLowerCase()==='f') state.firing=true;
   });
-  window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
+  window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false;
+    if(e.key.toLowerCase()==='f') state.firing=false;
+  });
 
   // Virtual joystick
   const joyZone=document.getElementById('joyZone');
@@ -373,6 +424,13 @@
   document.getElementById('btnBolt').addEventListener('click',throwBolt);
   document.getElementById('btnMed').addEventListener('touchstart',e=>{e.preventDefault();audioInit();useMed();},{passive:false});
   document.getElementById('btnMed').addEventListener('click',useMed);
+  // fire button — hold to keep firing
+  const btnFire=document.getElementById('btnFire');
+  btnFire.addEventListener('touchstart',e=>{e.preventDefault();audioInit();state.firing=true;shoot();},{passive:false});
+  btnFire.addEventListener('touchend',e=>{e.preventDefault();state.firing=false;},{passive:false});
+  btnFire.addEventListener('touchcancel',()=>{state.firing=false;});
+  btnFire.addEventListener('mousedown',()=>{audioInit();state.firing=true;shoot();});
+  window.addEventListener('mouseup',()=>{state.firing=false;});
 
   // ---------- Actions ----------
   function throwBolt(){
@@ -395,6 +453,32 @@
     toast('Аптечка использована');
     beep(660,0.12,'sine',0.06); beep(880,0.1,'sine',0.05);
     updateHUD();
+  }
+  const SHOOT_RATE=0.16; // seconds between shots
+  function shoot(){
+    if(!state.running||state.over) return;
+    if(state.shootCD>0) return;
+    if(state.ammo<=0){ toast('Магазин пуст'); beep(160,0.06,'square',0.05); state.shootCD=0.3; return; }
+    state.ammo--; state.shootCD=SHOOT_RATE;
+    let dx=Math.cos(state.facing), dy=Math.sin(state.facing);
+    if(joyActive && (joyDx||joyDy)){ const d=Math.hypot(joyDx,joyDy); dx=joyDx/d; dy=joyDy/d; }
+    const spread=rnd(-0.05,0.05), ca=Math.cos(spread), sa=Math.sin(spread);
+    const bx=dx*ca-dy*sa, by=dx*sa+dy*ca;
+    const spd=520;
+    state.bullets.push({x:state.px+bx*10, y:state.py-6+by*10, vx:bx*spd, vy:by*spd, life:0.9});
+    // muzzle flash
+    state.particles.push({x:state.px+bx*14, y:state.py-6+by*14, vx:bx*2, vy:by*2, life:0.06, col:'#ffe066', r:4});
+    beep(240,0.05,'square',0.05); noiseBurst(0.04,0.05);
+    updateHUD();
+  }
+  // direct damage (used by mutants — no global cooldown, each attacker self-limits)
+  function damagePlayer(amount,msg){
+    state.hp=clamp(state.hp-amount,0,100);
+    hurtflash.style.transition='none'; hurtflash.style.opacity='0.45';
+    requestAnimationFrame(()=>{ hurtflash.style.transition='opacity .4s'; hurtflash.style.opacity='0'; });
+    beep(130,0.12,'sawtooth',0.06);
+    if(msg) toast(msg);
+    if(state.hp<=0) endGame(false);
   }
 
   // ---------- Toast ----------
@@ -464,6 +548,8 @@
 
     // ----- timers -----
     if(state.hurtCD>0) state.hurtCD-=dt;
+    if(state.shootCD>0) state.shootCD-=dt;
+    if(state.firing) shoot();
 
     // ----- anomalies -----
     let nearestAnom=1e9;
@@ -536,6 +622,88 @@
       if(b.life<=0) state.bolts_flying.splice(i,1);
     }
 
+    // ----- bullets -----
+    for(let i=state.bullets.length-1;i>=0;i--){
+      const b=state.bullets[i];
+      b.x+=b.vx*dt; b.y+=b.vy*dt; b.life-=dt;
+      let dead=b.life<=0 || b.x<0||b.x>W||b.y<0||b.y>H;
+      // hit mutants
+      if(!dead){
+        for(const m of state.mutants){
+          const M=MUT_TYPES[m.t];
+          if(dist(b.x,b.y,m.x,m.y) < M.r+3){
+            m.hp-=22; m.hurtFlash=0.12; m.alerted=true;
+            spawnBurst(b.x,b.y,'#a83232',5);
+            beep(200,0.03,'square',0.03);
+            dead=true; break;
+          }
+        }
+      }
+      // hit solid props
+      if(!dead){
+        for(const p of state.props){
+          if(p.kind==='debris') continue;
+          if(dist(b.x,b.y,p.x,p.y)<p.r){ spawnBurst(b.x,b.y,'#8a7a5a',3); dead=true; break; }
+        }
+      }
+      if(dead) state.bullets.splice(i,1);
+    }
+
+    // ----- mutants -----
+    for(let i=state.mutants.length-1;i>=0;i--){
+      const m=state.mutants[i]; const M=MUT_TYPES[m.t];
+      if(m.hurtFlash>0) m.hurtFlash-=dt;
+      if(m.hitCD>0) m.hitCD-=dt;
+      m.phase+=dt*8;
+      if(m.hp<=0){
+        // death
+        spawnBurst(m.x,m.y,'#7a2020',18);
+        state.kills++;
+        beep(150,0.18,'sawtooth',0.06); noiseBurst(0.14,0.06);
+        if(Math.random()<0.35) state.ammoBoxes.push({x:m.x,y:m.y,amount:12,taken:false,drop:true});
+        state.mutants.splice(i,1); continue;
+      }
+      const d=dist(state.px,state.py,m.x,m.y);
+      if(d<M.det) m.alerted=true;
+      else if(d>M.det*1.6) m.alerted=false;
+      let mvx=0,mvy=0;
+      if(m.alerted){
+        const ang=Math.atan2(state.py-m.y, state.px-m.x);
+        mvx=Math.cos(ang); mvy=Math.sin(ang);
+      } else {
+        m.wanderT-=dt;
+        if(m.wanderT<=0){ m.wanderAng=Math.random()*6.28; m.wanderT=rnd(0.8,2.4); }
+        mvx=Math.cos(m.wanderAng)*0.4; mvy=Math.sin(m.wanderAng)*0.4;
+      }
+      const sp = M.spd*(m.alerted?1:0.5);
+      let mnx=m.x+mvx*sp*dt, mny=m.y+mvy*sp*dt;
+      // prop collision (avoid walking through trees/rocks)
+      for(const p of state.props){
+        if(p.kind==='debris') continue;
+        if(dist(mnx,mny,p.x,p.y) < p.r+M.r){
+          const a=Math.atan2(mny-p.y,mnx-p.x);
+          mnx=p.x+Math.cos(a)*(p.r+M.r); mny=p.y+Math.sin(a)*(p.r+M.r);
+        }
+      }
+      m.x=clamp(mnx,16,W-16); m.y=clamp(mny,16,H-16);
+      m.vx=mvx; m.vy=mvy;
+      // contact damage
+      if(d < M.r+11 && m.hitCD<=0){
+        m.hitCD=0.8;
+        damagePlayer(M.dmg, M.name+' атакует!');
+      }
+    }
+
+    // ----- ammo boxes -----
+    for(const box of state.ammoBoxes){
+      if(box.taken) continue;
+      if(dist(state.px,state.py,box.x,box.y)<24){
+        box.taken=true; state.ammo+=box.amount;
+        toast('+'+box.amount+' патронов');
+        beep(600,0.06,'square',0.05); beep(760,0.06,'square',0.04);
+      }
+    }
+
     // ----- particles -----
     for(let i=state.particles.length-1;i>=0;i--){
       const p=state.particles[i];
@@ -545,10 +713,20 @@
 
     // ----- exit -----
     const exd=dist(state.px,state.py,EXIT.x,EXIT.y);
-    document.getElementById('distTxt').textContent = 'выход: '+Math.round(exd/10)+'м';
-    if(exd<40){
+    const distEl=document.getElementById('distTxt');
+    if(state.artifacts>0){
+      distEl.textContent = 'выход: '+Math.round(exd/10)+'м';
+      distEl.style.color='#8a9877';
+    } else {
+      distEl.textContent = 'выход: нужен ✦';
+      distEl.style.color='#c9a227';
+    }
+    if(exd<52){
       if(state.artifacts>0) endGame(true);
-      else toast('Выход рядом — но без артефактов уходить незачем');
+      else if(!state._exitHintT || now()>state._exitHintT){
+        state._exitHintT=now()+2500;
+        toast('Нужен хотя бы 1 артефакт ✦, чтобы уйти');
+      }
     }
 
     updateHUD();
@@ -587,9 +765,11 @@
     document.getElementById('hpBar').style.width=state.hp+'%';
     document.getElementById('radBar').style.width=state.rad+'%';
     document.getElementById('artNum').textContent=state.artifacts;
+    document.getElementById('ammoNum').textContent=state.ammo;
     document.getElementById('boltNum').textContent=state.bolts;
     document.getElementById('btnBoltN').textContent=state.bolts;
     document.getElementById('btnMedN').textContent=state.meds;
+    document.getElementById('btnFireN').textContent=state.ammo;
   }
 
   // ================= RENDER =================
@@ -646,6 +826,19 @@
       ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+10,6,3,0,0,6.29); ctx.fill();
     }
 
+    // ammo boxes
+    for(const box of state.ammoBoxes){
+      if(box.taken) continue;
+      const sx=box.x+ox, sy=box.y+oy;
+      if(sx<-20||sx>VW+20||sy<-20||sy>VH+20) continue;
+      ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+7,8,3,0,0,6.29); ctx.fill();
+      ctx.fillStyle='#3a4a26'; ctx.fillRect(sx-8,sy-6,16,12);
+      ctx.fillStyle='#556b32'; ctx.fillRect(sx-8,sy-6,16,3);
+      ctx.fillStyle='#c9a227'; ctx.fillRect(sx-2,sy-4,4,8); // latch
+      ctx.fillStyle='#e0c86a'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
+      ctx.fillText('АМ', sx, sy+2);
+    }
+
     // anomalies
     for(const a of state.anomalies){
       const sx=a.x+ox, sy=a.y+oy;
@@ -658,6 +851,21 @@
       const sx=b.x+ox, sy=b.y+oy - b.z;
       ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(b.x+ox-2,b.y+oy-1,4,2);
       ctx.fillStyle='#c8d0bc'; ctx.fillRect(sx-2,sy-2,4,4);
+    }
+
+    // mutants
+    for(const m of state.mutants){
+      const sx=m.x+ox, sy=m.y+oy;
+      if(sx<-40||sx>VW+40||sy<-40||sy>VH+40) continue;
+      drawMutant(sx,sy,m);
+    }
+
+    // player bullets
+    for(const b of state.bullets){
+      const sx=b.x+ox, sy=b.y+oy;
+      ctx.strokeStyle='#ffe066'; ctx.lineWidth=2; ctx.beginPath();
+      ctx.moveTo(sx,sy); ctx.lineTo(sx-b.vx*0.012, sy-b.vy*0.012); ctx.stroke();
+      ctx.fillStyle='#fff6c8'; ctx.fillRect(sx-1.5,sy-1.5,3,3);
     }
 
     // player
@@ -787,6 +995,49 @@
     ctx.restore();
   }
 
+  function drawMutant(sx,sy,m){
+    const M=MUT_TYPES[m.t];
+    const mv=Math.hypot(m.vx,m.vy);
+    const wob=mv>0.05? Math.sin(m.phase)*2 : 0;
+    // shadow
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath();
+    ctx.ellipse(sx,sy+M.r*0.7,M.r*0.9,M.r*0.4,0,0,6.29); ctx.fill();
+    const face=Math.atan2(m.vy||0.001,m.vx||0.001);
+    const fx=Math.cos(face), fy=Math.sin(face);
+    const body = m.hurtFlash>0? '#ff8a7a' : M.col;
+    const dark = m.hurtFlash>0? '#ffb0a0' : M.dark;
+    ctx.save(); ctx.translate(sx,sy);
+    if(m.t==='dog'){
+      // low quadruped
+      ctx.fillStyle=dark;
+      ctx.fillRect(-2+wob,3,3,4); ctx.fillRect(3-wob,3,3,4); // legs
+      ctx.fillStyle=body; ctx.fillRect(-7,-4,14,8);          // body
+      ctx.fillStyle=dark; ctx.fillRect(fx*6-3,fy*3-3,6,6);   // head
+      ctx.fillStyle='#c0392b'; ctx.fillRect(fx*7-1,fy*3-2,2,2); // eye
+      ctx.fillStyle=body; ctx.fillRect(-9,-2,3,3);           // tail
+    } else if(m.t==='boar'){
+      ctx.fillStyle=dark; ctx.fillRect(-6,6,4,4); ctx.fillRect(2,6,4,4);
+      ctx.fillStyle=body; ctx.fillRect(-11,-7,22,14);
+      ctx.fillStyle=dark; ctx.fillRect(-11,-7,22,4);
+      ctx.fillStyle=dark; ctx.fillRect(fx*10-4,fy*6-4,8,8);  // snout head
+      ctx.fillStyle='#e8e0c0'; ctx.fillRect(fx*13-1,fy*6-3,2,2); // tusk
+      ctx.fillStyle='#c0392b'; ctx.fillRect(fx*9-3,fy*6-3,2,2);
+    } else { // flesh — hunched mutant
+      ctx.fillStyle=dark; ctx.fillRect(-4,5,3,5); ctx.fillRect(1,5,3,5);
+      ctx.fillStyle=body; ctx.fillRect(-7,-6,14,12);
+      ctx.fillStyle=dark; ctx.fillRect(-7,-6,14,3);
+      ctx.fillStyle='#9a5a5a'; ctx.fillRect(-3,-3,6,4);      // exposed flesh
+      ctx.fillStyle=dark; ctx.fillRect(fx*6-3,fy*5-4,7,6);   // head
+      ctx.fillStyle='#ffd24a'; ctx.fillRect(fx*7-2,fy*5-2,2,2);
+    }
+    ctx.restore();
+    // health bar when hurt
+    if(m.hp<m.maxhp){
+      ctx.fillStyle='#000a'; ctx.fillRect(sx-9,sy-M.r-9,18,3);
+      ctx.fillStyle='#c0392b'; ctx.fillRect(sx-9,sy-M.r-9,18*(m.hp/m.maxhp),3);
+    }
+  }
+
   function drawExitArrow(ex,ey){
     // if exit off-screen, draw directional arrow at edge
     const onScreen = ex>0&&ex<VW&&ey>0&&ey<VH;
@@ -819,7 +1070,8 @@
     audioInit(); if(AC&&AC.state==='suspended') AC.resume();
     Object.assign(state,{
       running:true, over:false, hp:100, rad:0, bolts:8, meds:2, artifacts:0,
-      dist:0, hurtCD:0, detNext:0, hpDrain:0,
+      ammo:40, kills:0, shootCD:0, firing:false,
+      dist:0, hurtCD:0, detNext:0, hpDrain:0, _exitHintT:0,
     });
     genWorld();
     updateHUD();
@@ -833,6 +1085,7 @@
     document.getElementById('endSub').textContent = won?'ЗОНА ОТПУСТИЛА ТЕБЯ':'ЗОНА ЗАБРАЛА ТЕБЯ';
     document.getElementById('endTitle').style.color = won?'var(--toxic)':'var(--danger)';
     document.getElementById('endArt').textContent=state.artifacts;
+    document.getElementById('endKills').textContent=state.kills;
     document.getElementById('endDist').textContent=Math.round(state.dist/10);
     // rank
     let rank='Новичок';
