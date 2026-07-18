@@ -213,6 +213,23 @@
   .art-card .legtag{ position:absolute; bottom:8px; right:8px; font-size:8px; letter-spacing:1px;
     color:#ff9ab6; border:1px solid #ff3b6b66; padding:1px 5px; border-radius:3px; }
   .inv-empty{ grid-column:1/-1; text-align:center; color:#5a6a48; font-size:13px; padding:24px; }
+
+  .inv-suits{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+  .suit-card{ pointer-events:auto; border:2px solid #2f3a1e; border-radius:8px; padding:10px;
+    background:#101609; display:flex; gap:10px; align-items:center; position:relative; cursor:pointer; }
+  .suit-card:active{ transform:scale(.98); }
+  .suit-card.worn{ border-color:var(--amber); background:#1a2210; box-shadow:0 0 0 1px var(--amber) inset; }
+  .suit-card.locked{ opacity:.5; cursor:default; filter:grayscale(.4); }
+  .suit-swatch{ width:26px; height:34px; border-radius:4px; flex:none; border:1px solid #000;
+    display:flex; flex-direction:column; overflow:hidden; }
+  .suit-swatch .sw-hood{ height:40%; } .suit-swatch .sw-body{ height:60%; }
+  .suit-info{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .suit-info .snm{ font-size:13px; color:var(--ink); font-weight:bold; }
+  .suit-info .sef{ font-size:10px; color:#8fd04a; }
+  .suit-info .slk{ font-size:10px; color:#8a6a4a; }
+  .suit-card .wtag{ position:absolute; top:8px; right:8px; font-size:9px; letter-spacing:1px;
+    color:#191600; background:var(--amber); padding:1px 6px; border-radius:3px; display:none; }
+  .suit-card.worn .wtag{ display:block; }
 </style>
 </head>
 <body>
@@ -265,7 +282,9 @@
       <div class="inv-active-title">АКТИВНЫЕ ЭФФЕКТЫ</div>
       <div class="inv-active" id="invActive"><span class="muted">ничего не экипировано</span></div>
     </div>
-    <div class="inv-grid-title">СОБРАНО</div>
+    <div class="inv-grid-title">ГАРДЕРОБ — КОСТЮМЫ</div>
+    <div class="inv-suits" id="invSuits"></div>
+    <div class="inv-grid-title">АРТЕФАКТЫ</div>
     <div class="inv-grid" id="invGrid"></div>
   </div>
 </div>
@@ -282,9 +301,9 @@
   <div class="legend">
     <b>Джойстик</b> (левый низ) — движение и прицел &nbsp;·&nbsp; <b>🔫</b> — стрелять (держи для очереди)<br>
     <b>🔩</b> — болт (проявить аномалии) &nbsp;·&nbsp; <b>💊</b> — аптечка &nbsp;·&nbsp; ПК: <b>WASD</b>, <b>F</b>, <b>Пробел</b>, <b>H</b><br>
-    <span style="color:#c9a227">✦ артефакты</span> у аномалий · <b>🎒</b> рюкзак — экипируй ради баффов ·
+    <span style="color:#c9a227">✦ артефакты</span> у аномалий · <b>🎒</b> рюкзак — баффы и <span style="color:#8fbfe0">костюмы</span> ·
     бей <span style="color:#e08a7a">мутантов</span><br>
-    подбирай <span style="color:#e8e8e0">💊 аптечки</span> и <span style="color:#c9a227">ящики патронов</span> · беги от <span style="color:#a8ff33">радиации</span><br>
+    находи <span style="color:#8fbfe0">костюмы</span>, <span style="color:#e8e8e0">💊 аптечки</span>, <span style="color:#c9a227">патроны</span> · беги от <span style="color:#a8ff33">радиации</span><br>
     <span style="color:#8a9877">цель: собрать хотя бы 1 артефакт и дойти до <b style="color:#5cc8ff">ВЫХОДА</b></span>
   </div>
 </div>
@@ -336,7 +355,8 @@
     hp:100, rad:0, bolts:8, meds:2, artifacts:0, ammo:40, kills:0,
     dist:0, lastX:0, lastY:0, shootCD:0, firing:false,
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
-    bullets:[], mutants:[], ammoBoxes:[], medKits:[],
+    bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[],
+    suit:'newcomer', suits:['newcomer'],
     inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
     mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     detBeep:0, detNext:0, hurtCD:0,
@@ -398,16 +418,20 @@
       eff:{radResist:1.0, spdMul:1.5, maxHpBonus:100},
       pros:['100% защита от радиации','Скорость ×1.5','+100% макс. HP'], cons:[]},
   ];
+  function applyEff(m,e){
+    if(!e) return;
+    m.regen+=e.regen||0; m.radPassive+=e.radPassive||0;
+    m.dmgMul*=(e.dmgMul||1); m.spdMul*=(e.spdMul||1);
+    m.radResist=Math.min(1.0, m.radResist+(e.radResist||0));
+    m.maxHpBonus+=e.maxHpBonus||0;
+    m.resist=Math.min(0.7, m.resist+(e.resist||0));
+  }
   function computeMods(){
     const m={regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0};
+    const suit=SUITS[state.suit]; if(suit) applyEff(m, suit.eff);
     for(const id of state.equipped){
       const it=state.inventory.find(x=>x.id===id); if(!it) continue;
-      const e=it.type.eff;
-      m.regen+=e.regen||0; m.radPassive+=e.radPassive||0;
-      m.dmgMul*=(e.dmgMul||1); m.spdMul*=(e.spdMul||1);
-      m.radResist=Math.min(1.0, m.radResist+(e.radResist||0));
-      m.maxHpBonus+=e.maxHpBonus||0;
-      m.resist=Math.min(0.7, m.resist+(e.resist||0));
+      applyEff(m, it.type.eff);
     }
     return m;
   }
@@ -435,13 +459,41 @@
     flesh: {hp:32, dmg:12, spd:74,  r:13, det:250, name:'Плоть',      col:'#7a4444', dark:'#4a2626'},
     boar:  {hp:58, dmg:22, spd:64,  r:16, det:230, name:'Кабан',      col:'#4d3d2b', dark:'#2e2418'},
   };
+  // suits — cosmetic appearance (palette) + a small signature bonus
+  const SUITS = {
+    newcomer: {
+      id:'newcomer', name:'Комбинезон новичка', short:'Новичок', eff:{},
+      pros:['Базовое снаряжение'],
+      pal:{hood:'#3d5a2a',hoodHi:'#557538',hoodShade:'#2a3f1c',face:'#0e1512',mask:'#0a100c',
+           eye:'#ffd24a',body:'#3a5a2c',bodyHi:'#4c7038',bodyShade:'#274420',accent:'#e08a2a',
+           hand:'#c8b088',legs:'#243a1a',boot:'#152510'} },
+    wanderer: {
+      id:'wanderer', name:'Плащ бродяги', short:'Бродяга', eff:{spdMul:1.12},
+      pros:['Скорость ×1.12'],
+      pal:{hood:'#aeb6c2',hoodHi:'#cfd6e0',hoodShade:'#7d8794',face:'#141a20',mask:'#0e1319',
+           eye:'#ffffff',body:'#212832',bodyHi:'#2d3642',bodyShade:'#161b23',accent:'#e07a2a',
+           hand:'#b8c0cc',legs:'#39424e',boot:'#20262e'} },
+    antirad: {
+      id:'antirad', name:'Антирад «СЕВА»', short:'Антирад', eff:{radResist:0.5}, visor:true,
+      pros:['Защита от радиации 50%'],
+      pal:{hood:'#d24a32',hoodHi:'#ec6640',hoodShade:'#a5331f',visor:'#8fded0',visorHi:'#c8fff2',
+           body:'#e0512e',bodyHi:'#f56d3c',bodyShade:'#b83c1f',accent:'#f2c94a',
+           hand:'#f2d24a',legs:'#2a2f45',boot:'#181c2c'} },
+    merc: {
+      id:'merc', name:'Костюм наёмника', short:'Наёмник', eff:{resist:0.2},
+      pros:['Урон аномалий/мутантов −20%'],
+      pal:{hood:'#3f6a8a',hoodHi:'#5a8aad',hoodShade:'#2c4d66',face:'#0e1418',mask:'#0a0f12',
+           eye:'#ffffff',body:'#2e5a4a',bodyHi:'#3c6f59',bodyShade:'#204034',accent:'#e07a2a',
+           hand:'#c8b088',legs:'#1a2430',boot:'#101820'} },
+  };
+  const SUIT_ORDER = ['newcomer','wanderer','antirad','merc'];
 
   function genWorld(){
     state.anomalies.length=0; state.artItems.length=0;
     state.radzones.length=0; state.props.length=0;
     state.bolts_flying.length=0; state.particles.length=0;
     state.bullets.length=0; state.mutants.length=0; state.ammoBoxes.length=0;
-    state.medKits.length=0;
+    state.medKits.length=0; state.suitPickups.length=0;
 
     // spawn player near one corner, exit at opposite
     state.px = 240; state.py = 240;
@@ -522,6 +574,13 @@
       state.medKits.push({x:clamp(state.px+Math.cos(ang)*d,80,W-80),
                           y:clamp(state.py+Math.sin(ang)*d,80,H-80), amount:1, taken:false});
     }
+    // suits to find — the 3 non-starter suits, scattered around the Zone
+    ['wanderer','antirad','merc'].forEach((sid,i)=>{
+      let sx,sy,tries=0;
+      do{ sx=rnd(200,W-150); sy=rnd(200,H-150); tries++; }
+      while(dist(sx,sy,state.px,state.py)<420 && tries<40);
+      state.suitPickups.push({x:sx,y:sy,suit:sid,taken:false});
+    });
   }
   function spawnMutant(x,y,t){
     const M=MUT_TYPES[t];
@@ -886,6 +945,19 @@
       }
     }
 
+    // ----- suit pickups -----
+    for(const sp of state.suitPickups){
+      if(sp.taken) continue;
+      if(dist(state.px,state.py,sp.x,sp.y)<26){
+        sp.taken=true;
+        if(!state.suits.includes(sp.suit)) state.suits.push(sp.suit);
+        spawnBurst(sp.x,sp.y,SUITS[sp.suit].pal.hoodHi,20);
+        toast('Найден костюм: '+SUITS[sp.suit].name+' (🎒 надеть)');
+        pulseInvBtn();
+        beep(520,0.08,'triangle',0.05); beep(700,0.1,'triangle',0.05);
+      }
+    }
+
     // ----- particles -----
     for(let i=state.particles.length-1;i>=0;i--){
       const p=state.particles[i];
@@ -1041,6 +1113,29 @@
       ctx.fillRect(sx-1.5,sy-4+bob,3,8); ctx.fillRect(sx-4,sy-1.5+bob,8,3);
     }
 
+    // suit pickups — mini mannequin in the suit's colours
+    for(const sp of state.suitPickups){
+      if(sp.taken) continue;
+      const sx=sp.x+ox, sy=sp.y+oy;
+      if(sx<-24||sx>VW+24||sy<-24||sy>VH+24) continue;
+      const S=SUITS[sp.suit], P=S.pal, bob=Math.sin(now()/380+sp.x)*1.5;
+      // findable glow
+      const gg=ctx.createRadialGradient(sx,sy,0,sx,sy,20);
+      gg.addColorStop(0,P.hoodHi+'66'); gg.addColorStop(1,P.hoodHi+'00');
+      ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(sx,sy,20,0,6.29); ctx.fill();
+      ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+9,7,3,0,0,6.29); ctx.fill();
+      const y=sy+bob;
+      // stand + mini torso + hood
+      ctx.fillStyle='#2a2a24'; ctx.fillRect(sx-1,y+4,2,5); ctx.fillRect(sx-4,y+8,8,2);
+      ctx.fillStyle=P.body;  ctx.fillRect(sx-4,y-3,8,8);
+      ctx.fillStyle=P.bodyHi;ctx.fillRect(sx-4,y-3,2,8);
+      ctx.fillStyle=P.hood;  ctx.fillRect(sx-3,y-9,6,6);
+      ctx.fillStyle=P.hoodHi;ctx.fillRect(sx-3,y-9,2,6);
+      if(S.visor){ ctx.fillStyle=P.visor; ctx.fillRect(sx-2,y-8,4,4); }
+      else { ctx.fillStyle=P.face; ctx.fillRect(sx-2,y-8,4,4);
+             ctx.fillStyle=P.eye; ctx.fillRect(sx-2,y-7,1,1); ctx.fillRect(sx+1,y-7,1,1); }
+    }
+
     // anomalies
     for(const a of state.anomalies){
       const sx=a.x+ox, sy=a.y+oy;
@@ -1174,29 +1269,58 @@
   }
 
   function drawPlayer(sx,sy){
+    const suit=SUITS[state.suit]||SUITS.newcomer, p=suit.pal;
     const bob=state.moving? Math.abs(Math.sin(state.walkPhase))*2 : 0;
     sy-=bob;
     // shadow
-    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(sx,sy+11+bob,7,3,0,0,6.29); ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(sx,sy+13+bob,8,3,0,0,6.29); ctx.fill();
     ctx.save(); ctx.translate(sx,sy);
-    // face direction: flip legs a bit via facing
-    const legSwing = state.moving? Math.sin(state.walkPhase)*3 : 0;
+    const ls = state.moving? Math.round(Math.sin(state.walkPhase)*2) : 0;
+
     // legs
-    ctx.fillStyle='#2b2f22';
-    ctx.fillRect(-4,4,3,7+legSwing*0.3); ctx.fillRect(1,4,3,7-legSwing*0.3);
-    // body — green coat
-    ctx.fillStyle='#3a4a26'; ctx.fillRect(-5,-6,10,11);
-    ctx.fillStyle='#4a5c30'; ctx.fillRect(-5,-6,10,3);
-    // backpack
-    ctx.fillStyle='#5a4326'; ctx.fillRect(-6,-4,2,8);
-    // head + gas mask
-    ctx.fillStyle='#6b5a3f'; ctx.fillRect(-4,-13,8,8);
-    ctx.fillStyle='#1a1a14'; ctx.fillRect(-3,-11,6,4); // mask filter dark
-    ctx.fillStyle='#c9a227'; ctx.fillRect(-3,-10,2,2); ctx.fillRect(1,-10,2,2); // eyes glow
-    // facing indicator (gun/hand)
+    ctx.fillStyle=p.legs;
+    ctx.fillRect(-4+ls,5,3,7); ctx.fillRect(1-ls,5,3,7);
+    ctx.fillStyle=p.boot;
+    ctx.fillRect(-4+ls,10,4,3); ctx.fillRect(0-ls,10,4,3);
+
+    // arms
+    ctx.fillStyle=p.bodyShade;
+    ctx.fillRect(-8,-4,3,10); ctx.fillRect(5,-4,3,10);
+    ctx.fillStyle=p.accent;                       // cuffs
+    ctx.fillRect(-8,5,3,2); ctx.fillRect(5,5,3,2);
+    ctx.fillStyle=p.hand;                          // hands
+    ctx.fillRect(-8,7,3,2); ctx.fillRect(5,7,3,2);
+
+    // torso with vertical shading (light left / dark right)
+    ctx.fillStyle=p.body;     ctx.fillRect(-5,-6,10,12);
+    ctx.fillStyle=p.bodyHi;   ctx.fillRect(-5,-6,3,12);
+    ctx.fillStyle=p.bodyShade;ctx.fillRect(2,-6,3,12);
+    ctx.fillStyle=p.accent;   ctx.fillRect(-5,-6,10,1);   // collar line
+
+    // hood
+    ctx.fillStyle=p.hood;
+    ctx.fillRect(-5,-16,10,3); ctx.fillRect(-6,-14,12,9);
+    ctx.fillStyle=p.hoodHi;                        // highlight (top-left)
+    ctx.fillRect(-6,-14,2,9); ctx.fillRect(-5,-16,4,2);
+    ctx.fillStyle=p.hoodShade;                     // shade (right)
+    ctx.fillRect(4,-14,2,9); ctx.fillRect(2,-16,3,1);
+
+    if(suit.visor){
+      // sealed helmet with glass dome
+      ctx.fillStyle=p.visor;
+      ctx.fillRect(-3,-15,6,1); ctx.fillRect(-4,-14,8,7); ctx.fillRect(-3,-7,6,1);
+      ctx.fillStyle=p.visorHi; ctx.fillRect(-3,-13,3,3);
+    } else {
+      // dark face + gas mask + glowing eyes
+      ctx.fillStyle=p.face; ctx.fillRect(-4,-13,8,7);
+      ctx.fillStyle=p.mask; ctx.fillRect(-3,-9,6,3);
+      ctx.fillStyle=p.eye;  ctx.fillRect(-3,-12,2,2); ctx.fillRect(1,-12,2,2);
+    }
+
+    // facing indicator (weapon nub)
     const fx=Math.cos(state.facing), fy=Math.sin(state.facing);
-    ctx.fillStyle='#2a2a24';
-    ctx.fillRect(fx*7-2, fy*7-2, 4,4);
+    ctx.fillStyle='#1a1a16';
+    ctx.fillRect(fx*9-2, -1+fy*4, 4,3);
     ctx.restore();
   }
 
@@ -1356,6 +1480,8 @@
       if(m.radPassive) lines.push(tag('con','Излучение +'+m.radPassive.toFixed(1)+'/с'));
       invActiveEl.innerHTML=lines.join('');
     }
+    // wardrobe
+    renderSuits();
     // grid of collected
     invGridEl.innerHTML='';
     if(state.inventory.length===0){
@@ -1379,6 +1505,30 @@
     updateHUD();
   }
   function tag(kind,txt){ return '<div class="eff-'+(kind==='pro'?'pro':'con')+'">'+(kind==='pro'?'▲ ':'▼ ')+txt+'</div>'; }
+  const invSuitsEl=document.getElementById('invSuits');
+  function changeSuit(id){
+    if(!state.suits.includes(id) || state.suit===id) return;
+    state.suit=id; recomputeMods(); renderInv();
+    beep(500,0.07,'triangle',0.05); beep(720,0.08,'triangle',0.04);
+    toast('Надет костюм: '+SUITS[id].short);
+  }
+  function renderSuits(){
+    invSuitsEl.innerHTML='';
+    for(const id of SUIT_ORDER){
+      const S=SUITS[id], owned=state.suits.includes(id), worn=state.suit===id;
+      const card=document.createElement('div');
+      card.className='suit-card'+(worn?' worn':'')+(owned?'':' locked');
+      const eff = owned ? S.pros.map(p=>'<div class="sef">▲ '+p+'</div>').join('')
+                        : '<div class="slk">не найден — ищи в Зоне</div>';
+      card.innerHTML=
+        '<span class="wtag">НАДЕТ</span>'+
+        '<div class="suit-swatch"><div class="sw-hood" style="background:'+S.pal.hood+'"></div>'+
+        '<div class="sw-body" style="background:'+S.pal.body+'"></div></div>'+
+        '<div class="suit-info"><span class="snm">'+S.name+'</span>'+eff+'</div>';
+      if(owned) card.onclick=()=>changeSuit(id);
+      invSuitsEl.appendChild(card);
+    }
+  }
   btnInv.addEventListener('click',()=>{ audioInit(); invScreen.classList.contains('hide')?openInv():closeInv(); });
   document.getElementById('invClose').addEventListener('click',closeInv);
   window.addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='i'){ audioInit(); invScreen.classList.contains('hide')?openInv():closeInv(); } });
@@ -1393,6 +1543,7 @@
       ammo:40, kills:0, shootCD:0, firing:false,
       dist:0, hurtCD:0, detNext:0, hpDrain:0, _exitHintT:0,
       inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
+      suit:'newcomer', suits:['newcomer'],
       mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     });
     genWorld();
