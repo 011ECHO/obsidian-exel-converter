@@ -629,23 +629,40 @@
     {name:'Кордон', difficulty:0, hasBunker:true, suit:'wanderer',
       pos:{x:0.46,y:0.97}, links:['Свалка','Тёмная долина'],
       theme:{base:'#141a0e',t1:'#171e10',t2:'#1a2213',s1:'#0f150a',s2:'#20301680',border:'#2a3a18'},
-      layout:{ spawn:{x:600,y:2760}, vendorName:'Сидорович',
-        bunker:{x:600,y:2560,door:{x:600,y:2606}},
+      layout:{ spawn:{x:760,y:2680}, vendorName:'Сидорович',
+        bunker:{x:470,y:2560,door:{x:470,y:2606}},
+        exits:{ 'Свалка':{x:1500,y:150,entry:{x:1500,y:360}},
+                'Тёмная долина':{x:3060,y:1600,entry:{x:2820,y:1600}} },
         buildings:[
-          {x:460,y:2690,w:120,h:90,kind:'house'}, {x:730,y:2760,w:100,h:80,kind:'house'},
-          {x:430,y:2430,w:90,h:80,kind:'ruin'},   {x:790,y:2470,w:110,h:80,kind:'house'},
-          {x:600,y:860,w:190,h:140,kind:'barn',name:'ФЕРМА'}, {x:930,y:980,w:90,h:80,kind:'house'},
-          {x:1470,y:1500,w:150,h:110,kind:'checkpoint',name:'БЛОКПОСТ'},
-          {x:1710,y:1470,w:70,h:44,kind:'wreck'}, {x:1360,y:1460,w:44,h:44,kind:'tower'},
-          {x:1440,y:1640,w:130,h:16,kind:'wall'}, {x:1490,y:360,w:80,h:46,kind:'wreck'},
-          {x:900,y:1720,w:70,h:40,kind:'rubble'},
+          // Деревня новичков (Ю-З)
+          {x:600,y:2720,w:120,h:90,kind:'house'}, {x:840,y:2760,w:110,h:80,kind:'house'},
+          {x:600,y:2500,w:100,h:80,kind:'house'}, {x:860,y:2530,w:110,h:80,kind:'house'},
+          {x:720,y:2880,w:90,h:70,kind:'ruin'},
+          // Южный КПП (граница Зоны, юг — тупик)
+          {x:940,y:3010,w:170,h:80,kind:'checkpoint',name:'КПП «ЮГ»'},
+          {x:1150,y:3020,w:80,h:46,kind:'wreck'}, {x:840,y:3040,w:120,h:16,kind:'wall'},
+          // Ж/д насыпь поперёк середины (с проёмами под мост и тоннель)
+          {x:120,y:1620,w:920,h:40,kind:'rail'}, {x:1340,y:1620,w:660,h:40,kind:'rail'}, {x:2280,y:1620,w:800,h:40,kind:'rail'},
+          // Ж/д мост + военный блокпост
+          {x:1050,y:1470,w:150,h:110,kind:'checkpoint',name:'МОСТ'},
+          {x:1240,y:1500,w:80,h:46,kind:'wreck'}, {x:1000,y:1500,w:44,h:44,kind:'tower'}, {x:1070,y:1680,w:120,h:16,kind:'wall'},
+          // Тоннель под насыпью (восток → Тёмная долина)
+          {x:2060,y:1590,w:210,h:70,kind:'ruin',name:'ТОННЕЛЬ'},
+          // Северный КПП (выход на Свалку)
+          {x:1420,y:340,w:150,h:100,kind:'checkpoint',name:'КПП «СЕВЕР»'}, {x:1620,y:360,w:80,h:46,kind:'wreck'},
+          // Автостоянка (бандиты, Ю-В)
+          {x:2000,y:2420,w:210,h:150,kind:'hangar',name:'АВТОСТОЯНКА'},
+          {x:2270,y:2500,w:80,h:46,kind:'wreck'}, {x:1980,y:2620,w:80,h:46,kind:'wreck'},
+          // Ферма и аномальное поле (С-З)
+          {x:600,y:860,w:200,h:150,kind:'barn',name:'ФЕРМА'}, {x:860,y:980,w:90,h:80,kind:'house'},
+          {x:520,y:1080,w:80,h:44,kind:'wreck'}, {x:700,y:1360,w:90,h:44,kind:'rubble'},
         ],
         roads:[
-          [[600,2610],[720,2300],[930,2000],[1130,1720],[1360,1520],[1470,1120],[1560,700],[1600,180]],
-          [[930,2000],[770,1500],[700,1000]],
-          [[120,1840],[900,1790],[1800,1740],[3080,1720]],
-        ],
-        transitions:[{x:1600,y:150,target:1,name:'Свалка',entry:{x:1600,y:360}}] }},
+          [[760,2620],[820,2300],[980,2000],[1080,1750],[1130,1650],[1220,1420],[1360,900],[1500,180]],
+          [[980,2000],[1600,2220],[2050,2470]],
+          [[1220,1420],[1650,1500],[2120,1590],[2600,1600],[3060,1600]],
+          [[980,2000],[800,1500],[680,1000]],
+        ] }},
     {name:'Свалка', difficulty:1,
       pos:{x:0.44,y:0.85}, links:['Кордон','Агропром','Тёмная долина','Росток'],
       theme:{base:'#1a140c',t1:'#211a10',t2:'#2a2015',s1:'#140d06',s2:'#3a2a1580',border:'#3a2a18'},
@@ -803,8 +820,10 @@
   }
   function travelTo(target, from){
     saveLoc(from);
-    // appear at the target's edge that faces the location we came from
-    const e=edgePoint(LOCATIONS[target], LOCATIONS[from], 1180);
+    // appear at the target's gate that faces where we came from (authored POI entry if any)
+    const lay=LOCATIONS[target].layout||{}, fromName=LOCATIONS[from].name;
+    const e = (lay.exits && lay.exits[fromName] && lay.exits[fromName].entry)
+      ? lay.exits[fromName].entry : edgePoint(LOCATIONS[target], LOCATIONS[from], 1180);
     state.px=e.x; state.py=e.y;
     state.locIndex=target;
     loadLoc(target);                          // genLocation (if first visit) avoids around the entry
@@ -822,10 +841,12 @@
     applyStatics(li);
     state.lastX=state.px; state.lastY=state.py;
 
-    // transitions derived from the world graph (links) — placed at the edge toward each neighbour
+    // transitions from the world graph; a location may pin a neighbour's gate at a POI via layout.exits
     const me=LOCATIONS[li];
     for(const j of me.linkIdx){
-      const nb=LOCATIONS[j], p=edgePoint(me, nb, 1480), e=edgePoint(me, nb, 1180);
+      const nb=LOCATIONS[j], ov=lay.exits && lay.exits[nb.name];
+      const p = ov ? {x:ov.x, y:ov.y} : edgePoint(me, nb, 1480);
+      const e = ov && ov.entry ? ov.entry : edgePoint(me, nb, 1180);
       state.transitions.push({x:p.x, y:p.y, target:j, name:nb.name, entry:e});
     }
     if(me.isFinal) state.transitions.push({x:W/2, y:180, win:true, name:'ПОБЕГ ⚑'});
@@ -1875,12 +1896,21 @@
     ctx.fillStyle='#101014'; ctx.fillRect(x+w/2-74,y-9,148,14);
     ctx.fillStyle='#7fff9a'; ctx.font='bold 10px monospace'; ctx.textAlign='center'; ctx.fillText('БАР «100 РЕНТГЕН»', x+w/2, y+1);
   }
+  function drawRail(x,y,w,h){
+    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(x+3,y+h,w,5);
+    ctx.fillStyle='#3a3228'; ctx.fillRect(x,y,w,h);          // embankment
+    ctx.fillStyle='#463c2c'; ctx.fillRect(x,y,w,4);
+    ctx.fillStyle='#2a241c'; ctx.fillRect(x,y+h-4,w,4);
+    ctx.fillStyle='#241c12'; for(let sx=x+4; sx<x+w; sx+=14) ctx.fillRect(sx,y+5,5,h-10); // sleepers
+    ctx.fillStyle='#6a6660'; ctx.fillRect(x,y+8,w,3); ctx.fillRect(x,y+h-11,w,3);         // rails
+  }
   function drawBuilding(b,ox,oy){
     const x=b.x+ox, y=b.y+oy, w=b.w, h=b.h;
     if(b.kind==='rubble'){ drawRubble(x,y,w,h); return; }
     if(b.kind==='wreck'){ drawWreck(x,y,w,h); return; }
     if(b.kind==='tower'){ drawTower(x,y,w,h); return; }
     if(b.kind==='wall'){ drawWall(x,y,w,h); return; }
+    if(b.kind==='rail'){ drawRail(x,y,w,h); if(b.name){ ctx.fillStyle='#c9b98a'; ctx.font='9px monospace'; ctx.textAlign='center'; ctx.fillText(b.name,x+w/2,y-4);} return; }
     const C=BKIND[b.kind]||BKIND.house;
     ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(x+6,y+h-2,w,10);      // ground shadow
     ctx.fillStyle=C.wall; ctx.fillRect(x,y,w,h);
