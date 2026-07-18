@@ -56,6 +56,11 @@
   }
   #detLed{ width:12px; height:12px; border-radius:50%; background:#123; box-shadow:0 0 0 1px #000; }
   #detTxt{ min-width:70px; text-align:left; }
+  #locBanner{
+    position:absolute; left:50%; top:calc(env(safe-area-inset-top) + 42px);
+    transform:translateX(-50%); font-size:13px; letter-spacing:3px; color:var(--toxic);
+    text-shadow:0 1px 3px #000, 0 0 10px #4f6a1f88; white-space:nowrap;
+  }
 
   /* ===== Touch controls ===== */
   #joyZone{
@@ -172,6 +177,12 @@
     padding:16px; box-shadow:0 12px 40px #000a; align-items:center; }
   .map-panel .inv-head{ width:100%; }
   #mapCanvas{ image-rendering:pixelated; background:#0e140a; border:1px solid #2f3a1e; border-radius:4px; }
+  .map-chain{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; align-items:center; }
+  .map-chain .lnode{ font-size:10px; letter-spacing:1px; color:#6f7d5f; padding:3px 7px;
+    border:1px solid #2f3a1e; border-radius:4px; background:#101609; }
+  .map-chain .lnode.cur{ color:#191600; background:var(--toxic); border-color:var(--toxic); font-weight:bold; }
+  .map-chain .lnode.done{ color:#8fbf3f; border-color:#3a4a28; }
+  .map-chain .larrow{ color:#4a5a2f; font-size:11px; }
   .map-legend{ display:flex; flex-wrap:wrap; gap:10px 16px; justify-content:center;
     font-size:11px; color:#9aa88a; }
   .map-legend span{ display:flex; align-items:center; gap:5px; }
@@ -306,6 +317,7 @@
     <div id="detLed"></div>
     <div id="detTxt">ДЕТЕКТОР</div>
   </div>
+  <div id="locBanner">Кордон</div>
 </div>
 
 <!-- Touch -->
@@ -326,10 +338,12 @@
 <div class="screen hide" id="mapScreen">
   <div class="map-panel">
     <div class="inv-head"><span>КАРТА ЗОНЫ</span><button class="inv-close" id="mapClose">✕</button></div>
+    <div class="map-chain" id="mapChain"></div>
     <canvas id="mapCanvas"></canvas>
     <div class="map-legend">
       <span><i style="background:#ffd24a"></i> Сидорович</span>
-      <span><i style="background:#5cc8ff"></i> выходы</span>
+      <span><i style="background:#5cc8ff"></i> переходы</span>
+      <span><i style="background:#7fff9a"></i> побег</span>
       <span><i style="background:#8fbf3f"></i> радиация</span>
       <span><i style="background:#e0602a"></i> аномалии</span>
       <span><i style="background:#e05a4a"></i> ты</span>
@@ -394,8 +408,9 @@
     бей <span style="color:#e08a7a">мутантов</span><br>
     находи <span style="color:#8fbfe0">костюмы</span>, <span style="color:#e8e8e0">💊 аптечки</span>, <span style="color:#c9a227">патроны</span> · <b>🔩 болт</b> разряжает аномалию на 3с<br>
     <span style="color:#ffd24a">🏠 бункер Сидоровича ₴</span> у старта — продавай и покупай · беги от <span style="color:#a8ff33">радиации</span><br>
-    <b>🗺️ карта</b> (кнопка слева / <b>M</b>) — выходы, радиация, бункер<br>
-    <span style="color:#8a9877">цель: собрать хотя бы 1 артефакт и дойти до любого <b style="color:#5cc8ff">ВЫХОДА</b></span>
+    <b>🗺️ карта</b> (кнопка слева / <b>M</b>) — локации мира, переходы, радиация<br>
+    <span style="color:#8a9877">Зона состоит из локаций: <b style="color:#8fbf3f">Кордон → Свалка → … → ЧАЭС</b>. Иди через <b style="color:#5cc8ff">ПЕРЕХОДЫ</b> на границах.<br>
+    цель: с артефактом ✦ добраться до <b style="color:#7fff9a">ЧАЭС</b> и сбежать из Зоны</span>
   </div>
 </div>
 
@@ -439,11 +454,11 @@
 
   // ---------- World config ----------
   const W = 3200, H = 3200;        // world size (px)
-  // multiple exits are populated per run in genWorld; the nearest is the objective
-  function nearestExit(){
+  // border transitions link locations; the nearest is the current objective
+  function nearestTransition(){
     let best=null, bd=1e9;
-    for(const e of state.exits){ const d=dist(state.px,state.py,e.x,e.y); if(d<bd){ bd=d; best=e; } }
-    return {e:best, d:bd};
+    for(const t of state.transitions){ const d=dist(state.px,state.py,t.x,t.y); if(d<bd){ bd=d; best=t; } }
+    return {t:best, d:bd};
   }
   const state = {
     running:false, over:false,
@@ -451,7 +466,8 @@
     hp:100, rad:0, bolts:8, meds:2, artifacts:0, ammo:40, kills:0,
     dist:0, lastX:0, lastY:0, shootCD:0, firing:false,
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
-    bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[], exits:[],
+    bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[], transitions:[],
+    locIndex:0, locData:{},
     suit:'newcomer', suits:['newcomer'],
     scene:'zone', money:600, house:null, returnPos:{x:0,y:0}, nearTrader:false, tradeTab:'buy',
     inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
@@ -598,74 +614,87 @@
   const TRADER={x:IW/2, y:150};
   const EXITMAT={x:IW/2, y:IH-38};
 
-  function genWorld(){
-    state.anomalies.length=0; state.artItems.length=0;
-    state.radzones.length=0; state.props.length=0;
-    state.bolts_flying.length=0; state.particles.length=0;
-    state.bullets.length=0; state.mutants.length=0; state.ammoBoxes.length=0;
-    state.medKits.length=0; state.suitPickups.length=0;
+  // ===== World of locations (STALKER-style chain) =====
+  const LOCATIONS = [
+    {name:'Кордон', difficulty:0, hasBunker:true, suit:'wanderer',
+      theme:{base:'#141a0e',t1:'#171e10',t2:'#1a2213',s1:'#0f150a',s2:'#20301680',border:'#2a3a18'}},
+    {name:'Свалка', difficulty:1,
+      theme:{base:'#1a140c',t1:'#211a10',t2:'#2a2015',s1:'#140d06',s2:'#3a2a1580',border:'#3a2a18'}},
+    {name:'Агропром', difficulty:2, suit:'antirad',
+      theme:{base:'#161a18',t1:'#1c211f',t2:'#242a28',s1:'#101413',s2:'#30383680',border:'#333a38'}},
+    {name:'Тёмная долина', difficulty:3, suit:'merc',
+      theme:{base:'#0f130b',t1:'#12160d',t2:'#171d11',s1:'#0a0e07',s2:'#1a24108a',border:'#22301a'}},
+    {name:'Янтарь', difficulty:4,
+      theme:{base:'#181a0c',t1:'#1e2010',t2:'#282a12',s1:'#121405',s2:'#3a3a1080',border:'#3a3a18'}},
+    {name:'ЧАЭС', difficulty:5, isFinal:true,
+      theme:{base:'#12161c',t1:'#171c22',t2:'#1e252c',s1:'#0d1116',s2:'#26303a80',border:'#2a3a4a'}},
+  ];
+  const LOC_ARRAYS=['anomalies','artItems','radzones','props','bolts_flying','particles',
+                    'bullets','mutants','ammoBoxes','medKits','suitPickups','transitions'];
+  function saveLoc(i){ const d={}; for(const k of LOC_ARRAYS) d[k]=state[k]; d.house=state.house; state.locData[i]=d; }
+  function loadLoc(i){
+    const d=state.locData[i];
+    if(d){ for(const k of LOC_ARRAYS) state[k]=d[k]; state.house=d.house; }
+    else genLocation();
+  }
+  function travelTo(target, from){
+    saveLoc(from);
+    const fromWest = from < target;         // moving deeper -> enter at west edge
+    state.px = fromWest ? 190 : W-190; state.py = H/2;
+    state.locIndex = target;
+    loadLoc(target);
+    state.pvx=state.pvy=0; state.firing=false;
+    state._transReadyAt = now()+700;        // grace so the connector doesn't bounce you back
+    toast('▶ '+LOCATIONS[target].name);
+    beep(400,0.1,'sine',0.05); setTimeout(()=>beep(560,0.1,'sine',0.05),90);
+    updateHUD();
+  }
 
-    // spawn player near one corner; several exits spread around the Zone
-    state.px = 240; state.py = 240;
-    state.exits = [
-      {x:W-260, y:H-260, name:'Кордон'},
-      {x:260,   y:H-260, name:'Свалка'},
-      {x:W-260, y:520,   name:'Агропром'},
-      {x:W/2,   y:H-150, name:'Тёмная долина'},
-      {x:W-150, y:H/2,   name:'Янтарь'},
-    ];
+  function genWorld(){ genLocation(); }
+  function genLocation(){
+    const li=state.locIndex, L=LOCATIONS[li], diff=L.difficulty;
+    // fresh arrays (don't clear cached ones held by other locations)
+    for(const k of LOC_ARRAYS) state[k]=[];
+    state.house = L.hasBunker ? {x:470, y:300, door:{x:470, y:344}} : null;
     state.lastX=state.px; state.lastY=state.py;
-    // trader's hut near the start; door on its south side
-    state.house = {x:470, y:300, door:{x:470, y:344}};
 
-    const types = Object.keys(ANOM_TYPES);
-    // anomaly clusters — artifacts spawn beside them
-    const CLUSTERS = 18;
+    // border transitions: west -> previous location, east -> next (or escape if final)
+    if(li>0) state.transitions.push({x:120, y:H/2, target:li-1, name:LOCATIONS[li-1].name});
+    if(li<LOCATIONS.length-1) state.transitions.push({x:W-120, y:H/2, target:li+1, name:LOCATIONS[li+1].name});
+    else state.transitions.push({x:W-120, y:H/2, win:true, name:'ПОБЕГ ИЗ ЗОНЫ'});
+    const clearOf = (x,y,r)=> dist(x,y,state.px,state.py)<520 ||
+      state.transitions.some(t=>dist(x,y,t.x,t.y)<r);
+
+    const types=Object.keys(ANOM_TYPES);
+    const CLUSTERS = 13 + diff*3;
     for(let i=0;i<CLUSTERS;i++){
       let ax,ay,tries=0;
-      do{
-        ax=rnd(360,W-260); ay=rnd(360,H-260); tries++;
-      }while((dist(ax,ay,state.px,state.py)<520 || state.exits.some(e=>dist(ax,ay,e.x,e.y)<300)) && tries<40);
+      do{ ax=rnd(300,W-260); ay=rnd(200,H-200); tries++; }
+      while(clearOf(ax,ay,300) && tries<40);
       const n = 1+ (Math.random()<0.6?1:0) + (Math.random()<0.3?1:0);
       for(let k=0;k<n;k++){
-        const t = types[(Math.random()*types.length)|0];
-        state.anomalies.push({
-          x:ax+rnd(-70,70), y:ay+rnd(-70,70), r:rnd(26,42),
-          t, phase:Math.random()*6.28, dischargeT:0
-        });
+        const t=types[(Math.random()*types.length)|0];
+        state.anomalies.push({x:ax+rnd(-70,70), y:ay+rnd(-70,70), r:rnd(26,42), t, phase:Math.random()*6.28, dischargeT:0});
       }
-      // artifact next to the cluster (70% of clusters)
-      if(Math.random()<0.78){
-        state.artItems.push({
-          x:ax+rnd(-100,100), y:ay+rnd(-100,100),
-          type:pickArt(), taken:false, bob:Math.random()*6.28
-        });
-      }
+      if(Math.random()<0.78) state.artItems.push({x:ax+rnd(-100,100), y:ay+rnd(-100,100), type:pickArt(), taken:false, bob:Math.random()*6.28});
     }
-    // guaranteed «Сердце зоны» right next to spawn (this build — easy to find)
-    {
+    if(li===0){ // guaranteed «Сердце зоны» near the very start
       const ang=rnd(0,6.28), d=rnd(150,240);
-      const hx=clamp(state.px+Math.cos(ang)*d, 80, W-80);
-      const hy=clamp(state.py+Math.sin(ang)*d, 80, H-80);
-      state.artItems.push({x:hx, y:hy, type:HEART, taken:false, bob:Math.random()*6.28});
+      state.artItems.push({x:clamp(state.px+Math.cos(ang)*d,80,W-80), y:clamp(state.py+Math.sin(ang)*d,80,H-80), type:HEART, taken:false, bob:Math.random()*6.28});
     }
-    // radiation zones
-    for(let i=0;i<14;i++){
+    for(let i=0;i<10+diff*2;i++){
       let rx,ry,tries=0;
       do{ rx=rnd(300,W-200); ry=rnd(300,H-200); tries++; }
       while(dist(rx,ry,state.px,state.py)<440 && tries<30);
       state.radzones.push({x:rx, y:ry, r:rnd(90,170)});
     }
-    // props (dead trees, rocks, debris) — decorative + collision
     for(let i=0;i<120;i++){
       const px=rnd(60,W-60), py=rnd(60,H-60);
       if(dist(px,py,state.px,state.py)<120) continue;
       const kind = Math.random()<0.5?'tree':(Math.random()<0.6?'rock':'debris');
       state.props.push({x:px,y:py,kind,r:kind==='tree'?14:kind==='rock'?16:10, s:rnd(0.8,1.3)});
     }
-    // mutants — dogs spawn in small packs
-    const mtypes=Object.keys(MUT_TYPES);
-    for(let i=0;i<11;i++){
+    for(let i=0;i<8+diff*3;i++){
       let mx,my,tries=0;
       do{ mx=rnd(200,W-100); my=rnd(200,H-100); tries++; }
       while(dist(mx,my,state.px,state.py)<500 && tries<40);
@@ -673,32 +702,25 @@
       const packN = t==='dog'? 1+((Math.random()*3)|0) : 1;
       for(let k=0;k<packN;k++) spawnMutant(mx+rnd(-40,40), my+rnd(-40,40), t);
     }
-    // ammo boxes scattered around
     for(let i=0;i<9;i++){
       let bx,by,tries=0;
       do{ bx=rnd(150,W-100); by=rnd(150,H-100); tries++; }
-      while(dist(bx,by,state.px,state.py)<260 && tries<30);
+      while(dist(bx,by,state.px,state.py)<200 && tries<30);
       state.ammoBoxes.push({x:bx,y:by,amount:20,taken:false});
     }
-    // medkits scattered around (one guaranteed near spawn)
     for(let i=0;i<7;i++){
       let bx,by,tries=0;
       do{ bx=rnd(150,W-100); by=rnd(150,H-100); tries++; }
-      while(dist(bx,by,state.px,state.py)<220 && tries<30);
+      while(dist(bx,by,state.px,state.py)<180 && tries<30);
       state.medKits.push({x:bx,y:by,amount:1,taken:false});
     }
-    {
-      const ang=rnd(0,6.28), d=rnd(200,300);
-      state.medKits.push({x:clamp(state.px+Math.cos(ang)*d,80,W-80),
-                          y:clamp(state.py+Math.sin(ang)*d,80,H-80), amount:1, taken:false});
-    }
-    // suits to find — the 3 non-starter suits, scattered around the Zone
-    ['wanderer','antirad','merc'].forEach((sid,i)=>{
+    // one suit to find in select locations
+    if(L.suit){
       let sx,sy,tries=0;
-      do{ sx=rnd(200,W-150); sy=rnd(200,H-150); tries++; }
-      while(dist(sx,sy,state.px,state.py)<420 && tries<40);
-      state.suitPickups.push({x:sx,y:sy,suit:sid,taken:false});
-    });
+      do{ sx=rnd(300,W-200); sy=rnd(300,H-200); tries++; }
+      while(dist(sx,sy,state.px,state.py)<300 && tries<40);
+      state.suitPickups.push({x:sx,y:sy,suit:L.suit,taken:false});
+    }
   }
   function spawnMutant(x,y,t){
     const M=MUT_TYPES[t];
@@ -1097,22 +1119,20 @@
     }
 
     // ----- exit -----
-    const ne=nearestExit();
-    const exd=ne.d;
-    const distEl=document.getElementById('distTxt');
     const haveArt=state.inventory.length>0;
-    if(haveArt){
-      distEl.textContent = 'выход: '+Math.round(exd/10)+'м';
-      distEl.style.color='#8a9877';
-    } else {
-      distEl.textContent = 'выход: нужен ✦';
-      distEl.style.color='#c9a227';
+    const distEl=document.getElementById('distTxt');
+    const ne=nearestTransition();
+    if(ne.t){
+      if(ne.t.win) distEl.textContent = 'ПОБЕГ: '+Math.round(ne.d/10)+'м'+(haveArt?'':' (нужен ✦)');
+      else distEl.textContent = '▶ '+ne.t.name+': '+Math.round(ne.d/10)+'м';
+      distEl.style.color = ne.t.win && !haveArt ? '#c9a227' : '#8a9877';
     }
-    if(exd<52){
-      if(haveArt) endGame(true);
-      else if(!state._exitHintT || now()>state._exitHintT){
-        state._exitHintT=now()+2500;
-        toast('Нужен хотя бы 1 артефакт ✦, чтобы уйти');
+    for(const t of state.transitions){
+      if(now()>(state._transReadyAt||0) && dist(state.px,state.py,t.x,t.y)<42){
+        if(t.win){
+          if(haveArt){ endGame(true); return; }
+          else if(!state._exitHintT || now()>state._exitHintT){ state._exitHintT=now()+2500; toast('Нужен хотя бы 1 артефакт ✦, чтобы сбежать'); }
+        } else { travelTo(t.target, state.locIndex); return; }
       }
     }
 
@@ -1159,6 +1179,8 @@
     document.getElementById('btnMedN').textContent=state.meds;
     document.getElementById('btnFireN').textContent=state.ammo;
     document.getElementById('invBadge').textContent=state.inventory.length;
+    document.getElementById('locBanner').textContent=
+      state.scene==='interior' ? 'Бункер Сидоровича' : (LOCATIONS[state.locIndex]?LOCATIONS[state.locIndex].name:'');
   }
 
   // ================= RENDER =================
@@ -1319,47 +1341,47 @@
     }
     ctx.globalAlpha=1;
 
-    // exit markers (all of them)
+    // transition / escape markers
     const pulse=0.5+0.5*Math.sin(now()/300);
-    for(const exit of state.exits){
-      const ex=exit.x+ox, ey=exit.y+oy;
-      if(ex<-60||ex>VW+60||ey<-60||ey>VH+60) continue;
-      const eg=ctx.createRadialGradient(ex,ey,0,ex,ey,40);
-      eg.addColorStop(0,'rgba(80,200,255,'+(0.25+0.2*pulse)+')'); eg.addColorStop(1,'rgba(80,200,255,0)');
-      ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(ex,ey,40,0,6.29); ctx.fill();
-      ctx.strokeStyle='#5cc8ff'; ctx.lineWidth=2; ctx.strokeRect(ex-14,ey-14,28,28);
-      ctx.fillStyle='#5cc8ff'; ctx.font='10px monospace'; ctx.textAlign='center';
-      ctx.fillText('ВЫХОД', ex, ey+26);
-      if(exit.name){ ctx.fillStyle='#8fbfe0'; ctx.font='8px monospace'; ctx.fillText(exit.name, ex, ey+36); }
+    for(const t of state.transitions){
+      const ex=t.x+ox, ey=t.y+oy;
+      if(ex<-70||ex>VW+70||ey<-70||ey>VH+70) continue;
+      const col = t.win ? '#7fff9a' : '#5cc8ff';
+      const rgb = t.win ? '120,255,150' : '80,200,255';
+      const eg=ctx.createRadialGradient(ex,ey,0,ex,ey,44);
+      eg.addColorStop(0,'rgba('+rgb+','+(0.25+0.2*pulse)+')'); eg.addColorStop(1,'rgba('+rgb+',0)');
+      ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(ex,ey,44,0,6.29); ctx.fill();
+      ctx.strokeStyle=col; ctx.lineWidth=2; ctx.strokeRect(ex-15,ey-15,30,30);
+      // gateway posts
+      ctx.fillStyle=col; ctx.fillRect(ex-16,ey-16,4,32); ctx.fillRect(ex+12,ey-16,4,32);
+      ctx.font='10px monospace'; ctx.textAlign='center';
+      ctx.fillText(t.win?'ПОБЕГ ⚑':'ПЕРЕХОД', ex, ey-22);
+      if(t.name){ ctx.fillStyle=t.win?'#aef2be':'#8fbfe0'; ctx.font='9px monospace'; ctx.fillText(t.name, ex, ey+28); }
     }
-    // arrow to the nearest exit if off-screen
-    const ne2=nearestExit();
-    if(ne2.e) drawExitArrow(ne2.e.x+ox, ne2.e.y+oy);
+    // arrow to the nearest transition if off-screen
+    const ne2=nearestTransition();
+    if(ne2.t) drawExitArrow(ne2.t.x+ox, ne2.t.y+oy);
   }
 
   function drawGround(ox,oy,camX,camY){
-    // base swamp gradient
-    ctx.fillStyle='#141a0e'; ctx.fillRect(0,0,VW,VH);
-    // tiled texture — cheap dithered blotches based on world coords
+    const th=LOCATIONS[state.locIndex].theme;
+    ctx.fillStyle=th.base; ctx.fillRect(0,0,VW,VH);
     const T=64;
     const startX=Math.floor(camX/T)*T, startY=Math.floor(camY/T)*T;
     for(let gx=startX; gx<camX+VW; gx+=T){
       for(let gy=startY; gy<camY+VH; gy+=T){
-        // pseudo-random per tile
         const h=((gx*73856093)^(gy*19349663))>>>0;
         const v=(h%100)/100;
         const sx=gx+ox, sy=gy+oy;
-        if(v<0.25){ ctx.fillStyle='#171e10'; ctx.fillRect(sx,sy,T,T); }
-        else if(v<0.5){ ctx.fillStyle='#1a2213'; ctx.fillRect(sx,sy,T,T); }
-        // small detail specks
-        ctx.fillStyle='#0f150a';
+        if(v<0.25){ ctx.fillStyle=th.t1; ctx.fillRect(sx,sy,T,T); }
+        else if(v<0.5){ ctx.fillStyle=th.t2; ctx.fillRect(sx,sy,T,T); }
+        ctx.fillStyle=th.s1;
         ctx.fillRect(sx+(h%48), sy+((h>>4)%48), 3,3);
-        ctx.fillStyle='#20301680';
+        ctx.fillStyle=th.s2;
         ctx.fillRect(sx+((h>>7)%56), sy+((h>>11)%56), 2,2);
       }
     }
-    // world border
-    ctx.strokeStyle='#2a3a18'; ctx.lineWidth=4;
+    ctx.strokeStyle=th.border; ctx.lineWidth=4;
     ctx.strokeRect(ox, oy, W, H);
   }
 
@@ -1790,8 +1812,16 @@
     state.paused=true; state.firing=false; mapScreen.classList.remove('hide'); renderMap(); }
   function closeMap(){ state.paused=false; mapScreen.classList.add('hide'); }
   function renderMap(){
+    // world chain strip
+    const chain=document.getElementById('mapChain'); chain.innerHTML='';
+    LOCATIONS.forEach((L,i)=>{
+      if(i>0){ const a=document.createElement('span'); a.className='larrow'; a.textContent='›'; chain.appendChild(a); }
+      const n=document.createElement('span');
+      n.className='lnode'+(i===state.locIndex?' cur':(i<state.locIndex?' done':''));
+      n.textContent=L.name; chain.appendChild(n);
+    });
     const mc=document.getElementById('mapCanvas'), mx=mc.getContext('2d');
-    const S=Math.round(Math.min(VW-52, VH-280, 520));
+    const S=Math.round(Math.min(VW-52, VH-300, 520));
     mc.width=S; mc.height=S; mc.style.width=S+'px'; mc.style.height=S+'px';
     mx.imageSmoothingEnabled=false;
     const sc=S/W;
@@ -1809,13 +1839,14 @@
     // bunker
     if(state.house){ mx.fillStyle='#ffd24a'; mx.font='bold 13px monospace'; mx.textAlign='center'; mx.textBaseline='middle';
       mx.fillText('₴', state.house.x*sc, state.house.y*sc); }
-    // exits
-    for(const e of state.exits){
-      mx.fillStyle='#5cc8ff'; mx.fillRect(e.x*sc-4, e.y*sc-4, 8,8);
-      mx.strokeStyle='#0e140a'; mx.lineWidth=1; mx.strokeRect(e.x*sc-4, e.y*sc-4, 8,8);
-      if(e.name){ mx.fillStyle='#7fb4d8'; mx.font='8px monospace'; mx.textBaseline='top';
-        mx.fillText(e.name, clamp(e.x*sc,26,S-26), e.y*sc+6); }
+    // transitions (borders / escape)
+    for(const t of state.transitions){
+      mx.fillStyle=t.win?'#7fff9a':'#5cc8ff'; mx.fillRect(t.x*sc-4, t.y*sc-4, 8,8);
+      mx.strokeStyle='#0e140a'; mx.lineWidth=1; mx.strokeRect(t.x*sc-4, t.y*sc-4, 8,8);
+      mx.fillStyle=t.win?'#aef2be':'#7fb4d8'; mx.font='8px monospace'; mx.textBaseline='middle'; mx.textAlign=t.x<W/2?'left':'right';
+      mx.fillText((t.win?'⚑ ':'▶ ')+t.name, clamp(t.x*sc+(t.x<W/2?8:-8),20,S-20), t.y*sc);
     }
+    mx.textAlign='center';
     // player marker (interior -> shown at the bunker)
     const inHouse=state.scene==='interior';
     const px=(inHouse?state.house.x:state.px)*sc, py=(inHouse?state.house.y:state.py)*sc;
@@ -1952,6 +1983,7 @@
       inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
       suit:'newcomer', suits:['newcomer'],
       scene:'zone', money:600, nearTrader:false, tradeTab:'buy',
+      locIndex:0, locData:{}, px:240, py:240,
       mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     });
     genWorld();
