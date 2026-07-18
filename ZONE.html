@@ -341,12 +341,10 @@
     <div class="map-chain" id="mapChain"></div>
     <canvas id="mapCanvas"></canvas>
     <div class="map-legend">
-      <span><i style="background:#ffd24a"></i> Сидорович</span>
-      <span><i style="background:#5cc8ff"></i> переходы</span>
-      <span><i style="background:#7fff9a"></i> побег</span>
-      <span><i style="background:#8fbf3f"></i> радиация</span>
-      <span><i style="background:#e0602a"></i> аномалии</span>
-      <span><i style="background:#e05a4a"></i> ты</span>
+      <span><i style="background:#e05a4a"></i> ты здесь</span>
+      <span><i style="background:#8fbf3f"></i> посещено</span>
+      <span><i style="background:#6a6658"></i> не открыто</span>
+      <span><i style="background:#7fff9a"></i> ЧАЭС · побег</span>
     </div>
   </div>
 </div>
@@ -409,7 +407,7 @@
     находи <span style="color:#8fbfe0">костюмы</span>, <span style="color:#e8e8e0">💊 аптечки</span>, <span style="color:#c9a227">патроны</span> · <b>🔩 болт</b> разряжает аномалию на 3с<br>
     <span style="color:#ffd24a">🏠 бункер Сидоровича ₴</span> у старта — продавай и покупай · беги от <span style="color:#a8ff33">радиации</span><br>
     <b>🗺️ карта</b> (кнопка слева / <b>M</b>) — локации мира, переходы, радиация<br>
-    <span style="color:#8a9877">Зона состоит из локаций: <b style="color:#8fbf3f">Кордон → Свалка → … → ЧАЭС</b>. Иди через <b style="color:#5cc8ff">ПЕРЕХОДЫ</b> на границах.<br>
+    <span style="color:#8a9877">Зона — сеть локаций (открой <b>🗺️ карту</b>). Иди через <b style="color:#5cc8ff">ПЕРЕХОДЫ</b> на границах к соседям.<br>
     цель: с артефактом ✦ добраться до <b style="color:#7fff9a">ЧАЭС</b> и сбежать из Зоны</span>
   </div>
 </div>
@@ -629,6 +627,7 @@
   // ===== World of locations — hand-authored layouts (STALKER-style) =====
   const LOCATIONS = [
     {name:'Кордон', difficulty:0, hasBunker:true, suit:'wanderer',
+      pos:{x:0.46,y:0.97}, links:['Свалка','Тёмная долина'],
       theme:{base:'#141a0e',t1:'#171e10',t2:'#1a2213',s1:'#0f150a',s2:'#20301680',border:'#2a3a18'},
       layout:{ spawn:{x:600,y:2760}, vendorName:'Сидорович',
         bunker:{x:600,y:2560,door:{x:600,y:2606}},
@@ -648,6 +647,7 @@
         ],
         transitions:[{x:1600,y:150,target:1,name:'Свалка',entry:{x:1600,y:360}}] }},
     {name:'Свалка', difficulty:1,
+      pos:{x:0.44,y:0.85}, links:['Кордон','Агропром','Тёмная долина','Росток'],
       theme:{base:'#1a140c',t1:'#211a10',t2:'#2a2015',s1:'#140d06',s2:'#3a2a1580',border:'#3a2a18'},
       layout:{
         buildings:[
@@ -664,6 +664,7 @@
         transitions:[{x:1600,y:3060,target:0,name:'Кордон',entry:{x:1600,y:2860}},
                      {x:2960,y:900,target:2,name:'Агропром',entry:{x:2760,y:900}}] }},
     {name:'Агропром', difficulty:2, suit:'antirad',
+      pos:{x:0.23,y:0.90}, links:['Свалка'],
       theme:{base:'#161a18',t1:'#1c211f',t2:'#242a28',s1:'#101413',s2:'#30383680',border:'#333a38'},
       layout:{
         buildings:[
@@ -677,7 +678,8 @@
         ],
         transitions:[{x:150,y:900,target:1,name:'Свалка',entry:{x:360,y:900}},
                      {x:1500,y:150,target:3,name:'Тёмная долина',entry:{x:1500,y:360}}] }},
-    {name:'Тёмная долина', difficulty:3, suit:'merc',
+    {name:'Тёмная долина', difficulty:2, suit:'merc',
+      pos:{x:0.74,y:0.82}, links:['Кордон','Свалка'],
       theme:{base:'#0f130b',t1:'#12160d',t2:'#171d11',s1:'#0a0e07',s2:'#1a24108a',border:'#22301a'},
       layout:{
         buildings:[
@@ -691,7 +693,8 @@
         ],
         transitions:[{x:1600,y:3060,target:2,name:'Агропром',entry:{x:1600,y:2860}},
                      {x:3060,y:950,target:4,name:'Росток',entry:{x:2860,y:950}}] }},
-    {name:'Росток', difficulty:4,
+    {name:'Росток', difficulty:2,
+      pos:{x:0.42,y:0.72}, links:['Свалка','Дикая территория','Военные склады'],
       theme:{base:'#181410',t1:'#201a13',t2:'#282019',s1:'#120e08',s2:'#3a2e1a80',border:'#3a3026'},
       layout:{ vendorName:'Бармен',
         bar:{box:{x:1370,y:1160,w:260,h:170}, door:{x:1500,y:1360}},
@@ -707,7 +710,8 @@
         ],
         transitions:[{x:1600,y:3060,target:3,name:'Тёмная долина',entry:{x:1600,y:2860}},
                      {x:3060,y:1000,target:5,name:'Янтарь',entry:{x:2860,y:1000}}] }},
-    {name:'Янтарь', difficulty:4,
+    {name:'Янтарь', difficulty:3,
+      pos:{x:0.15,y:0.78}, links:['Дикая территория'],
       theme:{base:'#181a0c',t1:'#1e2010',t2:'#282a12',s1:'#121405',s2:'#3a3a1080',border:'#3a3a18'},
       layout:{
         buildings:[
@@ -720,17 +724,65 @@
         ],
         transitions:[{x:150,y:1500,target:4,name:'Росток',entry:{x:360,y:1500}},
                      {x:1500,y:150,target:6,name:'ЧАЭС',entry:{x:1500,y:360}}] }},
-    {name:'ЧАЭС', difficulty:5, isFinal:true,
+    {name:'Дикая территория', difficulty:3,
+      pos:{x:0.30,y:0.70}, links:['Росток','Янтарь'],
+      theme:{base:'#12160e',t1:'#171d12',t2:'#1e2618',s1:'#0c1008',s2:'#22301680',border:'#2a3a1e'},
+      layout:{
+        buildings:[
+          {x:1360,y:1200,w:200,h:150,kind:'factory',name:'ЦЕХ'}, {x:1720,y:1440,w:44,h:120,kind:'tower'},
+          {x:1080,y:1360,w:150,h:110,kind:'ruin'}, {x:1600,y:900,w:80,h:44,kind:'wreck'},
+          {x:1200,y:1600,w:70,h:40,kind:'rubble'},
+        ],
+        roads:[[[1500,2600],[1500,1600],[1500,1350],[2100,1200],[2700,1150]],
+               [[1500,1600],[900,1400],[500,1300]]] }},
+    {name:'Военные склады', difficulty:3,
+      pos:{x:0.50,y:0.62}, links:['Росток','Рыжий лес'],
+      theme:{base:'#181a10',t1:'#1f2114',t2:'#282a18',s1:'#12140a',s2:'#38381e80',border:'#3a3a22'},
+      layout:{
+        buildings:[
+          {x:1300,y:1200,w:200,h:130,kind:'hangar',name:'СКЛАД'}, {x:1580,y:1360,w:180,h:120,kind:'hangar'},
+          {x:1100,y:1440,w:160,h:110,kind:'hangar'}, {x:1500,y:980,w:120,h:16,kind:'wall'},
+          {x:1780,y:1200,w:44,h:44,kind:'tower'}, {x:1200,y:1660,w:80,h:44,kind:'wreck'},
+        ],
+        roads:[[[1500,2600],[1500,1700],[1450,1300],[1500,800],[1520,400]],
+               [[1450,1300],[900,1350],[500,1400]]] }},
+    {name:'Рыжий лес', difficulty:4,
+      pos:{x:0.64,y:0.52}, links:['Военные склады','Припять'],
+      theme:{base:'#1e120c',t1:'#281610',t2:'#331a12',s1:'#160b06',s2:'#5a281880',border:'#4a2418'},
+      layout:{
+        buildings:[
+          {x:1450,y:1300,w:150,h:110,kind:'ruin'}, {x:1200,y:1000,w:44,h:44,kind:'tower'},
+          {x:1700,y:1500,w:80,h:44,kind:'wreck'}, {x:1300,y:1600,w:90,h:44,kind:'rubble'},
+        ],
+        roads:[[[1500,2700],[1520,1700],[1550,900],[1560,350]]] }},
+    {name:'Припять', difficulty:5,
+      pos:{x:0.58,y:0.34}, links:['Рыжий лес','ЧАЭС'],
+      theme:{base:'#14171c',t1:'#1a1e24',t2:'#22272e',s1:'#0e1116',s2:'#2c343e80',border:'#333a44'},
+      layout:{
+        buildings:[
+          {x:1150,y:1000,w:150,h:220,kind:'factory',name:'ДОМ'}, {x:1400,y:900,w:150,h:240,kind:'factory'},
+          {x:1660,y:1000,w:150,h:220,kind:'factory'}, {x:1250,y:1400,w:150,h:200,kind:'factory'},
+          {x:1560,y:1420,w:150,h:200,kind:'factory'}, {x:1450,y:760,w:44,h:120,kind:'tower'},
+        ],
+        roads:[[[1500,2700],[1500,1800],[1500,1300],[1500,700],[1520,320]],
+               [[1500,1300],[1000,1250],[600,1200]]] }},
+    {name:'ЧАЭС', difficulty:6, isFinal:true,
+      pos:{x:0.42,y:0.10}, links:['Припять'],
       theme:{base:'#12161c',t1:'#171c22',t2:'#1e252c',s1:'#0d1116',s2:'#26303a80',border:'#2a3a4a'},
       layout:{
         buildings:[
           {x:1420,y:820,w:300,h:210,kind:'sarcophagus',name:'САРКОФАГ'}, {x:1160,y:1420,w:180,h:130,kind:'ruin'},
           {x:1820,y:1520,w:160,h:120,kind:'ruin'},
         ],
-        roads:[[[1600,3060],[1550,2200],[1500,1400],[1520,700],[1560,300]]],
-        transitions:[{x:1600,y:3060,target:5,name:'Янтарь',entry:{x:1600,y:2860}},
-                     {x:1560,y:150,win:true,name:'ПОБЕГ ⚑'}] }},
+        roads:[[[1500,2900],[1500,2200],[1500,1400],[1520,700],[1560,300]]] }},
   ];
+  // resolve links by name -> index; final escape node
+  const LOC_IDX={}; LOCATIONS.forEach((l,i)=>LOC_IDX[l.name]=i);
+  LOCATIONS.forEach(l=>{ l.linkIdx=(l.links||[]).map(n=>LOC_IDX[n]); });
+  function edgePoint(fromL, towardL, d){
+    const a=Math.atan2(towardL.pos.y-fromL.pos.y, towardL.pos.x-fromL.pos.x);
+    return {x:clamp(W/2+Math.cos(a)*d, 150, W-150), y:clamp(H/2+Math.sin(a)*d, 150, H-150)};
+  }
   const LOC_ARRAYS=['anomalies','artItems','radzones','props','bolts_flying','particles',
                     'bullets','mutants','ammoBoxes','medKits','suitPickups','transitions'];
   function applyStatics(i){
@@ -751,11 +803,8 @@
   }
   function travelTo(target, from){
     saveLoc(from);
-    // entry = the target's authored transition that leads back to `from`
-    const lay=LOCATIONS[target].layout||{};
-    let e=null;
-    if(lay.transitions){ const back=lay.transitions.find(t=>t.target===from); if(back&&back.entry) e=back.entry; }
-    if(!e) e={x: from<target ? 360 : W-360, y:H/2};
+    // appear at the target's edge that faces the location we came from
+    const e=edgePoint(LOCATIONS[target], LOCATIONS[from], 1180);
     state.px=e.x; state.py=e.y;
     state.locIndex=target;
     loadLoc(target);                          // genLocation (if first visit) avoids around the entry
@@ -773,13 +822,13 @@
     applyStatics(li);
     state.lastX=state.px; state.lastY=state.py;
 
-    // authored transitions (fallback to default borders)
-    if(lay.transitions){ for(const t of lay.transitions) state.transitions.push(Object.assign({}, t)); }
-    else {
-      if(li>0) state.transitions.push({x:120,y:H/2,target:li-1,name:LOCATIONS[li-1].name,entry:{x:320,y:H/2}});
-      if(li<LOCATIONS.length-1) state.transitions.push({x:W-120,y:H/2,target:li+1,name:LOCATIONS[li+1].name,entry:{x:W-320,y:H/2}});
-      else state.transitions.push({x:W-120,y:H/2,win:true,name:'ПОБЕГ ИЗ ЗОНЫ'});
+    // transitions derived from the world graph (links) — placed at the edge toward each neighbour
+    const me=LOCATIONS[li];
+    for(const j of me.linkIdx){
+      const nb=LOCATIONS[j], p=edgePoint(me, nb, 1480), e=edgePoint(me, nb, 1180);
+      state.transitions.push({x:p.x, y:p.y, target:j, name:nb.name, entry:e});
     }
+    if(me.isFinal) state.transitions.push({x:W/2, y:180, win:true, name:'ПОБЕГ ⚑'});
 
     const inB=(x,y,m)=> state.buildings.some(b=> x>b.x-m && x<b.x+b.w+m && y>b.y-m && y<b.y+b.h+m);
     const nearHub=(x,y)=> (state.house && dist(x,y,state.house.x,state.house.y)<130) ||
@@ -2112,57 +2161,49 @@
     state.paused=true; state.firing=false; mapScreen.classList.remove('hide'); renderMap(); }
   function closeMap(){ state.paused=false; mapScreen.classList.add('hide'); }
   function renderMap(){
-    // world chain strip
-    const chain=document.getElementById('mapChain'); chain.innerHTML='';
-    LOCATIONS.forEach((L,i)=>{
-      if(i>0){ const a=document.createElement('span'); a.className='larrow'; a.textContent='›'; chain.appendChild(a); }
-      const n=document.createElement('span');
-      n.className='lnode'+(i===state.locIndex?' cur':(i<state.locIndex?' done':''));
-      n.textContent=L.name; chain.appendChild(n);
-    });
+    document.getElementById('mapChain').innerHTML='';
     const mc=document.getElementById('mapCanvas'), mx=mc.getContext('2d');
-    const S=Math.round(Math.min(VW-52, VH-300, 520));
-    mc.width=S; mc.height=S; mc.style.width=S+'px'; mc.style.height=S+'px';
+    const Wc=Math.round(Math.min(VW-52, 440));
+    const Hc=Math.round(Math.min(Wc*1.5, VH-300));
+    mc.width=Wc; mc.height=Hc; mc.style.width=Wc+'px'; mc.style.height=Hc+'px';
     mx.imageSmoothingEnabled=false;
-    const sc=S/W;
-    mx.fillStyle='#0e140a'; mx.fillRect(0,0,S,S);
-    mx.strokeStyle='#1c2614'; mx.lineWidth=1;
-    for(let i=1;i<8;i++){ const p=i*S/8;
-      mx.beginPath(); mx.moveTo(p,0); mx.lineTo(p,S); mx.stroke();
-      mx.beginPath(); mx.moveTo(0,p); mx.lineTo(S,p); mx.stroke(); }
-    // roads
-    mx.strokeStyle='#4a4030'; mx.lineWidth=2; mx.lineCap='round'; mx.lineJoin='round';
-    for(const road of state.roads){ mx.beginPath();
-      for(let i=0;i<road.length;i++){ const x=road[i][0]*sc, y=road[i][1]*sc; i?mx.lineTo(x,y):mx.moveTo(x,y); } mx.stroke(); }
-    mx.lineCap='butt'; mx.lineJoin='miter';
-    // buildings
-    for(const b of state.buildings){ mx.fillStyle='#6a665a';
-      mx.fillRect(b.x*sc, b.y*sc, Math.max(2,b.w*sc), Math.max(2,b.h*sc)); }
-    // radiation blobs
-    for(const z of state.radzones){ mx.fillStyle='rgba(140,200,60,0.35)';
-      mx.beginPath(); mx.arc(z.x*sc, z.y*sc, Math.max(3,z.r*sc), 0,6.29); mx.fill(); }
-    // anomaly specks
-    mx.fillStyle='rgba(224,96,42,0.55)';
-    for(const a of state.anomalies){ mx.fillRect(a.x*sc-1, a.y*sc-1, 2,2); }
-    // vendors (bunker + outdoor)
-    mx.fillStyle='#ffd24a'; mx.font='bold 13px monospace'; mx.textAlign='center'; mx.textBaseline='middle';
-    if(state.house) mx.fillText('₴', state.house.x*sc, state.house.y*sc);
-    if(state.vendor) mx.fillText('₴', state.vendor.x*sc, state.vendor.y*sc);
-    // transitions (borders / escape)
-    for(const t of state.transitions){
-      mx.fillStyle=t.win?'#7fff9a':'#5cc8ff'; mx.fillRect(t.x*sc-4, t.y*sc-4, 8,8);
-      mx.strokeStyle='#0e140a'; mx.lineWidth=1; mx.strokeRect(t.x*sc-4, t.y*sc-4, 8,8);
-      mx.fillStyle=t.win?'#aef2be':'#7fb4d8'; mx.font='8px monospace'; mx.textBaseline='middle'; mx.textAlign=t.x<W/2?'left':'right';
-      mx.fillText((t.win?'⚑ ':'▶ ')+t.name, clamp(t.x*sc+(t.x<W/2?8:-8),20,S-20), t.y*sc);
-    }
-    mx.textAlign='center';
-    // player marker (interior -> shown at the bunker)
-    const inHouse=state.scene==='interior';
-    const px=(inHouse?state.house.x:state.px)*sc, py=(inHouse?state.house.y:state.py)*sc;
-    mx.save(); mx.translate(px,py); mx.rotate(inHouse?0:state.facing);
-    mx.fillStyle='#e05a4a'; mx.beginPath(); mx.moveTo(7,0); mx.lineTo(-5,-5); mx.lineTo(-5,5); mx.closePath(); mx.fill();
-    mx.restore();
-    mx.strokeStyle='#3a4a28'; mx.lineWidth=2; mx.strokeRect(1,1,S-2,S-2);
+    // terrain background
+    mx.fillStyle='#10140c'; mx.fillRect(0,0,Wc,Hc);
+    for(let i=0;i<260;i++){ mx.fillStyle=(i%3)?'#141a0f':'#181e12'; mx.fillRect((i*89)%Wc,(i*53)%Hc,3,3); }
+    const pad=36;
+    const PX=p=> pad + p.x*(Wc-2*pad);
+    const PY=p=> pad + p.y*(Hc-2*pad);
+    // connection lines (roads between neighbours)
+    const drawn={};
+    mx.lineCap='round';
+    LOCATIONS.forEach((l,i)=>{ for(const j of l.linkIdx){ const key=Math.min(i,j)+'-'+Math.max(i,j); if(drawn[key])continue; drawn[key]=1;
+      const ax=PX(l.pos),ay=PY(l.pos),bx=PX(LOCATIONS[j].pos),by=PY(LOCATIONS[j].pos);
+      mx.strokeStyle='#2e2a1c'; mx.lineWidth=6; mx.beginPath(); mx.moveTo(ax,ay); mx.lineTo(bx,by); mx.stroke();
+      mx.strokeStyle='#463c26'; mx.lineWidth=3; mx.beginPath(); mx.moveTo(ax,ay); mx.lineTo(bx,by); mx.stroke();
+    }});
+    mx.lineCap='butt';
+    // nodes
+    LOCATIONS.forEach((l,i)=>{
+      const x=PX(l.pos), y=PY(l.pos);
+      const cur=i===state.locIndex, visited=cur||!!state.locData[i], goal=l.isFinal;
+      const col = cur?'#e05a4a' : goal?'#7fff9a' : visited?'#8fbf3f' : '#6a6658';
+      const g=mx.createRadialGradient(x,y,0,x,y,14); g.addColorStop(0,col+'88'); g.addColorStop(1,col+'00');
+      mx.fillStyle=g; mx.beginPath(); mx.arc(x,y,14,0,6.29); mx.fill();
+      mx.fillStyle=col; mx.fillRect(x-5,y-5,10,10);
+      mx.strokeStyle='#10140c'; mx.lineWidth=1; mx.strokeRect(x-5,y-5,10,10);
+      if(cur){ mx.strokeStyle='#e05a4a'; mx.lineWidth=2; mx.strokeRect(x-9,y-9,18,18); }
+      if(goal){ mx.fillStyle='#aef2be'; mx.fillRect(x+5,y-9,7,5); }
+      mx.fillStyle = cur?'#ffd0c8' : goal?'#aef2be' : visited?'#c8d8b0' : '#8a8676';
+      mx.font=(cur?'bold ':'')+'9px monospace';
+      const left=l.pos.x<0.5; mx.textAlign=left?'left':'right'; mx.textBaseline='middle';
+      mx.fillText(l.name, x+(left?10:-10), y);
+    });
+    // compass
+    mx.textAlign='center'; mx.textBaseline='middle';
+    mx.strokeStyle='#5a7a2a'; mx.lineWidth=1; mx.beginPath(); mx.moveTo(Wc-22,30); mx.lineTo(Wc-22,Hc-26); mx.stroke();
+    mx.fillStyle='#8fbf3f'; mx.font='bold 10px monospace';
+    mx.fillText('С', Wc-22, 22); mx.fillText('Ю', Wc-22, Hc-18);
+    mx.strokeStyle='#2e3a1e'; mx.lineWidth=2; mx.strokeRect(1,1,Wc-2,Hc-2);
     mx.textBaseline='alphabetic';
   }
   document.getElementById('btnMap').addEventListener('click',()=>{ audioInit();
