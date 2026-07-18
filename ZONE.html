@@ -32,13 +32,13 @@
     display:flex; flex-direction:column; gap:6px; font-size:12px;
     text-shadow:0 1px 2px #000;
   }
-  .bar{ width:150px; max-width:38vw; height:14px; border:1px solid #000;
-        background:#000a; position:relative; box-shadow:0 0 0 1px #2a331f; }
-  .bar > span{ position:absolute; inset:0; transition:width .15s linear; }
-  .bar-label{ position:absolute; inset:0; display:flex; align-items:center;
-        justify-content:center; font-size:10px; color:#fff; text-shadow:0 0 3px #000; letter-spacing:1px; }
-  .hp > span{ background:linear-gradient(#e05a4a,#8a2b22); }
-  .rad > span{ background:linear-gradient(#a8ff33,#5f8a00); }
+  .bar{ width:150px; max-width:40vw; height:13px; border:1px solid #05070499; border-radius:7px;
+        background:#0009; position:relative; box-shadow:0 0 0 1px #2a331f88, inset 0 1px 2px #0008; overflow:hidden; }
+  .bar > span{ position:absolute; inset:0; transition:width .15s linear; border-radius:7px; }
+  .bar-label{ position:absolute; inset:0; display:flex; align-items:center; padding-left:8px;
+        font-size:9px; color:#fff; text-shadow:0 0 3px #000; letter-spacing:1.5px; }
+  .hp > span{ background:linear-gradient(#e86a58,#a5342a); }
+  .rad > span{ background:linear-gradient(#b6ff44,#6a9a00); }
 
   .top-right{
     position:absolute; top:calc(env(safe-area-inset-top) + 10px); right:10px;
@@ -60,6 +60,11 @@
     position:absolute; left:50%; top:calc(env(safe-area-inset-top) + 42px);
     transform:translateX(-50%); font-size:13px; letter-spacing:3px; color:var(--toxic);
     text-shadow:0 1px 3px #000, 0 0 10px #4f6a1f88; white-space:nowrap;
+  }
+  #skyIcon{
+    position:absolute; left:50%; top:calc(env(safe-area-inset-top) + 60px);
+    transform:translateX(-50%); font-size:14px; white-space:nowrap; opacity:0.9;
+    filter:drop-shadow(0 1px 2px #000);
   }
 
   /* ===== Touch controls ===== */
@@ -318,6 +323,7 @@
     <div id="detTxt">ДЕТЕКТОР</div>
   </div>
   <div id="locBanner">Кордон</div>
+  <div id="skyIcon">☀️</div>
 </div>
 
 <!-- Touch -->
@@ -466,7 +472,7 @@
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
     bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[], transitions:[],
     buildings:[], roads:[], vendor:null, vendorName:'Сидорович', nearVendor:false, interiorKind:'bunker',
-    water:[], mud:[],
+    water:[], mud:[], dayT:0.12, weather:'clear', weatherT:18, tracks:[], trackDist:0, trackSide:1,
     locIndex:0, locData:{},
     suit:'newcomer', suits:['newcomer'],
     scene:'zone', money:600, house:null, returnPos:{x:0,y:0}, nearTrader:false, tradeTab:'buy',
@@ -816,6 +822,7 @@
                     'bullets','mutants','ammoBoxes','medKits','suitPickups','transitions','water','mud'];
   function applyStatics(i){
     const lay=LOCATIONS[i].layout||{};
+    state.tracks=[];
     state.roads = lay.roads || [];
     state.buildings = lay.buildings || [];
     state.vendor = lay.vendor || null;
@@ -1171,14 +1178,31 @@
     nx=clamp(nx,20,W-20); ny=clamp(ny,20,H-20);
     state.px=nx; state.py=ny;
 
-    // distance travelled
+    // distance travelled + footprints
     const dd=dist(state.px,state.py,state.lastX,state.lastY);
     if(dd>2){ state.dist+=dd; state.lastX=state.px; state.lastY=state.py; }
+    if(state.moving){
+      state.trackDist+=dd;
+      if(state.trackDist>16){ state.trackDist=0; state.trackSide=-state.trackSide;
+        const nx2=Math.cos(state.facing+Math.PI/2)*4*state.trackSide, ny2=Math.sin(state.facing+Math.PI/2)*4*state.trackSide;
+        if(state.tracks.length<80) state.tracks.push({x:state.px+nx2, y:state.py+ny2+10, a:state.facing, life:5});
+      }
+    }
 
     // ----- timers -----
     if(state.hurtCD>0) state.hurtCD-=dt;
     if(state.shootCD>0) state.shootCD-=dt;
     if(state.firing) shoot();
+
+    // ----- day/night + weather -----
+    state.dayT=(state.dayT + dt/200) % 1;              // full cycle ~200s
+    state.weatherT-=dt;
+    if(state.weatherT<=0){
+      if(state.weather==='clear'){ state.weather = Math.random()<0.4?'rain':'clear'; state.weatherT=rnd(30,70); }
+      else { state.weather='clear'; state.weatherT=rnd(40,90); }
+    }
+    // ----- footprints -----
+    for(let i=state.tracks.length-1;i>=0;i--){ state.tracks[i].life-=dt; if(state.tracks[i].life<=0) state.tracks.splice(i,1); }
 
     // ----- artifact passive effects -----
     if(state.mods.regen) state.hp=clamp(state.hp+state.mods.regen*dt,0,state.maxHp);
@@ -1444,6 +1468,9 @@
     document.getElementById('locBanner').textContent=
       state.scene==='interior' ? (state.interiorKind==='bar'?'Бар «100 рентген»':'Бункер Сидоровича')
                                : (LOCATIONS[state.locIndex]?LOCATIONS[state.locIndex].name:'');
+    const sun=Math.sin(state.dayT*6.283);
+    document.getElementById('skyIcon').textContent=
+      (state.scene==='interior'?'🏠':(sun>0.15?'☀️':sun<-0.15?'🌙':'🌆'))+(state.weather==='rain'&&state.scene!=='interior'?' 🌧️':'');
   }
 
   // ================= RENDER =================
@@ -1461,22 +1488,39 @@
     drawRoads(ox,oy);
     // water (ponds / swamp)
     drawWater(ox,oy);
+    // footprints
+    for(const tr of state.tracks){
+      const sx=tr.x+ox, sy=tr.y+oy;
+      if(sx<-10||sx>VW+10||sy<-10||sy>VH+10) continue;
+      ctx.save(); ctx.translate(sx,sy); ctx.rotate(tr.a);
+      ctx.globalAlpha=clamp(tr.life/5,0,1)*0.32; ctx.fillStyle='#150f06'; ctx.fillRect(-2,-3,4,6);
+      ctx.restore();
+    }
+    ctx.globalAlpha=1;
 
-    // radiation zones
+    // radiation zones — sickly toxic haze with drifting motes
+    const rt=now()/1000;
     for(const z of state.radzones){
       const sx=z.x+ox, sy=z.y+oy;
       if(sx+z.r<0||sx-z.r>VW||sy+z.r<0||sy-z.r>VH) continue;
+      const flick=0.85+0.15*Math.sin(rt*8+z.x);
       const g=ctx.createRadialGradient(sx,sy,0,sx,sy,z.r);
-      g.addColorStop(0,'rgba(140,220,60,0.28)');
-      g.addColorStop(0.6,'rgba(110,180,40,0.14)');
+      g.addColorStop(0,'rgba(150,220,60,'+(0.26*flick)+')');
+      g.addColorStop(0.55,'rgba(110,175,40,0.13)');
       g.addColorStop(1,'rgba(80,140,20,0)');
       ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,z.r,0,6.29); ctx.fill();
-      // sparse rad specks
-      ctx.fillStyle='rgba(180,255,90,0.5)';
-      for(let i=0;i<6;i++){
-        const a=(now()/600+i*1.05)%6.28, rr=z.r*(0.3+0.6*((i*0.37)%1));
-        ctx.fillRect(sx+Math.cos(a)*rr, sy+Math.sin(a)*rr,2,2);
+      // dashed hazard boundary
+      ctx.strokeStyle='rgba(170,240,80,0.30)'; ctx.lineWidth=1.5; ctx.setLineDash([4,8]); ctx.lineDashOffset=rt*10;
+      ctx.beginPath(); ctx.arc(sx,sy,z.r*0.94,0,6.29); ctx.stroke(); ctx.setLineDash([]);
+      // drifting radioactive motes (deterministic, slow float up)
+      const seed=(z.x*13+z.y)>>>0;
+      for(let i=0;i<10;i++){ const hh=(seed*(i+5))>>>0;
+        const bx=((hh%200)/100-1)*z.r*0.8, phase=((hh>>8)%1000)/1000;
+        const up=((rt*0.12+phase)%1);
+        const mx=sx+bx+Math.sin(rt+i)*4, my=sy+z.r*0.7 - up*z.r*1.4;
+        ctx.globalAlpha=(1-up)*0.55; ctx.fillStyle='#c8ff5a'; ctx.fillRect(mx,my,2,2);
       }
+      ctx.globalAlpha=1;
     }
 
     // props (behind if above player, simple)
@@ -1504,28 +1548,35 @@
       if(!(vx<-40||vx>VW+40||vy<-40||vy>VH+40)) drawVendorStand(vx,vy,state.vendor);
     }
 
-    // artifacts
+    // artifacts — glowing floating relics with sparkles
+    const at=now()/1000;
     for(const art of state.artItems){
       if(art.taken) continue;
       const sx=art.x+ox, sy=art.y+oy;
-      if(sx<-30||sx>VW+30||sy<-30||sy>VH+30) continue;
-      const bob=Math.sin(art.bob)*3;
-      const leg=art.type.legendary;
-      const gr=leg? 30+6*Math.sin(now()/240) : 20;
-      // glow
+      if(sx<-40||sx>VW+40||sy<-40||sy>VH+40) continue;
+      const leg=art.type.legendary, bob=Math.sin(art.bob)*3, pulse=0.5+0.5*Math.sin(art.bob*1.6);
+      const gr=(leg?30:20)+(leg?6:3)*Math.sin(at*2.6);
+      // ground shadow
+      ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+11,7,3,0,0,6.29); ctx.fill();
+      // aura glow
       const g=ctx.createRadialGradient(sx,sy+bob,0,sx,sy+bob,gr);
-      g.addColorStop(0,art.type.glow+(leg?'ee':'cc')); g.addColorStop(1,art.type.glow+'00');
+      g.addColorStop(0,art.type.glow+(leg?'ff':'dd')); g.addColorStop(0.5,art.type.glow+'55'); g.addColorStop(1,art.type.glow+'00');
       ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy+bob,gr,0,6.29); ctx.fill();
-      if(leg){ // pulsing ring so it's easy to spot
-        ctx.strokeStyle=art.type.glow+'aa'; ctx.lineWidth=2;
-        ctx.beginPath(); ctx.arc(sx,sy+bob,gr-4,0,6.29); ctx.stroke();
-      }
-      ctx.fillStyle=art.type.col;
-      ctx.fillRect(sx-(leg?5:4),sy-(leg?5:4)+bob,leg?10:8,leg?10:8);
+      // rotating sparkle ring
       ctx.fillStyle=art.type.glow;
-      ctx.fillRect(sx-2,sy-2+bob,4,4);
-      // shadow
-      ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+10,6,3,0,0,6.29); ctx.fill();
+      const nSpk=leg?6:4;
+      for(let i=0;i<nSpk;i++){ const ang=at*1.4+i*(6.283/nSpk), rr=(leg?13:10)+2*pulse;
+        const px=sx+Math.cos(ang)*rr, py=sy+bob+Math.sin(ang)*rr*0.7;
+        ctx.globalAlpha=0.6+0.4*Math.sin(at*3+i); ctx.fillRect(px-1,py-1,2,2); }
+      ctx.globalAlpha=1;
+      // faceted core (diamond)
+      const cs=leg?6:5;
+      ctx.fillStyle=art.type.col;
+      ctx.beginPath(); ctx.moveTo(sx,sy-cs+bob); ctx.lineTo(sx+cs,sy+bob); ctx.lineTo(sx,sy+cs+bob); ctx.lineTo(sx-cs,sy+bob); ctx.closePath(); ctx.fill();
+      ctx.fillStyle=art.type.glow;
+      ctx.beginPath(); ctx.moveTo(sx,sy-cs+bob); ctx.lineTo(sx+cs*0.5,sy-cs*0.2+bob); ctx.lineTo(sx-cs*0.5,sy-cs*0.2+bob); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#ffffff'; ctx.globalAlpha=0.7; ctx.fillRect(sx-2,sy-2+bob,2,2); ctx.globalAlpha=1;
+      if(leg){ ctx.strokeStyle=art.type.glow+'99'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(sx,sy+bob,gr-5,0,6.29); ctx.stroke(); }
     }
 
     // ammo boxes
@@ -1641,11 +1692,40 @@
     const ne2=nearestTransition();
     if(ne2.t) drawExitArrow(ne2.t.x+ox, ne2.t.y+oy);
 
-    // ambient fog / limited visibility centred on the player
+    // ===== atmosphere: day/night, fog, flashlight, rain =====
     const pcx=state.px+ox, pcy=state.py+oy;
-    const fg=ctx.createRadialGradient(pcx,pcy,150, pcx,pcy,560);
-    fg.addColorStop(0,'rgba(8,12,8,0)'); fg.addColorStop(0.7,'rgba(8,12,8,0.18)'); fg.addColorStop(1,'rgba(6,10,7,0.5)');
+    const sun=Math.sin(state.dayT*6.283);
+    const nightF=clamp(-sun,0,1)*0.82;
+    const warm=clamp(1-Math.abs(sun)/0.32,0,1)*0.13;
+    if(nightF>0.01){ ctx.fillStyle='rgba(12,18,42,'+nightF+')'; ctx.fillRect(0,0,VW,VH); }
+    if(warm>0.01){ ctx.fillStyle='rgba(255,150,60,'+warm+')'; ctx.fillRect(0,0,VW,VH); }
+    if(state.weather==='rain'){ ctx.fillStyle='rgba(22,30,44,0.20)'; ctx.fillRect(0,0,VW,VH); }
+    // fog / limited visibility (stronger at night)
+    const edge=0.40+nightF*0.5;
+    const fg=ctx.createRadialGradient(pcx,pcy,140, pcx,pcy,540);
+    fg.addColorStop(0,'rgba(8,12,10,0)'); fg.addColorStop(0.65,'rgba(8,12,10,'+(edge*0.4).toFixed(3)+')'); fg.addColorStop(1,'rgba(6,10,8,'+edge.toFixed(3)+')');
     ctx.fillStyle=fg; ctx.fillRect(0,0,VW,VH);
+    // flashlight at night
+    if(nightF>0.32){
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      const cl=ctx.createRadialGradient(pcx,pcy,0,pcx,pcy,95);
+      cl.addColorStop(0,'rgba(120,120,84,0.22)'); cl.addColorStop(1,'rgba(120,120,84,0)');
+      ctx.fillStyle=cl; ctx.beginPath(); ctx.arc(pcx,pcy,95,0,6.29); ctx.fill();
+      ctx.translate(pcx,pcy); ctx.rotate(state.facing);
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,220,-0.42,0.42); ctx.closePath();
+      const fc=ctx.createRadialGradient(0,0,20,0,0,220);
+      fc.addColorStop(0,'rgba(235,222,150,0.20)'); fc.addColorStop(1,'rgba(235,222,150,0)');
+      ctx.fillStyle=fc; ctx.fill();
+      ctx.restore();
+    }
+    // rain streaks
+    if(state.weather==='rain'){
+      ctx.strokeStyle='rgba(150,170,205,0.35)'; ctx.lineWidth=1; const tt=now()/1000;
+      for(let i=0;i<130;i++){
+        const rx=((i*137 + tt*900)%(VW+80))-40, ry=((i*89 + tt*1500)%(VH+40));
+        ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx-6,ry+16); ctx.stroke();
+      }
+    }
   }
 
   function drawGround(ox,oy,camX,camY){
@@ -1717,23 +1797,48 @@
   function drawAnomaly(sx,sy,a){
     if(a.dischargeT>0) return;            // discharged: temporarily gone
     const info=ANOM_TYPES[a.t];
-    const pulse=0.5+0.5*Math.sin(a.phase);
-    // danger ring
-    ctx.strokeStyle=info.ring+'aa'; ctx.lineWidth=2;
-    ctx.setLineDash([6,6]); ctx.lineDashOffset=-now()/40;
-    ctx.beginPath(); ctx.arc(sx,sy,a.r+6,0,6.29); ctx.stroke();
-    ctx.setLineDash([]);
-    const g=ctx.createRadialGradient(sx,sy,0,sx,sy,a.r);
-    g.addColorStop(0, hexA(info.ring, 0.7+0.3*pulse));
-    g.addColorStop(0.5, hexA(info.col, 0.5));
-    g.addColorStop(1, hexA(info.col,0));
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,a.r,0,6.29); ctx.fill();
-    // core distortion pixels
-    ctx.fillStyle=info.ring;
-    for(let i=0;i<5;i++){
-      const ang=a.phase*2+i*1.25, rr=a.r*0.5*(0.4+0.5*((i*0.3+pulse)%1));
-      ctx.fillRect(sx+Math.cos(ang)*rr-1.5, sy+Math.sin(ang)*rr-1.5,3,3);
+    const pulse=0.5+0.5*Math.sin(a.phase), t=now()/1000;
+    ctx.save();
+    if(a.t==='thermal'){                                   // Жарка — heat & flame
+      const g=ctx.createRadialGradient(sx,sy,0,sx,sy,a.r*1.15);
+      g.addColorStop(0,'rgba(255,150,50,'+(0.5+0.3*pulse)+')'); g.addColorStop(0.5,'rgba(200,60,20,0.34)'); g.addColorStop(1,'rgba(120,20,0,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,a.r*1.15,0,6.29); ctx.fill();
+      ctx.fillStyle='#ffb44a';
+      for(let i=0;i<6;i++){ const ang=i*1.05+t*1.4, rr=a.r*(0.28+0.42*((i*0.3+pulse)%1)), fl=Math.sin(t*7+i)*3;
+        ctx.fillRect(sx+Math.cos(ang)*rr-1, sy+Math.sin(ang)*rr-3+fl, 3, 5); }
+      ctx.fillStyle='#ff6a2a';
+      for(let i=0;i<5;i++){ const ph=(t*0.8+i*0.2)%1; ctx.globalAlpha=1-ph; ctx.fillRect(sx+Math.sin(i*2+t)*a.r*0.5, sy-ph*a.r*1.2, 2,2); }
+      ctx.globalAlpha=1;
+    } else if(a.t==='gravity'){                            // Трамплин — vortex
+      const g=ctx.createRadialGradient(sx,sy,0,sx,sy,a.r);
+      g.addColorStop(0,'rgba(30,10,50,0.85)'); g.addColorStop(0.6,'rgba(120,80,200,0.3)'); g.addColorStop(1,'rgba(120,80,200,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,a.r,0,6.29); ctx.fill();
+      ctx.strokeStyle='rgba(184,146,255,0.5)'; ctx.lineWidth=2;
+      for(let arm=0;arm<3;arm++){ ctx.beginPath();
+        for(let s=0;s<=12;s++){ const f=s/12, ang=a.phase*2+arm*2.09+f*4.2, rr=a.r*(1-f)*1.05, x=sx+Math.cos(ang)*rr, y=sy+Math.sin(ang)*rr; s?ctx.lineTo(x,y):ctx.moveTo(x,y);} ctx.stroke(); }
+      ctx.fillStyle='#0a0612'; ctx.beginPath(); ctx.arc(sx,sy,a.r*0.16,0,6.29); ctx.fill();
+    } else if(a.t==='chemical'){                           // Кисель — acid pool
+      ctx.fillStyle='rgba(90,150,30,0.5)'; ctx.beginPath(); ctx.ellipse(sx,sy,a.r,a.r*0.72,0,0,6.29); ctx.fill();
+      ctx.fillStyle='rgba(150,210,55,0.55)'; ctx.beginPath(); ctx.ellipse(sx,sy-2,a.r*0.8,a.r*0.56,0,0,6.29); ctx.fill();
+      ctx.fillStyle='#c8ff5a';
+      for(let i=0;i<7;i++){ const ph=(t*0.5+i*0.15)%1, bx=sx+Math.sin(i*2.3)*a.r*0.6, by=sy+Math.cos(i*1.7)*a.r*0.42, rad=1+ph*3;
+        ctx.globalAlpha=(1-ph)*0.8; ctx.beginPath(); ctx.arc(bx,by,rad,0,6.29); ctx.fill(); }
+      ctx.globalAlpha=1;
+    } else {                                               // Электра — electric
+      const g=ctx.createRadialGradient(sx,sy,0,sx,sy,a.r);
+      g.addColorStop(0,'rgba(80,180,255,0.4)'); g.addColorStop(1,'rgba(60,150,255,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,a.r,0,6.29); ctx.fill();
+      ctx.strokeStyle='#9ad4ff'; ctx.lineWidth=1.5;
+      for(let i=0;i<3;i++){ const base=a.phase*3+i*2.1; let x=sx,y=sy; ctx.beginPath(); ctx.moveTo(x,y);
+        for(let s=1;s<=5;s++){ const ang=base+Math.sin(base*s)*0.9; x+=Math.cos(ang)*a.r/5+Math.sin(base*s*3)*5; y+=Math.sin(ang)*a.r/5+Math.cos(base*s*3)*5; ctx.lineTo(x,y);}
+        ctx.globalAlpha=(Math.sin(t*20+i*2)>0)?0.9:0.25; ctx.stroke(); }
+      ctx.globalAlpha=1; ctx.fillStyle='#dff0ff';
+      for(let i=0;i<4;i++){ const ang=t*8+i*1.57, rr=a.r*0.7; ctx.fillRect(sx+Math.cos(ang)*rr, sy+Math.sin(ang)*rr,2,2); }
     }
+    // subtle dashed hazard boundary
+    ctx.strokeStyle=info.ring+'55'; ctx.lineWidth=1.5; ctx.setLineDash([5,7]); ctx.lineDashOffset=-t*20;
+    ctx.beginPath(); ctx.arc(sx,sy,a.r+7,0,6.29); ctx.stroke(); ctx.setLineDash([]);
+    ctx.restore();
   }
 
   function drawPlayer(sx,sy){
@@ -2472,6 +2577,7 @@
       suit:'newcomer', suits:['newcomer'],
       scene:'zone', money:600, nearTrader:false, tradeTab:'buy',
       locIndex:0, locData:{}, px:LOCATIONS[0].layout.spawn.x, py:LOCATIONS[0].layout.spawn.y, nearVendor:false, interiorKind:'bunker',
+      dayT:0.12, weather:'clear', weatherT:24, tracks:[], trackDist:0,
       mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     });
     genWorld();
