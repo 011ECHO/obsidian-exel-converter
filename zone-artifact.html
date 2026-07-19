@@ -24,7 +24,7 @@
     display:flex; flex-direction:column; gap:6px; font-size:12px;
     text-shadow:0 1px 2px #000;
   }
-  .bar{ width:150px; max-width:40vw; height:13px; border:1px solid #05070499; border-radius:7px;
+  .bar{ width:132px; max-width:36vw; height:13px; border:1px solid #05070499; border-radius:7px;
         background:#0009; position:relative; box-shadow:0 0 0 1px #2a331f88, inset 0 1px 2px #0008; overflow:hidden; }
   .bar > span{ position:absolute; inset:0; transition:width .15s linear; border-radius:7px; }
   .bar-label{ position:absolute; inset:0; display:flex; align-items:center; padding-left:8px;
@@ -53,15 +53,15 @@
   /* detector */
   #detector{
     position:absolute; left:50%; top:calc(env(safe-area-inset-top) + 8px);
-    transform:translateX(-50%); display:flex; align-items:center; gap:8px;
-    background:var(--panel); border:1px solid #2a331f; padding:6px 12px;
-    border-radius:3px; font-size:11px; letter-spacing:1px;
+    transform:translateX(-50%); display:flex; align-items:center; gap:6px;
+    background:var(--panel); border:1px solid #2a331f; padding:5px 9px;
+    border-radius:3px; font-size:10px; letter-spacing:1px;
   }
-  #detLed{ width:12px; height:12px; border-radius:50%; background:#123; box-shadow:0 0 0 1px #000; }
-  #detTxt{ min-width:70px; text-align:left; }
+  #detLed{ width:10px; height:10px; border-radius:50%; background:#123; box-shadow:0 0 0 1px #000; }
+  #detTxt{ min-width:50px; text-align:left; }
   #locBanner{
-    position:absolute; left:50%; top:calc(env(safe-area-inset-top) + 42px);
-    transform:translateX(-50%); font-size:13px; letter-spacing:3px; color:var(--toxic);
+    position:absolute; left:50%; top:calc(env(safe-area-inset-top) + 44px);
+    transform:translateX(-50%); font-size:11px; letter-spacing:0.5px; color:var(--toxic);
     text-shadow:0 1px 3px #000, 0 0 10px #4f6a1f88; white-space:nowrap;
   }
   #skyIcon{
@@ -92,13 +92,16 @@
     background:radial-gradient(circle at 40% 35%,#5c7038,#2a3419);
     border:2px solid #6b8a3f; transform:translate(-50%,-50%);
   }
+  /* control cluster — bottom-right only, raised clear of browser chrome (Opera GX tab bar etc.) */
   #btns{
-    position:absolute; right:14px; bottom:calc(env(safe-area-inset-bottom) + 24px);
-    display:flex; flex-direction:column; gap:14px; align-items:center;
-    pointer-events:auto; z-index:11;
+    position:fixed; right:12px; bottom:calc(env(safe-area-inset-bottom) + 70px);
+    display:flex; flex-direction:column; align-items:flex-end; gap:9px;
+    pointer-events:none; z-index:12;
   }
+  .brow{ display:flex; gap:9px; align-items:flex-end; }
+  #btns .btn{ pointer-events:auto; }
   .btn{
-    width:72px; height:72px; border-radius:50%;
+    width:64px; height:64px; border-radius:50%;
     background:radial-gradient(circle at 40% 35%,#2b3520,#12160c);
     border:2px solid #4a5a2f; color:var(--ink);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -107,21 +110,16 @@
   }
   .btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #000; background:radial-gradient(circle at 40% 35%,#3b4a2a,#1a2011); }
   .btn .ico{ font-size:22px; }
-  .btn .n{ font-size:15px; color:var(--amber); font-weight:bold; }
+  .btn .n{ font-size:14px; color:var(--amber); font-weight:bold; }
   .btn.tiny{ width:50px; height:50px; }
   .btn.tiny .ico{ font-size:17px; }
   .btn.tiny .n{ font-size:12px; }
-  #btns2{
-    position:absolute; left:50%; transform:translateX(-50%);
-    bottom:calc(env(safe-area-inset-bottom) + 14px);
-    display:flex; gap:10px; align-items:center; pointer-events:auto; z-index:11;
-  }
   .btn.sprint{ width:58px; height:58px; border-color:#4f9ac8;
     background:radial-gradient(circle at 40% 35%,#1e3648,#0c1620); }
   .btn.sprint:active,.btn.sprint.on{ background:radial-gradient(circle at 40% 35%,#2a5a78,#123044); }
   .btn.sprint .ico{ font-size:24px; }
   .btn.fire{
-    width:86px; height:86px;
+    width:84px; height:84px;
     background:radial-gradient(circle at 40% 35%,#5a2320,#2a0f0d);
     border-color:#a0463c;
     box-shadow:0 3px 0 #000, inset 0 1px 2px #ffffff18, 0 0 20px #c0392b44;
@@ -301,7 +299,7 @@
 
   /* ===== Trade ===== */
   #btnTrade{
-    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 130px);
+    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 172px);
     transform:translateX(-50%); z-index:13; pointer-events:auto; display:none;
     align-items:center; gap:6px; padding:12px 22px; border-radius:26px;
     background:linear-gradient(#7a5a1e,#4a3512); border:2px solid #ffd24a; color:#ffe9a8;
@@ -310,7 +308,7 @@
   }
   #btnTrade:active{ transform:translateX(-50%) translateY(2px); box-shadow:0 2px 0 #000; }
   #btnBench{
-    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 186px);
+    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 232px);
     transform:translateX(-50%); z-index:13; pointer-events:auto; display:none;
     align-items:center; gap:6px; padding:11px 20px; border-radius:26px;
     background:linear-gradient(#2a4658,#152430); border:2px solid #5cc8ff; color:#cfeaff;
@@ -390,15 +388,17 @@
 <!-- Touch -->
 <div id="joyZone"><div id="joyBase"><div id="joyStick"></div></div></div>
 <div id="btns">
-  <div class="btn sprint" id="btnSprint"><span class="ico">👟</span></div>
+  <div class="brow">
+    <div class="btn tiny" id="btnFood"><span class="ico">🥫</span><span class="n" id="btnFoodN">2</span></div>
+    <div class="btn tiny" id="btnDrink"><span class="ico">💧</span><span class="n" id="btnDrinkN">2</span></div>
+    <div class="btn tiny" id="btnMed"><span class="ico">💊</span><span class="n" id="btnMedN">2</span></div>
+  </div>
+  <div class="brow">
+    <div class="btn tiny" id="btnBolt"><span class="ico">🔩</span><span class="n" id="btnBoltN">8</span></div>
+    <div class="btn tiny" id="btnReload"><span class="ico">⟳</span><span class="n">R</span></div>
+    <div class="btn sprint" id="btnSprint"><span class="ico">👟</span></div>
+  </div>
   <div class="btn fire" id="btnFire"><span class="ico">🔫</span><span class="n" id="btnFireN">30</span></div>
-</div>
-<div id="btns2">
-  <div class="btn tiny" id="btnReload"><span class="ico">⟳</span><span class="n">R</span></div>
-  <div class="btn tiny" id="btnFood"><span class="ico">🥫</span><span class="n" id="btnFoodN">2</span></div>
-  <div class="btn tiny" id="btnDrink"><span class="ico">💧</span><span class="n" id="btnDrinkN">2</span></div>
-  <div class="btn tiny" id="btnMed"><span class="ico">💊</span><span class="n" id="btnMedN">2</span></div>
-  <div class="btn tiny" id="btnBolt"><span class="ico">🔩</span><span class="n" id="btnBoltN">8</span></div>
 </div>
 
 <!-- Inventory button -->
@@ -1994,6 +1994,8 @@
     document.getElementById('locBanner').textContent=
       state.scene==='interior' ? (state.interiorKind==='bar'?'Бар «100 рентген»':'Бункер Сидоровича')
                                : (LOCATIONS[state.locIndex]?LOCATIONS[state.locIndex].name:'');
+    // combat cluster is only for the zone — hide it indoors so it doesn't clash with ТОРГ/ВЕРСТАК
+    document.getElementById('btns').style.display = state.scene==='zone' ? 'flex' : 'none';
     const sun=Math.sin(state.dayT*6.283);
     document.getElementById('skyIcon').textContent=
       (state.scene==='interior'?'🏠':(sun>0.15?'☀️':sun<-0.15?'🌙':'🌆'))+(state.weather==='rain'&&state.scene!=='interior'?' 🌧️':'');
