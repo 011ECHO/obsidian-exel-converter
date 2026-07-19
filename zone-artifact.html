@@ -251,74 +251,112 @@
   .eff-pro{ color:#8fd04a; }
   .eff-con{ color:#e07a6a; }
 
-  /* ===== EFT-style inventory (flat, dark, tan) ===== */
-  .inv-panel.zs{
-    max-width:600px; gap:0; padding:0; border:1px solid #3a3a30;
-    background:#121210; box-shadow:0 16px 48px #000d, inset 0 0 0 1px #000;
-    border-radius:2px;
+  /* ===== STALKER 2-style inventory ===== */
+  .inv-panel.s2{
+    max-width:600px; gap:0; padding:12px; border-radius:3px;
+    border:2px solid #4a3e2a;
+    background:
+      linear-gradient(#242c22,#171d16);
+    box-shadow:0 18px 50px #000e,
+      inset 0 0 0 2px #10140d, inset 0 0 0 3px #55603f, inset 0 0 70px #0007;
   }
-  .zs-topbar{ display:flex; align-items:center; gap:8px; padding:10px 12px;
-    background:#1b1b15; border-bottom:1px solid #3a3a30; }
-  .zs-title{ font-size:14px; letter-spacing:3px; color:#c8c0a6; font-weight:bold; }
-  .zs-title::before{ content:''; display:inline-block; width:4px; height:14px; background:#c07a3a;
-    margin-right:8px; vertical-align:-2px; }
-  .inv-wt{ font-size:12px; color:#9a957e; margin-left:auto; margin-right:6px; letter-spacing:0; }
-  .zs-section{ padding:10px 12px; background:#0f0f0c; }
-  .zs-lbl{ font-size:9px; letter-spacing:3px; color:#6f6a55; margin-bottom:7px; }
-  .zs-equip{ display:flex; gap:6px; }
+  .s2-top{ display:flex; align-items:center; gap:8px; padding:2px 2px 10px; }
+  .s2-brand{ font-size:13px; letter-spacing:4px; color:#c9c8b0; }
+  .inv-wt{ font-size:12px; color:#9aa383; margin-left:auto; margin-right:6px; letter-spacing:0; }
+  .s2-hdr{ display:flex; align-items:center; gap:10px; margin:10px 0 8px; color:#b9b89e;
+    font-size:10px; letter-spacing:3px; }
+  .s2-hdr>span{ flex:0 0 auto; }
+  .s2-hdr::before,.s2-hdr::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg,#0000,#4a5a40,#0000); }
+  .s2-hdr.inl{ margin:0; flex:0 0 auto; }
+  .s2-hdr.inl::before,.s2-hdr.inl::after{ display:none; }
+  .s2-equip{ display:flex; gap:6px; }
   .load-cell{ pointer-events:auto; flex:1; min-width:0; position:relative; cursor:pointer;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:#1a1a14; border:1px solid #35352b; border-radius:2px;
-    padding:10px 6px 8px; text-align:center; min-height:78px; }
+    background:radial-gradient(circle at 50% 30%,#1a2116,#0c110a); border:1px solid #3c4a33; border-radius:2px;
+    padding:12px 6px 8px; text-align:center; min-height:82px; box-shadow:inset 0 0 14px #000a; }
   .load-cell.wpn{ flex:2; }
-  .load-cell:active{ background:#20201a; }
-  .lc-tag{ order:-1; position:absolute; top:4px; left:6px; font-size:8px; letter-spacing:1.5px; color:#605b48; }
-  .lc-ico{ font-size:26px; line-height:1; filter:grayscale(.2) drop-shadow(0 1px 2px #000); }
-  .lc-nm{ font-size:11px; color:#cfc8ac; margin-top:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
-  .load-arts{ pointer-events:auto; flex:1.5; background:#1a1a14; border:1px solid #35352b; border-radius:2px;
-    padding:6px 6px 7px; position:relative; }
-  .la-tag{ font-size:8px; letter-spacing:1.5px; color:#605b48; text-align:left; margin:0 0 6px 2px; }
-  .la-row{ display:flex; gap:5px; justify-content:flex-start; }
-  .la-slot{ pointer-events:auto; width:34px; height:34px; border:1px solid #3f3f33; border-radius:1px;
+  .load-cell:active{ background:#20281c; }
+  .load-cell::before,.load-cell::after{ content:''; position:absolute; width:9px; height:9px; }
+  .load-cell::before{ top:3px; left:3px; border-top:1px solid #5a6a44; border-left:1px solid #5a6a44; }
+  .load-cell::after{ bottom:3px; right:3px; border-bottom:1px solid #5a6a44; border-right:1px solid #5a6a44; }
+  .lc-tag{ order:-1; position:absolute; top:5px; left:0; right:0; font-size:8px; letter-spacing:1.5px; color:#6c7a54; text-align:center; }
+  .lc-ico{ font-size:27px; line-height:1; filter:drop-shadow(0 1px 2px #000); }
+  .lc-nm{ font-size:11px; color:#cdd2b4; margin-top:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+  .load-arts{ pointer-events:auto; flex:1.5; background:radial-gradient(circle at 50% 30%,#1a2116,#0c110a);
+    border:1px solid #3c4a33; border-radius:2px; padding:16px 6px 7px; position:relative; box-shadow:inset 0 0 14px #000a; }
+  .la-tag{ position:absolute; top:5px; left:0; right:0; font-size:8px; letter-spacing:1.5px; color:#6c7a54; text-align:center; }
+  .la-row{ display:flex; gap:5px; justify-content:center; }
+  .la-slot{ pointer-events:auto; width:34px; height:34px; border:1px solid #45543a; border-radius:1px;
     display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer;
-    background:#0e0e0a; box-shadow:inset 0 0 6px #000; }
-  .la-slot.filled{ border-color:#8a9a55; }
-  .la-slot .muted{ color:#3f3f33; font-size:18px; }
-  .inv-active{ margin-top:9px; }
-  .inv-active .muted{ color:#605b48; }
-  .zs-detail{ display:none; margin:0 12px 11px; background:#16160f;
-    border:1px solid #35352b; border-left:3px solid #c07a3a; border-radius:2px; padding:10px; }
-  .zs-detail.show{ display:block; }
-  .det-title{ font-size:14px; font-weight:bold; color:#d8d0b2; letter-spacing:.5px; }
-  .det-body{ font-size:11.5px; color:#a29c84; line-height:1.55; margin-top:5px; }
-  .det-body .muted{ color:#6a6552; }
-  .det-acts{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
-  .det-btn{ pointer-events:auto; background:#26261d; border:1px solid #6a5a34; color:#d9b978;
+    background:#0c110a; box-shadow:inset 0 0 6px #000; }
+  .la-slot.filled{ border-color:#9ab45a; box-shadow:inset 0 0 6px #000, 0 0 5px #9ab45a44; }
+  .la-slot .muted{ color:#3f4a33; font-size:18px; }
+  .s2-quick{ display:flex; gap:6px; }
+  .s2-qslot{ pointer-events:auto; flex:1; aspect-ratio:1/1; position:relative; cursor:pointer;
+    background:#0e130c; border:1px solid #3c4a33; border-radius:2px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; box-shadow:inset 0 0 8px #000a; }
+  .s2-qslot:active{ background:#161d13; }
+  .s2-qslot .qi{ font-size:22px; line-height:1; }
+  .s2-qslot .qn{ position:absolute; bottom:1px; right:3px; font-size:11px; font-weight:bold; color:#e6e2c4; text-shadow:0 1px 2px #000; }
+  .s2-qslot.empty .qi{ opacity:.3; }
+  .s2-prot{ display:grid; grid-template-columns:1fr 1fr; gap:6px 14px; }
+  .prot-row{ display:flex; align-items:center; gap:6px; }
+  .prot-ico{ font-size:13px; width:16px; text-align:center; }
+  .prot-lbl{ font-size:8.5px; letter-spacing:.5px; color:#9aa383; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .seg{ position:relative; width:52px; height:8px; background:#0a0f08; border:1px solid #2f3a2a; border-radius:1px; overflow:hidden; flex:0 0 auto; }
+  .seg>i{ position:absolute; left:0; top:0; bottom:0; }
+  .seg::after{ content:''; position:absolute; inset:0; background:repeating-linear-gradient(90deg,#0000 0 5px,#0a0f08 5px 6px); }
+  .seg.green>i{ background:linear-gradient(#a4c85a,#6f9a3a); }
+  .seg.amber>i{ background:linear-gradient(#d0b24a,#9a7a24); }
+  .seg.red>i{ background:linear-gradient(#c86a3a,#9a3a20); }
+  .s2-detail{ display:none; margin-bottom:10px; background:linear-gradient(#1e261a,#12180f);
+    border:1px solid #4a5a3a; border-radius:2px; box-shadow:inset 0 0 0 1px #10140d; overflow:hidden; }
+  .s2-detail.show{ display:block; }
+  .s2d-head{ background:#28311f; padding:6px 10px; font-size:13px; letter-spacing:2px; color:#d8dcbe;
+    border-bottom:1px solid #4a5a3a; text-align:center; }
+  .s2d-body{ padding:9px 11px; }
+  .s2d-meta{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
+  .s2d-kg{ font-size:13px; color:#cdd2b4; } .s2d-kg small{ color:#8a9370; }
+  .s2d-val{ font-size:14px; color:#d9b24a; font-weight:bold; }
+  .s2d-sub{ font-size:11px; color:#8a9370; font-style:italic; margin-bottom:5px; }
+  .s2d-desc{ font-size:11px; color:#aab294; line-height:1.5; margin-bottom:8px; }
+  .s2d-stat{ display:flex; align-items:center; gap:7px; margin-top:5px; }
+  .s2d-stat .si{ width:16px; text-align:center; font-size:12px; }
+  .s2d-stat .sl{ flex:1; font-size:10px; color:#b9b89e; letter-spacing:.5px; }
+  .s2d-stat .sa{ font-size:11px; width:12px; text-align:center; }
+  .s2d-acts{ display:flex; gap:8px; margin-top:11px; flex-wrap:wrap; }
+  .det-btn{ pointer-events:auto; background:#2c3720; border:1px solid #6a7a44; color:#d7e0b0;
     font-family:inherit; font-size:12px; font-weight:bold; padding:8px 14px; border-radius:2px; letter-spacing:.5px; }
-  .det-btn.sell{ background:#1c241b; border-color:#4a6a44; color:#9ac48c; }
-  .det-btn:active{ transform:translateY(1px); background:#30302433; }
-  .zs-bagbar{ display:flex; align-items:center; gap:8px; padding:7px 12px;
-    background:#1b1b15; border-top:1px solid #3a3a30; border-bottom:1px solid #3a3a30; }
-  .zs-bagbar>span{ font-size:10px; letter-spacing:2px; color:#7d7862; white-space:nowrap; }
+  .det-btn.sell{ background:#2e2a18; border-color:#7a6a34; color:#d9b978; }
+  .det-btn:active{ transform:translateY(1px); }
+  .s2-bag{ display:flex; align-items:center; gap:10px; margin:10px 0 8px; }
+  .s2-bag .s2-hdr.inl{ color:#b9b89e; font-size:10px; letter-spacing:3px; }
   .eft-cats{ display:flex; gap:4px; overflow-x:auto; -webkit-overflow-scrolling:touch; margin-left:auto; }
-  .cat-btn{ pointer-events:auto; flex:0 0 auto; background:#17170f; border:1px solid #35352b; color:#8a856c;
+  .cat-btn{ pointer-events:auto; flex:0 0 auto; background:#141a10; border:1px solid #3c4a33; color:#8a9670;
     font-family:inherit; font-size:11px; letter-spacing:.5px; padding:6px 8px; border-radius:2px;
     display:flex; align-items:center; gap:3px; }
-  .cat-btn.on{ background:#2e2415; border-color:#c07a3a; color:#d9b978; }
+  .cat-btn.on{ background:#2c3720; border-color:#9ab45a; color:#cbe08a; }
   .cat-btn span{ font-size:10px; }
-  .eft-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(70px,1fr)); gap:3px; padding:10px;
-    max-height:42vh; overflow-y:auto; -webkit-overflow-scrolling:touch; background:#0b0b09; }
+  .eft-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(66px,1fr)); gap:3px; padding:8px;
+    max-height:38vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    background:#0b0f09; border:1px solid #2c3826; border-radius:2px; box-shadow:inset 0 0 18px #000a; }
   .eft-cell{ pointer-events:auto; position:relative; aspect-ratio:1/1;
-    background:#17170f; border:1px solid #2a2a22; border-radius:1px; display:flex; flex-direction:column;
+    background:linear-gradient(#191f14,#0f140c); border:1px solid #2e3a28; border-radius:1px; display:flex; flex-direction:column;
     align-items:center; justify-content:center; padding:3px; cursor:pointer; }
-  .eft-cell:active{ background:#20201622; }
-  .eft-cell.sel{ border-color:#d98d3f; box-shadow:0 0 0 1px #d98d3f inset; }
+  .eft-cell:active{ background:#212a1a; }
+  .eft-cell.sel{ border-color:#c9d68a; box-shadow:0 0 0 1px #c9d68a inset, 0 0 8px #9ab45a55; }
   .eft-cell.dim{ opacity:.42; }
-  .eft-cell .ci{ font-size:26px; line-height:1; filter:grayscale(.15) drop-shadow(0 1px 1px #000); }
-  .eft-cell .cn{ font-size:8px; color:#9a957c; margin-top:3px; text-align:center; line-height:1.05;
+  .eft-cell .ci{ font-size:25px; line-height:1; filter:drop-shadow(0 1px 1px #000); }
+  .eft-cell .cn{ font-size:8px; color:#9aa37e; margin-top:3px; text-align:center; line-height:1.05;
     overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-  .eft-cell .cq{ position:absolute; bottom:1px; right:3px; font-size:11px; font-weight:bold; color:#cfa668; text-shadow:0 1px 2px #000,0 0 3px #000; }
-  .eft-cell .cstar{ position:absolute; top:1px; left:3px; font-size:9px; color:#8a9a55; text-shadow:0 0 3px #000; }
+  .eft-cell .cq{ position:absolute; bottom:1px; right:3px; font-size:11px; font-weight:bold; color:#e6e2c4; text-shadow:0 1px 2px #000,0 0 3px #000; }
+  .eft-cell .cstar{ position:absolute; top:1px; left:3px; font-size:9px; color:#9ab45a; text-shadow:0 0 3px #000; }
+  .s2-weight{ display:flex; align-items:center; gap:8px; margin-top:9px; padding:6px 4px 2px;
+    border-top:1px solid #3a4630; font-size:11px; color:#9aa383; }
+  .s2wg{ position:relative; flex:1; height:12px; background:#0a0f08; border:1px solid #3a4630; border-radius:1px; overflow:hidden; }
+  .s2wg>i{ position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#6f9a3a,#c9a13a 70%,#c05a2c); }
+  .s2wg::after{ content:''; position:absolute; inset:0; background:repeating-linear-gradient(90deg,#0000 0 7px,#0a0f08 7px 8px); }
+  .s2-weight b{ color:#d8dcbe; }
   .inv-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
     gap:10px; padding:2px; }
   .art-card{
@@ -541,24 +579,26 @@
 
 <!-- Inventory modal (Zero Sievert-style, STALKER-2 palette) -->
 <div class="screen hide" id="invScreen">
-  <div class="inv-panel zs">
-    <div class="zs-topbar">
-      <span class="zs-title">СНАРЯЖЕНИЕ</span>
+  <div class="inv-panel s2">
+    <div class="s2-top">
+      <span class="s2-brand">СНАРЯЖЕНИЕ</span>
       <span class="inv-wt" id="invWt"></span>
       <button class="inv-close" id="invClose">✕</button>
     </div>
-    <div class="zs-section">
-      <div class="zs-lbl">ЭКИПИРОВКА</div>
-      <div class="zs-equip">
-        <div class="load-cell wpn" id="loadWeapon"></div>
-        <div class="load-cell" id="loadSuit"></div>
-        <div class="load-arts" id="loadArts"></div>
-      </div>
-      <div class="inv-active" id="invActive"></div>
+    <div class="s2-detail" id="invDetail"></div>
+    <div class="s2-hdr"><span>ЭКИПИРОВКА</span></div>
+    <div class="s2-equip">
+      <div class="load-cell wpn" id="loadWeapon"></div>
+      <div class="load-cell" id="loadSuit"></div>
+      <div class="load-arts" id="loadArts"></div>
     </div>
-    <div class="zs-detail" id="invDetail"></div>
-    <div class="zs-bagbar"><span id="invBagTitle">РЮКЗАК</span><div class="eft-cats" id="invCats"></div></div>
-    <div class="eft-grid zs-grid" id="invGrid2"></div>
+    <div class="s2-hdr"><span>БЫСТРЫЙ ДОСТУП</span></div>
+    <div class="s2-quick" id="invQuick"></div>
+    <div class="s2-hdr"><span>ЗАЩИТА</span></div>
+    <div class="s2-prot" id="invProt"></div>
+    <div class="s2-bag"><span class="s2-hdr inl"><span>ИНВЕНТАРЬ</span></span><div class="eft-cats" id="invCats"></div></div>
+    <div class="eft-grid s2-grid" id="invGrid2"></div>
+    <div class="s2-weight" id="invWeightBar"></div>
   </div>
 </div>
 
@@ -3547,7 +3587,6 @@
   // ---------- Inventory ----------
   const invScreen=document.getElementById('invScreen');
   const btnInv=document.getElementById('btnInv');
-  const invActiveEl=document.getElementById('invActive');
   let invCat='all', invSel=null;                 // UI state (not persisted)
   const INV_CATS=[
     {id:'all', ico:'🎒', label:'Всё'},
@@ -3619,23 +3658,49 @@
     return c;
   }
   function renderInv(){
-    const wr=state.weight/state.maxWeight, wc = wr>1?'#e05a4a':wr>0.7?'#e0a02a':'#8fbf3f';
-    document.getElementById('invWt').innerHTML='<span style="color:'+wc+'">⚖ '+state.weight.toFixed(1)+'/'+state.maxWeight+'</span> · 🎒'+state.inventory.length+'/'+state.maxSlots;
-    renderLoadout();
-    // active artifact effects
-    const m=state.mods, lines=[];
-    if(state.equipped.length){
-      if(m.maxHpBonus) lines.push(tag(m.maxHpBonus>0?'pro':'con',(m.maxHpBonus>0?'+':'')+m.maxHpBonus+' макс.HP'));
-      if(m.regen) lines.push(tag('pro','реген +'+m.regen.toFixed(1)+'/с'));
-      if(m.dmgMul!==1) lines.push(tag(m.dmgMul>1?'pro':'con','урон ×'+m.dmgMul.toFixed(2)));
-      if(m.spdMul!==1) lines.push(tag(m.spdMul>1?'pro':'con','скор. ×'+m.spdMul.toFixed(2)));
-      if(m.radResist) lines.push(tag('pro','защ.рад '+Math.round(m.radResist*100)+'%'));
-      if(m.resist) lines.push(tag('pro','защ.урон −'+Math.round(m.resist*100)+'%'));
-      if(m.radPassive) lines.push(tag('con','рад +'+m.radPassive.toFixed(1)+'/с'));
-    }
-    invActiveEl.innerHTML = lines.length? lines.join('') : '<span class="muted">артефакты не надеты</span>';
-    renderCats(); renderGrid(); renderDetail();
+    const wr=state.weight/state.maxWeight, wc = wr>1?'#e05a4a':wr>0.7?'#e0a02a':'#9ab45a';
+    document.getElementById('invWt').innerHTML='<span style="color:'+wc+'">⚖ '+state.weight.toFixed(1)+'/'+state.maxWeight+' кг</span>';
+    renderLoadout(); renderQuick(); renderProtection();
+    renderCats(); renderGrid(); renderDetail(); renderWeight();
     updateHUD();
+  }
+  function renderQuick(){
+    const q=document.getElementById('invQuick'); q.innerHTML='';
+    const items=[['med','💊',state.meds],['food','🥫',state.food],['drink','💧',state.drink],['bolt','🔩',state.bolts]];
+    for(const [k,ic,n] of items){
+      const s=document.createElement('div'); s.className='s2-qslot'+(n<=0?' empty':'');
+      s.innerHTML='<span class="qi">'+ic+'</span>'+(n>0?'<span class="qn">'+n+'</span>':'');
+      s.onclick=()=>{ if(k==='bolt'){ toast('🔩 болты кидаются в Зоне'); return; } if(n<=0){ toast('Пусто'); return; } invUse(k); };
+      q.appendChild(s);
+    }
+  }
+  function protectionVals(){
+    const m=state.mods, tier=Math.max(0,SUIT_ORDER.indexOf(state.suit)), base=Math.min(0.4, tier*0.09);
+    return [
+      {ico:'🔥', lbl:'ТЕРМИЧЕСКАЯ',  v:base*0.8},
+      {ico:'☢', lbl:'РАДИАЦИОННАЯ', v:m.radResist},
+      {ico:'⚡', lbl:'ЭЛЕКТРО',      v:base*0.9},
+      {ico:'🧠', lbl:'ПСИ',          v:base*0.6},
+      {ico:'🧪', lbl:'ХИМИЧЕСКАЯ',   v:base},
+      {ico:'🛡', lbl:'ФИЗИЧЕСКАЯ',   v:Math.min(1,m.resist*1.4)},
+    ];
+  }
+  function renderProtection(){
+    const p=document.getElementById('invProt'); p.innerHTML='';
+    for(const r of protectionVals()){
+      const pct=Math.round(clamp(r.v,0,1)*100);
+      const col = pct>=50?'green':pct>0?'amber':'';
+      const row=document.createElement('div'); row.className='prot-row';
+      row.innerHTML='<span class="prot-ico">'+r.ico+'</span><span class="prot-lbl">'+r.lbl+'</span>'+
+        '<span class="seg '+col+'"><i style="width:'+pct+'%"></i></span>';
+      p.appendChild(row);
+    }
+  }
+  function renderWeight(){
+    const el=document.getElementById('invWeightBar');
+    const pct=clamp(state.weight/state.maxWeight,0,1)*100;
+    el.innerHTML='<span>'+state.money+' ₴</span><span class="s2wg"><i style="width:'+pct.toFixed(0)+'%"></i></span>'+
+      '<span><b>'+state.weight.toFixed(1)+'</b> / Макс. '+state.maxWeight+' кг</span>';
   }
   function renderLoadout(){
     const w=curWeapon();
@@ -3699,38 +3764,66 @@
         sel:invSel&&invSel.t==='mat'&&invSel.key===mk, onTap:()=>{ invSel={t:'mat',key:mk}; renderInv(); }})); }
     if(!any) gridEmpty(g, cat==='mod'?'Модулей нет — купи у торговца или скрафти на 🔧 Верстаке':'Пусто');
   }
+  function statRow(i,l,v,neg){ const w=Math.round(clamp(Math.abs(v),0,1)*100);
+    return '<div class="s2d-stat"><span class="si">'+i+'</span><span class="sl">'+l+'</span>'+
+      '<span class="seg '+(neg?'red':'green')+'"><i style="width:'+w+'%"></i></span>'+
+      '<span class="sa" style="color:'+(neg?'#c86a3a':'#a4c85a')+'">'+(neg?'↑':'+')+'</span></div>'; }
+  function artStatRows(type){ const e=type.eff||{}, r=[];
+    if(e.maxHpBonus) r.push(statRow('❤','Макс. HP', e.maxHpBonus/100, e.maxHpBonus<0));
+    if(e.regen) r.push(statRow('✚','Регенерация', e.regen/2, false));
+    if(e.spdMul&&e.spdMul!==1) r.push(statRow('👟','Скорость', e.spdMul-1, e.spdMul<1));
+    if(e.dmgMul&&e.dmgMul!==1) r.push(statRow('🔫','Урон', e.dmgMul-1, e.dmgMul<1));
+    if(e.radResist) r.push(statRow('☢','Защ. радиации', e.radResist, false));
+    if(e.resist) r.push(statRow('🛡','Защ. урона', e.resist, false));
+    if(e.radPassive) r.push(statRow('☢','Излучение', e.radPassive/2, true));
+    return r.join(''); }
+  function card(o){   // {name, kg, val, sub, desc, stats, glow}
+    return '<div class="s2d-head" style="'+(o.glow?'color:'+o.glow:'')+'">'+o.name+'</div>'+
+      '<div class="s2d-body">'+
+      '<div class="s2d-meta"><span class="s2d-kg">'+(o.kg!=null?'☰ '+o.kg+' <small>кг</small>':'')+'</span>'+
+        (o.val!=null?'<span class="s2d-val">'+o.val+' ₴</span>':'')+'</div>'+
+      (o.sub?'<div class="s2d-sub">'+o.sub+'</div>':'')+
+      (o.desc?'<div class="s2d-desc">'+o.desc+'</div>':'')+
+      (o.stats||'')+
+      (o.acts?'<div class="s2d-acts">'+o.acts+'</div>':'')+
+      '</div>'; }
   function renderDetail(){
     const d=document.getElementById('invDetail');
     if(!invSel){ d.innerHTML=''; d.classList.remove('show'); return; }
     d.classList.add('show');
     const btns=(arr)=>arr.map(b=>'<button class="det-btn'+(b.cls||'')+'" data-a="'+b.a+'">'+b.t+'</button>').join('');
-    let html='', acts=[];
-    if(invSel.t==='weap'){ const w=state.weapons.find(x=>x.uid===invSel.id); if(w){ const st=weaponStats(w);
-      const mods=Object.keys(w.mods).map(s=>MODS[w.mods[s]].ico+MODS[w.mods[s]].name).join(', ')||'нет';
-      html='<div class="det-title">🔫 '+WEAPONS[w.key].name+' · '+WEAPONS[w.key].cls+'</div>'+
-        '<div class="det-body">Калибр '+CALIBERS[st.cal].name+' · Урон '+st.dmg.toFixed(0)+(st.pellets>1?'×'+st.pellets:'')+' · Магазин '+st.mag+' · Разброс '+(st.spread*100).toFixed(1)+(st.quiet?' · 🔇':'')+'<br>Модули: '+mods+'<br><span class="muted">Менять модули — на 🔧 Верстаке</span></div>';
-      if(state.weaponId!==w.uid) acts.push({a:'equipw',t:'★ В РУКИ'}); } }
-    else if(invSel.t==='mod'){ const mk=invSel.key;
-      html='<div class="det-title">'+MODS[mk].ico+' '+MODS[mk].name+'</div>'+
-        '<div class="det-body">Слот: <b>'+SLOT_NAMES[MODS[mk].slot]+'</b> · '+modDesc(mk)+'<br>Подходит: '+modFits(mk)+'<br><span class="muted">Установи на 🔧 Верстаке → Оружейник</span></div>'; }
+    let o=null, acts=[];
+    if(invSel.t==='weap'){ const w=state.weapons.find(x=>x.uid===invSel.id); if(w){ const st=weaponStats(w), B=WEAPONS[w.key];
+      const mods=Object.keys(w.mods).map(s=>MODS[w.mods[s]].ico+' '+MODS[w.mods[s]].name).join(', ')||'нет';
+      const stats=statRow('🔫','Урон', st.dmg/70, false)+statRow('▮','Магазин', st.mag/60, false)+
+        statRow('⏱','Скорострельн.', (1/st.rate)/12, false)+statRow('◎','Кучность', 1-clamp(st.spread*4.5,0,1), false);
+      if(state.weaponId!==w.uid) acts.push({a:'equipw',t:'★ В РУКИ'});
+      o={name:B.name+' · '+B.cls, kg:B.kg, val:B.price, sub:'Калибр '+CALIBERS[st.cal].name+(st.quiet?' · 🔇 тихое':''),
+        desc:'Модули: '+mods+'. Менять — на Верстаке.', stats, acts:btns(acts)}; } }
+    else if(invSel.t==='mod'){ const mk=invSel.key, M=MODS[mk];
+      o={name:M.ico+' '+M.name, kg:0.2, val:M.price, sub:'Модуль · слот «'+SLOT_NAMES[M.slot]+'»',
+        desc:modDesc(mk)+'. Подходит: '+modFits(mk)+'. Установи на Верстаке → Оружейник.'}; }
     else if(invSel.t==='art'||invSel.t==='artstash'){ const arr=invSel.t==='art'?state.inventory:state.stash; const it=arr.find(x=>x.id===invSel.id);
-      if(it){ const pros=it.type.pros.map(p=>'▲ '+p).join(' · '), cons=it.type.cons.map(c=>'▼ '+c).join(' · ');
-        html='<div class="det-title" style="color:'+it.type.glow+'">'+it.type.icon+' '+it.type.name+(it.type.legendary?' ★':'')+'</div>'+
-          '<div class="det-body">'+(pros||'')+(pros&&cons?'<br>':'')+(cons||'')+'</div>';
-        if(invSel.t==='art'){ acts.push({a:'toggle',t:state.equipped.includes(it.id)?'СНЯТЬ':'НАДЕТЬ'});
-          if(state.atStash) acts.push({a:'toput',t:'📦 В тайник',cls:' sell'}); }
-        else acts.push({a:'totake',t:'🎒 Взять'}); } }
-    else if(invSel.t==='suit'){ const id=invSel.id, owned=state.suits.includes(id);
-      html='<div class="det-title">🧥 '+SUITS[id].name+'</div><div class="det-body">'+(owned?SUITS[id].pros.map(p=>'▲ '+p).join(' · '):'<span class="muted">не найден — ищи в Зоне</span>')+'</div>';
-      if(owned && state.suit!==id) acts.push({a:'wear',t:'НАДЕТЬ'}); }
+      if(it){ const T=it.type;
+        if(invSel.t==='art'){ acts.push({a:'toggle',t:state.equipped.includes(it.id)?'СНЯТЬ':'НАДЕТЬ'}); if(state.atStash) acts.push({a:'toput',t:'📦 В тайник',cls:' sell'}); }
+        else acts.push({a:'totake',t:'🎒 Взять'});
+        o={name:T.name+(T.legendary?' ★':''), glow:T.glow, kg:0.5, val:ART_PRICE[T.name]||100,
+          sub:'Артефакт'+(T.legendary?' · ЛЕГЕНДАРНЫЙ':''), desc:'', stats:artStatRows(T), acts:btns(acts)}; } }
+    else if(invSel.t==='suit'){ const id=invSel.id, owned=state.suits.includes(id), S=SUITS[id];
+      if(owned && state.suit!==id) acts.push({a:'wear',t:'НАДЕТЬ'});
+      o={name:S.name, kg:2.5, val:SUIT_PRICE[id]||0, sub:'Броня'+(state.suit===id?' · НАДЕТА':''),
+        desc:owned?S.pros.join('. '):'Не найден — ищи в Зоне.', acts:btns(acts)}; }
     else if(invSel.t==='ammo'){ const c=invSel.key;
-      html='<div class="det-title">🔸 '+CALIBERS[c].name+'</div><div class="det-body">В запасе: <b>'+(state.ammo[c]||0)+'</b> патронов<br><span class="muted">Пополнить — у торговца или крафтом</span></div>'; }
-    else if(invSel.t==='use'){ const k=invSel.key; const nm={med:'Аптечка',food:'Паёк',drink:'Вода',bolt:'Болты'}[k];
-      html='<div class="det-title">'+({med:'💊',food:'🥫',drink:'💧',bolt:'🔩'}[k])+' '+nm+'</div><div class="det-body">Количество: <b>'+({med:state.meds,food:state.food,drink:state.drink,bolt:state.bolts}[k])+'</b></div>';
-      if(k!=='bolt') acts.push({a:'use',t:'ИСПОЛЬЗОВАТЬ'}); }
+      o={name:'🔸 '+CALIBERS[c].name, kg:((state.ammo[c]||0)*0.012).toFixed(2), sub:'Патроны',
+        desc:'В запасе: '+(state.ammo[c]||0)+' шт. Пополнить — у торговца или крафтом.'}; }
+    else if(invSel.t==='use'){ const k=invSel.key, nm={med:'Аптечка',food:'Паёк',drink:'Вода',bolt:'Болты'}[k], q={med:state.meds,food:state.food,drink:state.drink,bolt:state.bolts}[k];
+      if(k!=='bolt') acts.push({a:'use',t:'ИСПОЛЬЗОВАТЬ'});
+      o={name:({med:'💊',food:'🥫',drink:'💧',bolt:'🔩'}[k])+' '+nm, kg:(q*0.2).toFixed(1), sub:'Расходник',
+        desc:'Количество: '+q+'.', acts:btns(acts)}; }
     else if(invSel.t==='mat'){ const mk=invSel.key;
-      html='<div class="det-title">'+MATERIALS[mk].ico+' '+MATERIALS[mk].name+'</div><div class="det-body">Количество: <b>'+(state.materials[mk]||0)+'</b><br><span class="muted">Расходуется в крафте на Верстаке</span></div>'; }
-    d.innerHTML=html+(acts.length?'<div class="det-acts">'+btns(acts)+'</div>':'');
+      o={name:MATERIALS[mk].ico+' '+MATERIALS[mk].name, kg:((state.materials[mk]||0)*0.1).toFixed(1), sub:'Материал',
+        desc:'Количество: '+(state.materials[mk]||0)+'. Расходуется в крафте на Верстаке.'}; }
+    d.innerHTML = o? card(o) : '';
     for(const bn of d.querySelectorAll('.det-btn')){ bn.onclick=()=>{ const a=bn.dataset.a;
       if(a==='equipw') equipWeaponInv(invSel.id);
       else if(a==='toggle') toggleEquip(invSel.id);
