@@ -39,6 +39,17 @@
         font-size:9px; color:#fff; text-shadow:0 0 3px #000; letter-spacing:1.5px; }
   .hp > span{ background:linear-gradient(#e86a58,#a5342a); }
   .rad > span{ background:linear-gradient(#b6ff44,#6a9a00); }
+  .bar.sta{ height:9px; }
+  .sta > span{ background:linear-gradient(#4fd0ff,#1f7aa8); }
+  .surv{ display:flex; gap:6px; margin-top:1px; }
+  .surv .mini{ display:flex; align-items:center; gap:3px; }
+  .surv .mi{ font-size:11px; }
+  .surv i{ display:block; width:40px; height:7px; border-radius:4px; background:#0009;
+           box-shadow:inset 0 1px 2px #000, 0 0 0 1px #2a331f88; position:relative; overflow:hidden; }
+  .surv i > span{ position:absolute; inset:0; transition:width .2s linear; border-radius:4px; }
+  #hunBar{ background:linear-gradient(#e0a24a,#9a6a1a); }
+  #thiBar{ background:linear-gradient(#4fb8ff,#1f6aa8); }
+  #fatBar{ background:linear-gradient(#c8a2ff,#7a4ad0); }
 
   .top-right{
     position:absolute; top:calc(env(safe-area-inset-top) + 10px); right:10px;
@@ -105,9 +116,18 @@
   .btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #000; background:radial-gradient(circle at 40% 35%,#3b4a2a,#1a2011); }
   .btn .ico{ font-size:22px; }
   .btn .n{ font-size:15px; color:var(--amber); font-weight:bold; }
-  .btn.tiny{ width:58px; height:58px; }
-  .btn.tiny .ico{ font-size:18px; }
-  .btn.tiny .n{ font-size:13px; }
+  .btn.tiny{ width:50px; height:50px; }
+  .btn.tiny .ico{ font-size:17px; }
+  .btn.tiny .n{ font-size:12px; }
+  #btns2{
+    position:absolute; left:50%; transform:translateX(-50%);
+    bottom:calc(env(safe-area-inset-bottom) + 14px);
+    display:flex; gap:10px; align-items:center; pointer-events:auto; z-index:11;
+  }
+  .btn.sprint{ width:58px; height:58px; border-color:#4f9ac8;
+    background:radial-gradient(circle at 40% 35%,#1e3648,#0c1620); }
+  .btn.sprint:active,.btn.sprint.on{ background:radial-gradient(circle at 40% 35%,#2a5a78,#123044); }
+  .btn.sprint .ico{ font-size:24px; }
   .btn.fire{
     width:86px; height:86px;
     background:radial-gradient(circle at 40% 35%,#5a2320,#2a0f0d);
@@ -258,6 +278,17 @@
   .art-card .legtag{ position:absolute; bottom:8px; right:8px; font-size:8px; letter-spacing:1px;
     color:#ff9ab6; border:1px solid #ff3b6b66; padding:1px 5px; border-radius:3px; }
   .inv-empty{ grid-column:1/-1; text-align:center; color:#5a6a48; font-size:13px; padding:24px; }
+  .inv-cap{ font-size:12px; color:#b7c2a6; margin:2px 0 8px; }
+  .inv-cap b{ color:#e6eed8; }
+  .inv-stash-wrap{ margin:6px 0 4px; }
+  .inv-stash{ display:flex; flex-direction:column; gap:5px; }
+  .stash-row{ display:flex; align-items:center; gap:8px; background:#0f1409;
+    border:1px solid #33402a; border-radius:6px; padding:6px 9px; }
+  .stash-row .sr-ic{ font-size:16px; }
+  .stash-row .sr-nm{ flex:1; font-size:13px; color:var(--ink); }
+  .art-card .tostash{ pointer-events:auto; margin-top:6px; width:100%; background:#12321f;
+    border:1px solid #3fa86a; color:#8fd0a0; font-family:inherit; font-size:11px;
+    padding:4px; border-radius:5px; }
 
   .inv-suits{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
   .suit-card{ pointer-events:auto; border:2px solid #2f3a1e; border-radius:8px; padding:10px;
@@ -327,12 +358,19 @@
   <div class="stats">
     <div class="bar hp"><span id="hpBar" style="width:100%"></span><div class="bar-label">ЗДОРОВЬЕ</div></div>
     <div class="bar rad"><span id="radBar" style="width:0%"></span><div class="bar-label">РАДИАЦИЯ</div></div>
+    <div class="bar sta"><span id="staBar" style="width:100%"></span><div class="bar-label">ВЫНОСЛИВОСТЬ</div></div>
+    <div class="surv">
+      <div class="mini"><span class="mi">🍖</span><i><span id="hunBar" style="width:100%"></span></i></div>
+      <div class="mini"><span class="mi">💧</span><i><span id="thiBar" style="width:100%"></span></i></div>
+      <div class="mini"><span class="mi">😴</span><i><span id="fatBar" style="width:100%"></span></i></div>
+    </div>
   </div>
   <div class="top-right">
     <div class="art-count">✦ <span id="artNum">0</span></div>
     <div style="color:#ffd24a">💰 <span id="moneyNum">0</span></div>
-    <div><span class="k" id="ammoNum">40</span> патронов</div>
+    <div><span class="k" id="ammoNum">30 / 60</span> патр.</div>
     <div><span class="k" id="boltNum">8</span> болтов</div>
+    <div style="font-size:11px" id="weightTxt">⚖ 6/45</div>
     <div style="font-size:11px;color:#8a9877" id="distTxt">выход: —</div>
   </div>
   <div id="detector">
@@ -347,9 +385,15 @@
 <!-- Touch -->
 <div id="joyZone"><div id="joyBase"><div id="joyStick"></div></div></div>
 <div id="btns">
+  <div class="btn sprint" id="btnSprint"><span class="ico">👟</span></div>
+  <div class="btn fire" id="btnFire"><span class="ico">🔫</span><span class="n" id="btnFireN">30</span></div>
+</div>
+<div id="btns2">
+  <div class="btn tiny" id="btnReload"><span class="ico">⟳</span><span class="n">R</span></div>
+  <div class="btn tiny" id="btnFood"><span class="ico">🥫</span><span class="n" id="btnFoodN">2</span></div>
+  <div class="btn tiny" id="btnDrink"><span class="ico">💧</span><span class="n" id="btnDrinkN">2</span></div>
   <div class="btn tiny" id="btnMed"><span class="ico">💊</span><span class="n" id="btnMedN">2</span></div>
   <div class="btn tiny" id="btnBolt"><span class="ico">🔩</span><span class="n" id="btnBoltN">8</span></div>
-  <div class="btn fire" id="btnFire"><span class="ico">🔫</span><span class="n" id="btnFireN">40</span></div>
 </div>
 
 <!-- Inventory button -->
@@ -403,7 +447,12 @@
       <button class="inv-close" id="invClose">✕</button>
     </div>
     <div class="inv-sub">Пояс — экипируй артефакты (до <b id="invMax">3</b>). Нажми на артефакт, чтобы надеть/снять.</div>
+    <div class="inv-cap" id="invCap"></div>
     <div class="inv-slots" id="invSlots"></div>
+    <div class="inv-stash-wrap hide" id="invStashWrap">
+      <div class="inv-grid-title">📦 ТАЙНИК (на базе)</div>
+      <div class="inv-stash" id="invStash"></div>
+    </div>
     <div class="inv-active-wrap">
       <div class="inv-active-title">АКТИВНЫЕ ЭФФЕКТЫ</div>
       <div class="inv-active" id="invActive"><span class="muted">ничего не экипировано</span></div>
@@ -426,14 +475,13 @@
   <button class="cta" id="startBtn">В ЗОНУ →</button>
   <div class="legend">
     <b>Джойстик</b> (левый низ) — движение и прицел &nbsp;·&nbsp; <b>🔫</b> — стрелять (держи для очереди)<br>
-    <b>🔩</b> — болт (проявить аномалии) &nbsp;·&nbsp; <b>💊</b> — аптечка &nbsp;·&nbsp; ПК: <b>WASD</b>, <b>F</b>, <b>Пробел</b>, <b>H</b><br>
-    <span style="color:#c9a227">✦ артефакты</span> у аномалий · <b>🎒</b> рюкзак — баффы и <span style="color:#8fbfe0">костюмы</span> ·
-    бей <span style="color:#e08a7a">мутантов</span><br>
-    находи <span style="color:#8fbfe0">костюмы</span>, <span style="color:#e8e8e0">💊 аптечки</span>, <span style="color:#c9a227">патроны</span> · <b>🔩 болт</b> разряжает аномалию на 3с<br>
-    <span style="color:#ffd24a">🏠 бункер Сидоровича ₴</span> у старта — продавай и покупай · беги от <span style="color:#a8ff33">радиации</span><br>
-    <b>🗺️ карта</b> (кнопка слева / <b>M</b>) — локации мира, переходы, радиация<br>
-    <span style="color:#8a9877">Зона — сеть локаций (открой <b>🗺️ карту</b>). Иди через <b style="color:#5cc8ff">ПЕРЕХОДЫ</b> на границах к соседям.<br>
-    цель: с артефактом ✦ добраться до <b style="color:#7fff9a">ЧАЭС</b> и сбежать из Зоны</span>
+    <b>👟</b> — спринт (держи, тратит <span style="color:#4fd0ff">выносливость</span>) &nbsp;·&nbsp; <b>⟳</b> — перезарядка (магазин) &nbsp;·&nbsp; <b>🔩</b> болт · <b>💊</b> аптечка<br>
+    <b>🥫 еда</b> · <b>💧 вода</b> — следи за <span style="color:#e0a24a">🍖 сытостью</span>, <span style="color:#4fb8ff">💧 жаждой</span>, <span style="color:#c8a2ff">😴 усталостью</span> · тяжёлый <b>⚖ вес</b> замедляет<br>
+    ПК: <b>WASD</b>, <b>F</b> стрелять, <b>Shift</b> спринт, <b>R</b> перезарядка, <b>Q/T</b> еда/вода, <b>Пробел</b>, <b>H</b><br>
+    <span style="color:#c9a227">✦ артефакты</span> у аномалий · неси на <b style="color:#5cc8ff">✚ ЭВАКУАЦИЮ</b> — сохрани лут в <b style="color:#8fbf3f">📦 тайник</b> на базе<br>
+    <span style="color:#e05a4a">☠ смерть = провал рейда</span>: теряешь несданный лут, но тайник цел · <span style="color:#7fff9a">убежища</span> спасают от выброса<br>
+    <span style="color:#ffd24a">🏠 бункер Сидоровича ₴</span> у старта — торговля, <b>задания</b>, <b>тайник</b>, <b>койка</b> (сон) · <b>🗺️ карта</b> (<b>M</b>)<br>
+    <span style="color:#8a9877">цель: с артефактом ✦ добраться до <b style="color:#7fff9a">ЧАЭС</b> и сбежать из Зоны</span>
   </div>
 </div>
 
@@ -487,13 +535,18 @@
   const state = {
     running:false, over:false,
     px:0, py:0, pvx:0, pvy:0, facing:0, walkPhase:0, moving:false,
-    hp:100, rad:0, bolts:8, meds:2, artifacts:0, ammo:40, kills:0,
+    hp:100, rad:0, bolts:8, meds:2, artifacts:0, kills:0,
+    mag:30, magSize:30, ammoReserve:60, reloading:0,
+    stamina:100, maxStamina:100, sprinting:false, exhausted:false,
+    weight:0, maxWeight:45, encumbered:false,
+    hunger:100, thirst:100, fatigue:100, survT:0,
+    food:2, drink:2, stash:[], maxSlots:10, atStash:false, evacT:0, onEvac:false, raids:0, sleeping:0,
     dist:0, lastX:0, lastY:0, shootCD:0, firing:false,
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
     bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[], transitions:[],
     buildings:[], roads:[], vendor:null, vendorName:'Сидорович', nearVendor:false, interiorKind:'bunker',
     water:[], mud:[], dayT:0.12, weather:'clear', weatherT:18, tracks:[], trackDist:0, trackSide:1,
-    shelters:[], emission:'idle', emissionT:0, emissionNext:130, inShelter:false, shake:0,
+    shelters:[], evacs:[], emission:'idle', emissionT:0, emissionNext:130, inShelter:false, shake:0,
     quests:[], questOffers:{}, questsDone:0, _questId:1, thunderT:6,
     locIndex:0, locData:{},
     suit:'newcomer', suits:['newcomer'],
@@ -680,11 +733,15 @@
     {key:'ammo', name:'Патроны ×24', amount:24, price:70,  ico:'🔫'},
     {key:'med',  name:'Аптечка ×1',  amount:1,  price:130, ico:'💊'},
     {key:'bolt', name:'Болты ×5',    amount:5,  price:45,  ico:'🔩'},
+    {key:'food', name:'Тушёнка ×2',  amount:2,  price:80,  ico:'🥫'},
+    {key:'drink',name:'Вода ×2',     amount:2,  price:60,  ico:'💧'},
   ];
   // interior (trader hideout) dimensions & key positions
   const IW=440, IH=620;
   const TRADER={x:IW/2, y:150};
   const EXITMAT={x:IW/2, y:IH-38};
+  const SLEEPMAT={x:IW-70, y:IH-120};   // bunk (base bunker only) — hold to sleep
+  const STASHMAT={x:70, y:IH-120};      // stash crate (base bunker only)
 
   // building palettes
   const BKIND={
@@ -885,7 +942,7 @@
     urban:null,
   };
   const LOC_ARRAYS=['anomalies','artItems','radzones','props','bolts_flying','particles',
-                    'bullets','mutants','ammoBoxes','medKits','suitPickups','transitions','water','mud','shelters'];
+                    'bullets','mutants','ammoBoxes','medKits','suitPickups','transitions','water','mud','shelters','evacs'];
   function applyStatics(i){
     const lay=LOCATIONS[i].layout||{};
     state.tracks=[];
@@ -1037,6 +1094,17 @@
       else { do{ hx=rnd(200,W-200); hy=rnd(200,H-200); tries++; } while((inB(hx,hy,50)||nearHub(hx,hy)) && tries<40); }
       state.shelters.push({x:hx, y:hy, r:56});
     }
+    // extraction points — hold to secure loot into the stash (usually near map edges)
+    const nEvac = li===0 ? 1 : 2;   // base has its own stash, so Cordon needs fewer
+    for(let i=0;i<nEvac;i++){
+      let ex,ey,tries=0;
+      do{ const edge=Math.floor(rnd(0,4));
+        ex = edge===0? rnd(260,W-260) : edge===1? W-320 : edge===2? rnd(260,W-260) : 320;
+        ey = edge<2 ? (edge===0? 320 : rnd(260,H-260)) : (edge===2? H-320 : rnd(260,H-260));
+        tries++;
+      } while((inB(ex,ey,60)||nearHub(ex,ey)) && tries<40);
+      state.evacs.push({x:ex, y:ey, r:60});
+    }
   }
   function spawnMutant(x,y,t){
     const M=MUT_TYPES[t];
@@ -1054,6 +1122,9 @@
     if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase())) e.preventDefault();
     if(e.key===' ') throwBolt();
     if(e.key.toLowerCase()==='h') useMed();
+    if(e.key.toLowerCase()==='r') reload();
+    if(e.key.toLowerCase()==='q') useFood();
+    if(e.key.toLowerCase()==='t') useDrink();
     if(e.key.toLowerCase()==='f') state.firing=true;
   });
   window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false;
@@ -1098,10 +1169,23 @@
     window.addEventListener('mousemove',mm); window.addEventListener('mouseup',mu);
   });
 
-  document.getElementById('btnBolt').addEventListener('touchstart',e=>{e.preventDefault();audioInit();throwBolt();},{passive:false});
-  document.getElementById('btnBolt').addEventListener('click',throwBolt);
-  document.getElementById('btnMed').addEventListener('touchstart',e=>{e.preventDefault();audioInit();useMed();},{passive:false});
-  document.getElementById('btnMed').addEventListener('click',useMed);
+  const tapBtn=(id,fn)=>{ const el=document.getElementById(id);
+    el.addEventListener('touchstart',e=>{e.preventDefault();audioInit();fn();},{passive:false});
+    el.addEventListener('click',fn); };
+  tapBtn('btnBolt',throwBolt);
+  tapBtn('btnMed',useMed);
+  tapBtn('btnFood',useFood);
+  tapBtn('btnDrink',useDrink);
+  tapBtn('btnReload',reload);
+  // sprint button — hold to sprint
+  const btnSprint=document.getElementById('btnSprint');
+  const sprintOn=e=>{ if(e){e.preventDefault();} audioInit(); state._sprintBtn=true; };
+  const sprintOff=e=>{ if(e){e.preventDefault();} state._sprintBtn=false; };
+  btnSprint.addEventListener('touchstart',sprintOn,{passive:false});
+  btnSprint.addEventListener('touchend',sprintOff,{passive:false});
+  btnSprint.addEventListener('touchcancel',sprintOff);
+  btnSprint.addEventListener('mousedown',sprintOn);
+  window.addEventListener('mouseup',()=>{state._sprintBtn=false;});
   // fire button — hold to keep firing
   const btnFire=document.getElementById('btnFire');
   btnFire.addEventListener('touchstart',e=>{e.preventDefault();audioInit();state.firing=true;shoot();},{passive:false});
@@ -1135,9 +1219,10 @@
   const SHOOT_RATE=0.16; // seconds between shots
   function shoot(){
     if(!state.running||state.over||state.scene!=='zone') return;
+    if(state.reloading>0) return;
     if(state.shootCD>0) return;
-    if(state.ammo<=0){ toast('Магазин пуст'); beep(160,0.06,'square',0.05); state.shootCD=0.3; return; }
-    state.ammo--; state.shootCD=SHOOT_RATE;
+    if(state.mag<=0){ reload(); return; }   // auto-reload on empty magazine
+    state.mag--; state.shootCD=SHOOT_RATE;
     let dx=Math.cos(state.facing), dy=Math.sin(state.facing);
     if(joyActive && (joyDx||joyDy)){ const d=Math.hypot(joyDx,joyDy); dx=joyDx/d; dy=joyDy/d; }
     const spread=rnd(-0.05,0.05), ca=Math.cos(spread), sa=Math.sin(spread);
@@ -1157,7 +1242,111 @@
     requestAnimationFrame(()=>{ hurtflash.style.transition='opacity .4s'; hurtflash.style.opacity='0'; });
     beep(130,0.12,'sawtooth',0.06);
     if(msg) toast(msg);
-    if(state.hp<=0) endGame(false);
+    if(state.hp<=0) downRaid('ранения');
+  }
+  // ---------- Reload (magazine) ----------
+  function reload(){
+    if(state.reloading>0 || state.scene!=='zone') return;
+    if(state.mag>=state.magSize){ return; }
+    if(state.ammoReserve<=0){ toast('Нет патронов в запасе'); beep(150,0.06,'square',0.04); return; }
+    state.reloading=1.7; toast('Перезарядка…'); beep(300,0.05,'square',0.04);
+  }
+  // ---------- Raid / stamina / survival ----------
+  function computeWeight(){
+    let w=6;                                   // base gear
+    w += state.inventory.length*2.2;           // artifacts are heavy
+    w += (state.mag+state.ammoReserve)*0.02;
+    w += state.meds*0.4 + state.bolts*0.15 + state.food*0.5 + state.drink*0.5;
+    return Math.round(w*10)/10;
+  }
+  function moveFactor(){
+    let f = state.sprinting ? 1.6 : 1;
+    const wr = state.weight/state.maxWeight;
+    if(wr>1) f*=0.55; else if(wr>0.7) f*=1-(wr-0.7)*0.9;   // gradual slow above 70% capacity
+    if(state.fatigue<25) f*=0.85;
+    return f;
+  }
+  function updateStamina(dt){
+    if(state.sprinting){
+      state.stamina=clamp(state.stamina-26*dt,0,state.maxStamina);
+      if(state.stamina<=0) state.exhausted=true;
+    } else {
+      const rr = state.moving?12:22;
+      state.stamina=clamp(state.stamina+rr*dt,0,state.maxStamina);
+    }
+    if(state.exhausted && state.stamina>state.maxStamina*0.35) state.exhausted=false;
+  }
+  function updateSurvival(dt){
+    const drain = state.sprinting?1.5:1;
+    state.hunger=clamp(state.hunger-0.14*dt,0,100);
+    state.thirst=clamp(state.thirst-0.20*dt,0,100);
+    state.fatigue=clamp(state.fatigue-0.09*drain*dt,0,100);
+    state.maxStamina = state.thirst<20 ? 60 : 100;      // dehydration caps stamina
+    if(state.stamina>state.maxStamina) state.stamina=state.maxStamina;
+    state.survT=(state.survT||0)+dt;
+    if(state.survT>=1){ state.survT=0;
+      let chip=0;
+      if(state.hunger<=0) chip+=2;
+      if(state.thirst<=0) chip+=3;
+      if(state.fatigue<=0) chip+=1;
+      if(chip>0 && !state.over){ state.hp=clamp(state.hp-chip,0,state.maxHp);
+        if(now()>(state._survWarn||0)){ state._survWarn=now()+4500; toast('⚠ Истощение отнимает силы'); }
+        if(state.hp<=0) downRaid('истощение'); }
+    }
+  }
+  function useFood(){
+    if(state.food<=0){ toast('Нет еды'); beep(160,0.06,'square',0.04); return; }
+    state.food--; state.hunger=clamp(state.hunger+45,0,100);
+    toast('🥫 Перекусил (+сытость)'); beep(520,0.07,'sine',0.05); updateHUD();
+  }
+  function useDrink(){
+    if(state.drink<=0){ toast('Нет воды'); beep(160,0.06,'square',0.04); return; }
+    state.drink--; state.thirst=clamp(state.thirst+50,0,100);
+    toast('💧 Утолил жажду'); beep(560,0.07,'sine',0.05); updateHUD();
+  }
+  function updateEvac(dt){
+    state.onEvac=false;
+    for(const e of state.evacs){ if(dist(state.px,state.py,e.x,e.y)<e.r){ state.onEvac=true; break; } }
+    const loose=state.inventory.filter(it=>!state.equipped.includes(it.id));
+    if(state.onEvac && !state.moving && loose.length>0 && state.emission!=='active'){
+      state.evacT=Math.min(state.evacT+dt,3);
+      if(state.evacT>=3) doExtract();
+    } else {
+      state.evacT=Math.max(0, state.evacT-dt*2);
+    }
+  }
+  function doExtract(){
+    const loose=state.inventory.filter(it=>!state.equipped.includes(it.id));
+    let cash=0;
+    for(const it of loose){ state.stash.push(it); cash+=Math.round((ART_PRICE[it.type.name]||100)*0.15); }
+    state.inventory=state.inventory.filter(it=>state.equipped.includes(it.id));
+    state.money+=cash; state.evacT=0; state.raids++;
+    state.hp=clamp(state.hp+20,0,state.maxHp);
+    toast('✅ Эвакуация: '+loose.length+' арт. в тайник (+'+cash+'₴)');
+    beep(660,0.1,'sine',0.06); setTimeout(()=>beep(990,0.12,'sine',0.06),110);
+    recomputeMods(); updateHUD();
+  }
+  function goToBase(){
+    state.locIndex=0; loadLoc(0);                 // ensure Cordon context is live
+    state.scene='interior'; state.interiorKind='bunker'; state.vendorName='Сидорович';
+    state.returnPos={x:LOCATIONS[0].layout.spawn.x, y:LOCATIONS[0].layout.spawn.y};
+    state.px=IW/2; state.py=IH-90; state.pvx=state.pvy=0;
+    state.firing=false; state.paused=false; state._doorReadyAt=now()+900;
+    document.getElementById('emissionBar').classList.add('hide');
+    emStop(); updateHUD();
+  }
+  function downRaid(cause){
+    if(state.over) return;
+    const loose=state.inventory.filter(it=>!state.equipped.includes(it.id));
+    const lostMoney=Math.round(state.money*0.3);
+    state.inventory=state.inventory.filter(it=>state.equipped.includes(it.id));
+    state.money=Math.max(0,state.money-lostMoney);
+    state.hp=Math.round(state.maxHp*0.6); state.rad=clamp(state.rad-30,0,100);
+    state.hunger=Math.max(state.hunger,40); state.thirst=Math.max(state.thirst,40); state.fatigue=Math.max(state.fatigue,35);
+    state.reloading=0; state.sprinting=false; state.evacT=0;
+    goToBase(); recomputeMods();
+    toast('☠ РЕЙД ПРОВАЛЕН ('+cause+'): −'+loose.length+' арт., −'+lostMoney+'₴');
+    noiseBurst(0.3,0.08); beep(90,0.4,'sawtooth',0.06);
   }
   // ---------- Emission (выброс) ----------
   function updateEmission(dt){
@@ -1216,7 +1405,7 @@
     requestAnimationFrame(()=>{ hurtflash.style.transition='opacity .4s'; hurtflash.style.opacity='0'; });
     noiseBurst(0.18,0.09); beep(120,0.15,'sawtooth',0.06);
     if(msg) toast(msg);
-    if(state.hp<=0) endGame(false);
+    if(state.hp<=0) downRaid('аномалия');
   }
 
   // ---------- Game loop ----------
@@ -1242,14 +1431,19 @@
     if(keys['d']||keys['arrowright']) ix+=1;
     const im=Math.hypot(ix,iy);
     state.moving = im>0.08;
+    // weight & sprint state
+    state.atStash=false;
+    state.weight=computeWeight(); state.encumbered=state.weight>state.maxWeight;
+    state.sprinting = (keys['shift']||state._sprintBtn) && state.moving && !state.encumbered && !state.exhausted && state.stamina>0;
     if(im>0.08){
       const nx=ix/im, ny=iy/im;
       state.facing=Math.atan2(ny,nx);
-      const spd = 132*state.mods.spdMul; // px/s
+      const spd = 132*state.mods.spdMul*moveFactor(); // px/s (sprint/weight/fatigue)
       let mag = joyActive? Math.min(im,1) : 1;
       state.pvx=nx*spd*mag; state.pvy=ny*spd*mag;
-      state.walkPhase += dt*10*mag;
+      state.walkPhase += dt*10*mag*(state.sprinting?1.5:1);
     } else { state.pvx*=0.6; state.pvy*=0.6; }
+    updateStamina(dt);
 
     // wading through water slows you & splashes
     if(state.water.length){
@@ -1308,6 +1502,11 @@
     // ----- timers -----
     if(state.hurtCD>0) state.hurtCD-=dt;
     if(state.shootCD>0) state.shootCD-=dt;
+    if(state.reloading>0){ state.reloading-=dt;
+      if(state.reloading<=0){ const need=state.magSize-state.mag, take=Math.min(need,state.ammoReserve);
+        state.mag+=take; state.ammoReserve-=take; beep(520,0.05,'square',0.04); updateHUD(); } }
+    updateSurvival(dt);
+    updateEvac(dt);
     if(state.firing) shoot();
 
     // ----- day/night + weather -----
@@ -1364,7 +1563,7 @@
     }
     // radiation damage over threshold
     if(state.rad>70){ state.hpDrain=(state.hpDrain||0)+dt;
-      if(state.hpDrain>1){ state.hpDrain=0; state.hp=clamp(state.hp-3,0,state.maxHp); if(state.hp<=0) endGame(false); }
+      if(state.hpDrain>1){ state.hpDrain=0; state.hp=clamp(state.hp-3,0,state.maxHp); if(state.hp<=0) downRaid('радиация'); }
     }
 
     // ----- artifacts -----
@@ -1372,6 +1571,10 @@
       if(art.taken) continue;
       art.bob+=dt*3;
       if(dist(state.px,state.py,art.x,art.y)<26){
+        if(state.inventory.length>=state.maxSlots){
+          if(now()>(state._fullWarn||0)){ state._fullWarn=now()+2500; toast('🎒 Рюкзак полон — освободи место'); beep(160,0.07,'square',0.04); }
+          continue;
+        }
         art.taken=true;
         state.artifacts++;
         state.inventory.push({id:state._invId++, type:art.type});
@@ -1483,7 +1686,7 @@
     for(const box of state.ammoBoxes){
       if(box.taken) continue;
       if(dist(state.px,state.py,box.x,box.y)<24){
-        box.taken=true; state.ammo+=box.amount;
+        box.taken=true; state.ammoReserve+=box.amount;
         toast('+'+box.amount+' патронов');
         beep(600,0.06,'square',0.05); beep(760,0.06,'square',0.04);
       }
@@ -1578,14 +1781,26 @@
   function updateHUD(){
     document.getElementById('hpBar').style.width=clamp(state.hp/state.maxHp*100,0,100)+'%';
     document.getElementById('radBar').style.width=state.rad+'%';
+    document.getElementById('staBar').style.width=clamp(state.stamina/state.maxStamina*100,0,100)+'%';
     document.getElementById('artNum').textContent=state.inventory.length;
     document.getElementById('moneyNum').textContent=state.money;
-    document.getElementById('ammoNum').textContent=state.ammo;
+    document.getElementById('ammoNum').textContent=state.mag+' / '+state.ammoReserve;
     document.getElementById('boltNum').textContent=state.bolts;
     document.getElementById('btnBoltN').textContent=state.bolts;
     document.getElementById('btnMedN').textContent=state.meds;
-    document.getElementById('btnFireN').textContent=state.ammo;
+    document.getElementById('btnFoodN').textContent=state.food;
+    document.getElementById('btnDrinkN').textContent=state.drink;
+    document.getElementById('btnFireN').textContent=state.reloading>0?'⟳':state.mag;
     document.getElementById('invBadge').textContent=state.inventory.length;
+    // survival meters
+    const setMeter=(id,v,lowCol)=>{ const el=document.getElementById(id); if(!el) return;
+      el.style.width=clamp(v,0,100)+'%'; el.style.background=v<25?lowCol:''; };
+    setMeter('hunBar',state.hunger,'#e05a4a');
+    setMeter('thiBar',state.thirst,'#e0a02a');
+    setMeter('fatBar',state.fatigue,'#b892ff');
+    const wr=state.weight/state.maxWeight;
+    const wEl=document.getElementById('weightTxt');
+    if(wEl){ wEl.textContent='⚖ '+state.weight.toFixed(0)+'/'+state.maxWeight; wEl.style.color=wr>1?'#e05a4a':wr>0.7?'#e0a02a':'#8a9877'; }
     document.getElementById('locBanner').textContent=
       state.scene==='interior' ? (state.interiorKind==='bar'?'Бар «100 рентген»':'Бункер Сидоровича')
                                : (LOCATIONS[state.locIndex]?LOCATIONS[state.locIndex].name:'');
@@ -1673,6 +1888,34 @@
       ctx.fillStyle='#0e0e0a'; for(let i=0;i<3;i++) ctx.fillRect(sx-10,sy+4+i*3,20,1);
       ctx.fillStyle='#101010'; ctx.fillRect(sx-30,sy-20,60,7);          // sign plate
       ctx.fillStyle=emActive?'#8fd0a0':'#8a9877'; ctx.font='bold 8px monospace'; ctx.textAlign='center'; ctx.fillText('УБЕЖИЩЕ', sx, sy-14);
+    }
+    // extraction points (hold to secure loot into the stash)
+    for(const e of state.evacs){
+      const sx=e.x+ox, sy=e.y+oy;
+      if(sx<-80||sx>VW+80||sy<-80||sy>VH+80) continue;
+      const here=dist(state.px,state.py,e.x,e.y)<e.r;
+      const pul=0.5+0.5*Math.sin(now()/280);
+      // green landing-zone
+      const g=ctx.createRadialGradient(sx,sy,0,sx,sy,e.r);
+      g.addColorStop(0,'rgba(60,200,255,'+(0.05+0.06*pul)+')'); g.addColorStop(1,'rgba(60,200,255,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,e.r,0,6.29); ctx.fill();
+      ctx.strokeStyle='rgba(90,220,255,'+(0.35+0.25*pul)+')'; ctx.lineWidth=2; ctx.setLineDash([8,7]); ctx.lineDashOffset=-now()/40;
+      ctx.beginPath(); ctx.arc(sx,sy,e.r,0,6.29); ctx.stroke(); ctx.setLineDash([]);
+      // painted H pad
+      ctx.fillStyle='rgba(90,220,255,0.5)';
+      ctx.fillRect(sx-13,sy-16,5,32); ctx.fillRect(sx+8,sy-16,5,32); ctx.fillRect(sx-8,sy-4,16,5);
+      ctx.fillStyle=here?'#7fe0ff':'#5aa8c8'; ctx.font='bold 9px monospace'; ctx.textAlign='center';
+      ctx.fillText('ЭВАКУАЦИЯ', sx, sy-24);
+      // hold progress ring
+      if(here && state.evacT>0){
+        ctx.strokeStyle='#7fff9a'; ctx.lineWidth=4;
+        ctx.beginPath(); ctx.arc(sx,sy,e.r-6,-1.57,-1.57+6.283*(state.evacT/3)); ctx.stroke();
+        ctx.fillStyle='#7fff9a'; ctx.font='bold 11px monospace'; ctx.fillText(Math.ceil(3-state.evacT)+'с', sx, sy+4);
+      } else if(here){
+        const loose=state.inventory.filter(it=>!state.equipped.includes(it.id)).length;
+        ctx.fillStyle='#cfe8ff'; ctx.font='9px monospace';
+        ctx.fillText(loose>0?'стой на месте':'нет лута', sx, sy+4);
+      }
     }
     // buildings (solid landmarks)
     for(const b of state.buildings){
@@ -2461,7 +2704,20 @@
     if(dist(state.px,state.py,EXITMAT.x,EXITMAT.y)<24){ exitHouse(); return; }
     state.nearTrader = dist(state.px,state.py,TRADER.x,TRADER.y) < 62;
     document.getElementById('btnTrade').style.display = state.nearTrader ? 'flex' : 'none';
-    const distEl=document.getElementById('distTxt'); distEl.textContent=state.interiorKind==='bar'?'🍺 бар':'🏠 бункер'; distEl.style.color='#8a9877';
+    // survival keeps draining indoors (slower), stamina recovers
+    updateSurvival(dt); updateStamina(dt);
+    state.weight=computeWeight();
+    // base bunker: sleep on the bunk (hold still) to restore fatigue & advance time
+    const isBase = state.interiorKind==='bunker';
+    state.atStash = isBase && dist(state.px,state.py,STASHMAT.x,STASHMAT.y)<40;
+    if(isBase && dist(state.px,state.py,SLEEPMAT.x,SLEEPMAT.y)<26 && !state.moving){
+      state.sleeping=Math.min((state.sleeping||0)+dt,2.2);
+      if(state.sleeping>=2.2){ state.sleeping=0;
+        state.fatigue=100; state.stamina=state.maxStamina; state.hp=clamp(state.hp+25,0,state.maxHp);
+        state.dayT=0.12; state.hunger=clamp(state.hunger-8,0,100); state.thirst=clamp(state.thirst-8,0,100);
+        toast('😴 Отдохнул — усталость снята'); beep(440,0.12,'sine',0.05); }
+    } else { state.sleeping=Math.max(0,(state.sleeping||0)-dt*2); }
+    const distEl=document.getElementById('distTxt'); distEl.textContent=state.interiorKind==='bar'?'🍺 бар':'🏠 база'; distEl.style.color='#8a9877';
     updateHUD();
   }
   function renderInterior(){
@@ -2518,6 +2774,30 @@
     ctx.fillStyle='rgba(80,200,255,'+(0.12+0.12*pulse)+')'; ctx.fillRect(ex-28,ey-13,56,26);
     ctx.strokeStyle='#5cc8ff'; ctx.lineWidth=2; ctx.strokeRect(ex-28,ey-13,56,26);
     ctx.fillStyle='#5cc8ff'; ctx.font='10px monospace'; ctx.textAlign='center'; ctx.fillText('ВЫХОД ↓', ex, ey+3);
+    // base-only furniture: stash crate + bunk
+    if(!bar){
+      // stash crate
+      const stx=STASHMAT.x+ox, sty=STASHMAT.y+oy;
+      ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fillRect(stx-24,sty+14,48,6);
+      ctx.fillStyle='#4a5a34'; ctx.fillRect(stx-24,sty-18,48,34);
+      ctx.fillStyle='#5c6f42'; ctx.fillRect(stx-24,sty-18,48,5);
+      ctx.fillStyle='#33401f'; ctx.fillRect(stx-24,sty+10,48,6);
+      ctx.fillStyle='#2c3618'; ctx.fillRect(stx-3,sty-18,6,34); ctx.fillRect(stx-24,sty-3,48,4);
+      ctx.fillStyle='#ffd24a'; ctx.font='bold 8px monospace'; ctx.textAlign='center'; ctx.fillText('ТАЙНИК', stx, sty-24);
+      if(state.atStash){ ctx.fillStyle='#8fd0a0'; ctx.font='9px monospace'; ctx.fillText('🎒 открой рюкзак', stx, sty+34); }
+      // bunk (sleep)
+      const bkx=SLEEPMAT.x+ox, bky=SLEEPMAT.y+oy;
+      ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(bkx-26,bky+12,52,6);
+      ctx.fillStyle='#3a3a34'; ctx.fillRect(bkx-26,bky-14,52,28);          // frame
+      ctx.fillStyle='#6b5a3a'; ctx.fillRect(bkx-24,bky-11,48,14);          // mattress
+      ctx.fillStyle='#8a7a52'; ctx.fillRect(bkx-24,bky-11,48,3);
+      ctx.fillStyle='#c8b088'; ctx.fillRect(bkx-22,bky-9,14,10);           // pillow
+      ctx.fillStyle='#8a9877'; ctx.font='bold 8px monospace'; ctx.fillText('КОЙКА', bkx, bky-20);
+      if(state.sleeping>0){ ctx.strokeStyle='#7fd0ff'; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.arc(bkx,bky,20,-1.57,-1.57+6.283*(state.sleeping/2.2)); ctx.stroke();
+        ctx.fillStyle='#7fd0ff'; ctx.font='10px monospace'; ctx.fillText('💤', bkx, bky+3); }
+      else { ctx.fillStyle='#6f7d5f'; ctx.font='9px monospace'; ctx.fillText('встань — спать', bkx, bky+30); }
+    }
     // aura + player
     if(state.heartEquipped) drawHeartAura(state.px+ox, state.py+oy);
     drawPlayer(state.px+ox, state.py+oy);
@@ -2624,7 +2904,8 @@
   function buyGood(key){ const g=GOODS.find(x=>x.key===key);
     if(state.money<g.price){ tradeMsg('Недостаточно монет'); beep(160,0.08,'square',0.05); return; }
     state.money-=g.price;
-    if(key==='ammo') state.ammo+=g.amount; else if(key==='med') state.meds+=g.amount; else if(key==='bolt') state.bolts+=g.amount;
+    if(key==='ammo') state.ammoReserve+=g.amount; else if(key==='med') state.meds+=g.amount; else if(key==='bolt') state.bolts+=g.amount;
+    else if(key==='food') state.food+=g.amount; else if(key==='drink') state.drink+=g.amount;
     beep(700,0.06,'square',0.05); renderTrade(); updateHUD(); }
   function buySuit(id){ if(state.suits.includes(id)) return; const price=SUIT_PRICE[id];
     if(state.money<price){ tradeMsg('Недостаточно монет'); beep(160,0.08,'square',0.05); return; }
@@ -2797,7 +3078,38 @@
     } else { state.equipped.push(id); beep(560,0.06,'sine',0.05); beep(760,0.06,'sine',0.04); }
     recomputeMods(); renderInv();
   }
+  function stashTake(id){
+    if(state.inventory.length>=state.maxSlots){ beep(160,0.08,'square',0.05); toast('🎒 Рюкзак полон'); return; }
+    const idx=state.stash.findIndex(x=>x.id===id); if(idx<0) return;
+    state.inventory.push(state.stash.splice(idx,1)[0]);
+    beep(560,0.06,'sine',0.05); renderInv();
+  }
+  function stashPut(id){
+    const idx=state.inventory.findIndex(x=>x.id===id); if(idx<0) return;
+    const eq=state.equipped.indexOf(id); if(eq>=0) state.equipped.splice(eq,1);
+    state.stash.push(state.inventory.splice(idx,1)[0]);
+    recomputeMods(); beep(420,0.06,'square',0.05); renderInv();
+  }
   function renderInv(){
+    // capacity
+    const cap=document.getElementById('invCap');
+    const wr=state.weight/state.maxWeight;
+    const wc = wr>1?'#e05a4a':wr>0.7?'#e0a02a':'#8fbf3f';
+    cap.innerHTML='🎒 <b>'+state.inventory.length+' / '+state.maxSlots+'</b> ячеек · '+
+      '<span style="color:'+wc+'">⚖ '+state.weight.toFixed(1)+' / '+state.maxWeight+' кг'+(state.encumbered?' (перегруз!)':'')+'</span>';
+    // stash (only usable at base crate)
+    const sw=document.getElementById('invStashWrap');
+    if(state.atStash){
+      sw.classList.remove('hide');
+      const st=document.getElementById('invStash'); st.innerHTML='';
+      if(state.stash.length===0) st.innerHTML='<div class="inv-empty">Тайник пуст. Эвакуируй артефакты с точек ЭВАК.</div>';
+      for(const it of state.stash){
+        const r=document.createElement('div'); r.className='stash-row';
+        r.innerHTML='<span class="sr-ic" style="color:'+it.type.glow+'">'+it.type.icon+'</span><span class="sr-nm">'+it.type.name+'</span>';
+        const b=document.createElement('button'); b.className='trade-btn'; b.textContent='ВЗЯТЬ';
+        b.onclick=()=>stashTake(it.id); r.appendChild(b); st.appendChild(r);
+      }
+    } else sw.classList.add('hide');
     // slots
     invSlotsEl.innerHTML='';
     for(let i=0;i<EQUIP_SLOTS;i++){
@@ -2847,8 +3159,9 @@
           '<span class="etag">НАДЕТ</span>'+legTag+
           '<div class="ahead"><span class="aic" style="color:'+it.type.glow+'">'+it.type.icon+'</span>'+
           '<span class="anm">'+it.type.name+'</span></div>'+
-          '<div class="aeff">'+pros+cons+'</div>';
-        card.onclick=()=>toggleEquip(it.id);
+          '<div class="aeff">'+pros+cons+'</div>'+
+          (state.atStash?'<button class="tostash">→ 📦 в тайник</button>':'');
+        card.onclick=(e)=>{ if(e.target.classList.contains('tostash')){ stashPut(it.id); return; } toggleEquip(it.id); };
         invGridEl.appendChild(card);
       }
     }
@@ -2890,7 +3203,11 @@
     audioInit(); if(AC&&AC.state==='suspended') AC.resume();
     Object.assign(state,{
       running:true, over:false, hp:100, rad:0, bolts:8, meds:2, artifacts:0,
-      ammo:40, kills:0, shootCD:0, firing:false,
+      mag:30, magSize:30, ammoReserve:60, reloading:0, kills:0, shootCD:0, firing:false,
+      stamina:100, maxStamina:100, sprinting:false, exhausted:false, _sprintBtn:false,
+      weight:0, maxWeight:45, encumbered:false,
+      hunger:100, thirst:100, fatigue:100, survT:0,
+      food:2, drink:2, stash:[], maxSlots:10, atStash:false, evacT:0, onEvac:false, raids:0, sleeping:0,
       dist:0, hurtCD:0, detNext:0, hpDrain:0, _exitHintT:0,
       inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
       suit:'newcomer', suits:['newcomer'],
