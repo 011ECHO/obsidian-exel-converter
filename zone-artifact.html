@@ -319,7 +319,10 @@
   .bench-mats{ font-size:14px; color:#cbd4bb; letter-spacing:1px; }
   .gun-stats{ font-size:12px; color:#b7c2a6; background:#0f1409; border:1px solid #33402a;
     border-radius:6px; padding:8px 10px; line-height:1.5; }
-  .trade-row.gun-sel{ border-color:#5cc8ff; box-shadow:0 0 0 1px #5cc8ff55 inset; }
+  .trade-row.gun-sel{ border-color:#5cc8ff; box-shadow:0 0 0 1px #5cc8ff55 inset; background:#0e1a22; }
+  .gun-row{ pointer-events:auto; cursor:pointer; }
+  .slot-row{ background:#0c130a; }
+  .mod-opt{ background:#0f1409; border-style:dashed; }
   .mod-sel{ pointer-events:auto; background:#12321f; border:1px solid #3fa86a; color:#cfe8d6;
     font-family:inherit; font-size:11px; padding:5px 6px; border-radius:5px; max-width:150px; }
   .trade-panel{ max-width:520px; }
@@ -500,15 +503,15 @@
   <button class="cta" id="startBtn">НОВАЯ ИГРА →</button>
   <div id="wipeHint" style="display:none;font-size:11px;color:#8a7d5f;margin-top:8px;">Новая игра сбросит сохранённый прогресс</div>
   <div class="legend">
-    <b>Джойстик</b> (левый низ) — движение и прицел &nbsp;·&nbsp; <b>🔫</b> — стрелять (держи для очереди)<br>
-    <b>👟</b> — спринт (держи, тратит <span style="color:#4fd0ff">выносливость</span>) &nbsp;·&nbsp; <b>⟳</b> — перезарядка (магазин) &nbsp;·&nbsp; <b>🔩</b> болт · <b>💊</b> аптечка<br>
-    <b>🥫 еда</b> · <b>💧 вода</b> — следи за <span style="color:#e0a24a">🍖 сытостью</span>, <span style="color:#4fb8ff">💧 жаждой</span>, <span style="color:#c8a2ff">😴 усталостью</span> · тяжёлый <b>⚖ вес</b> замедляет<br>
-    ПК: <b>WASD</b>, <b>F</b> стрелять, <b>Shift</b> спринт, <b>R</b> перезарядка, <b>Q/T</b> еда/вода, <b>Пробел</b>, <b>H</b><br>
-    <span style="color:#c9a227">✦ артефакты · 📦 тайники · материалы</span> в рейде · неси на <b style="color:#5cc8ff">✚ ЭВАКУАЦИЮ</b> и сохрани в <b style="color:#8fbf3f">тайник</b><br>
-    <span style="color:#e05a4a">☠ смерть = провал рейда</span>: теряешь несданный лут и оружие, но база и тайник целы<br>
-    <span style="color:#ffd24a">🏠 база Сидоровича</span>: торговля (<b>оружие, моды, патроны</b>), <b>🔧 верстак</b> — крафт и модификация ствола, <b>тайник</b>, <b>койка</b><br>
-    <span style="color:#8fbfe0">Бармен на Ростоке</span> торгует продвинутым оружием и модулями · <b style="color:#7fff9a">весь прогресс сохраняется</b><br>
-    <span style="color:#8a9877">цель: развивайся, добудь снаряжение и дойди до <b style="color:#7fff9a">ЧАЭС</b></span>
+    <b style="color:#ffd24a">Экстракшен-шутер.</b> Ты начинаешь на <b>🏠 БАЗЕ</b> — это твой штаб (как в Тарков).<br>
+    На базе: <b>💰 торговля</b> (оружие/моды/патроны), <b>🔧 ВЕРСТАК</b> — крафт и <b>смена оружия и модулей</b>,
+    <b>📦 тайник</b>, <b>🛏 койка</b>. Готов — иди на <b style="color:#5cc8ff">▶ В РЕЙД</b> (нижний люк).<br>
+    В рейде: собирай <span style="color:#c9a227">✦ артефакты, лутбоксы, материалы</span>, бей <span style="color:#e08a7a">мутантов</span>.<br>
+    Чтобы <b style="color:#7fff9a">сохранить добычу — эвакуируйся</b>: встань на <b style="color:#5cc8ff">✚ ЭВАКУАЦИЮ</b> или вернись
+    к <b style="color:#7fff9a">⤴ бункеру</b> — попадёшь на базу, лут уедет в тайник.<br>
+    <span style="color:#e05a4a">☠ смерть = провал рейда</span>: теряешь несданный лут и найденное оружие. База, тайник и снаряга целы.<br>
+    <b style="color:#7fff9a">Весь прогресс сохраняется.</b> Управление: <b>джойстик</b> слева, кнопки справа
+    (<b>🔫</b> огонь, <b>👟</b> спринт, <b>⟳</b> перезарядка, <b>🔩💊🥫💧</b>). ПК: <b>WASD/F/Shift/R</b>.
   </div>
 </div>
 
@@ -1474,25 +1477,48 @@
     let cash=0;
     for(const it of loose){ state.stash.push(it); cash+=Math.round((ART_PRICE[it.type.name]||100)*0.15); }
     state.inventory=state.inventory.filter(it=>state.equipped.includes(it.id));
-    // secure raid weapons & mods
+    // secure raid weapons & mods into permanent stash
     for(const uid of state.raidWeapons){ const w=state.weapons.find(x=>x.uid===uid); if(w) delete w.raid; }
     for(const mk of state.raidMods){ state.modsOwned[mk]=(state.modsOwned[mk]||0)+1; }
-    const secured=state.raidWeapons.length, securedMods=state.raidMods.length;
+    const secured=state.raidWeapons.length;
     state.raidWeapons=[]; state.raidMods=[];
     state.money+=cash; state.evacT=0; state.raids++;
-    state.hp=clamp(state.hp+20,0,state.maxHp);
-    toast('✅ Эвакуация: '+loose.length+' арт., '+secured+' ор., '+securedMods+' мод. в тайник (+'+cash+'₴)');
-    beep(660,0.1,'sine',0.06); setTimeout(()=>beep(990,0.12,'sine',0.06),110);
+    goToBase();                                  // extraction returns you to the base
     recomputeMods(); saveMeta(); updateHUD();
+    toast('✅ Эвакуация успешна: '+loose.length+' арт., '+secured+' ор. в тайник (+'+cash+'₴)');
+    beep(660,0.1,'sine',0.06); setTimeout(()=>beep(990,0.12,'sine',0.06),110);
   }
+  // The BASE is the hub (like an EFT hideout): you start here, extract here, deploy from here.
   function goToBase(){
-    state.locIndex=0; loadLoc(0);                 // ensure Cordon context is live
     state.scene='interior'; state.interiorKind='bunker'; state.vendorName='Сидорович';
-    state.returnPos={x:LOCATIONS[0].layout.spawn.x, y:LOCATIONS[0].layout.spawn.y};
+    state.locIndex=0;
     state.px=IW/2; state.py=IH-90; state.pvx=state.pvy=0;
     state.firing=false; state.paused=false; state._doorReadyAt=now()+900;
+    state.emission='idle'; state.emissionNext=rnd(90,140); state.shake=0;
+    state.atStash=false; state.atBench=false; state.nearTrader=false;
     document.getElementById('emissionBar').classList.add('hide');
-    emStop(); updateHUD();
+    document.getElementById('btnTrade').style.display='none';
+    document.getElementById('btnBench').style.display='none';
+    emStop(); rainLoop(false); updateHUD();
+  }
+  // Deploy from the base into a fresh raid (regenerated map).
+  function deployRaid(target){
+    const li = (target!=null) ? target : 0;      // default: Кордон
+    state.locData={};                            // fresh maps every raid
+    state.locIndex=li;
+    state.inventory=state.inventory.filter(it=>state.equipped.includes(it.id)); // carry out only what's equipped
+    state.raidWeapons=[]; state.raidMods=[];
+    state.scene='zone'; state.paused=false; state.firing=false;
+    state.px=LOCATIONS[li].layout.spawn.x; state.py=LOCATIONS[li].layout.spawn.y; state.pvx=state.pvy=0;
+    genWorld();                                  // regenerate the location (fresh loot/mutants)
+    state.hp=state.maxHp;                         // rested at base
+    state._doorReadyAt=now()+900; state._transReadyAt=now()+900;
+    state.atStash=false; state.atBench=false; state.nearTrader=false;
+    document.getElementById('btnTrade').style.display='none';
+    document.getElementById('btnBench').style.display='none';
+    toast('▶ Выход в Зону: '+LOCATIONS[li].name);
+    beep(400,0.1,'sine',0.05); setTimeout(()=>beep(560,0.1,'sine',0.05),90);
+    emStop(); saveMeta(); updateHUD();
   }
   function downRaid(cause){
     if(state.over) return;
@@ -1637,10 +1663,13 @@
         if(m===dl) nx=b.x-pad; else if(m===dr) nx=b.x+b.w+pad; else if(m===dt) ny=b.y-pad; else ny=b.y+b.h+pad;
       }
     }
-    // enterable (Sidorovich bunker / Бар «100 рентген»): door enters, walls solid
+    // Sidorovich bunker = home extraction (return to base); Бар = walk-in trader. Walls solid.
     if(state.house){
       const h=state.house;
-      if(now()>(state._doorReadyAt||0) && dist(nx,ny,h.door.x,h.door.y) < 30){ enterHouse(); return; }
+      if(now()>(state._doorReadyAt||0) && dist(nx,ny,h.door.x,h.door.y) < 32){
+        if(h.kind==='bunker') doExtract(); else enterHouse();
+        return;
+      }
       if(h.box){ const b=h.box, pad=9;
         if(nx>b.x-pad&&nx<b.x+b.w+pad&&ny>b.y-pad&&ny<b.y+b.h+pad){
           const dl=nx-(b.x-pad),dr=(b.x+b.w+pad)-nx,dt=ny-(b.y-pad),db=(b.y+b.h+pad)-ny;
@@ -2856,9 +2885,9 @@
     // two open hatch doors
     drawHatchDoor(sx-19, sy, -1);
     drawHatchDoor(sx+19, sy, 1);
-    // dim name marker
-    ctx.fillStyle='#0e0f0a'; ctx.fillRect(sx-26,sy-36,52,11);
-    ctx.fillStyle='#c9a227'; ctx.font='bold 9px monospace'; ctx.textAlign='center'; ctx.fillText('СИДОРОВИЧ', sx, sy-28);
+    // marker — this is the home extraction back to base
+    ctx.fillStyle='#0e1a10'; ctx.fillRect(sx-30,sy-38,60,12);
+    ctx.fillStyle='#7fff9a'; ctx.font='bold 8px monospace'; ctx.textAlign='center'; ctx.fillText('⤴ НА БАЗУ', sx, sy-29);
   }
   function drawTrader(x,y){ // Сидорович — bald, heavy, in a khaki vest
     ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(x,y+16,15,5,0,0,6.29); ctx.fill();
@@ -2920,7 +2949,7 @@
       nx=TRADER.x+Math.cos(a)*24; ny=TRADER.y+Math.sin(a)*24; }
     nx=clamp(nx,22,IW-22); ny=clamp(ny,42,IH-22);
     state.px=nx; state.py=ny;
-    if(dist(state.px,state.py,EXITMAT.x,EXITMAT.y)<24){ exitHouse(); return; }
+    if(dist(state.px,state.py,EXITMAT.x,EXITMAT.y)<24){ if(state.interiorKind==='bunker') deployRaid(); else exitHouse(); return; }
     state.nearTrader = dist(state.px,state.py,TRADER.x,TRADER.y) < 62;
     document.getElementById('btnTrade').style.display = state.nearTrader ? 'flex' : 'none';
     // survival keeps draining indoors (slower), stamina recovers
@@ -2994,7 +3023,8 @@
     const pulse=0.5+0.5*Math.sin(now()/300);
     ctx.fillStyle='rgba(80,200,255,'+(0.12+0.12*pulse)+')'; ctx.fillRect(ex-28,ey-13,56,26);
     ctx.strokeStyle='#5cc8ff'; ctx.lineWidth=2; ctx.strokeRect(ex-28,ey-13,56,26);
-    ctx.fillStyle='#5cc8ff'; ctx.font='10px monospace'; ctx.textAlign='center'; ctx.fillText('ВЫХОД ↓', ex, ey+3);
+    ctx.fillStyle='#5cc8ff'; ctx.font='bold 10px monospace'; ctx.textAlign='center';
+    ctx.fillText(state.interiorKind==='bunker'?'▶ В РЕЙД':'ВЫХОД ↓', ex, ey+3);
     // base-only furniture: stash crate + bunk
     if(!bar){
       // stash crate
@@ -3323,15 +3353,18 @@
         row.appendChild(l); row.appendChild(b); list.appendChild(row);
       }
     } else {
-      trHead(list,'ТВОЁ ОРУЖИЕ — выбери для модификации');
-      if(!state.weapons.length) trEmpty(list,'нет оружия');
-      for(const w of state.weapons){ const W=WEAPONS[w.key]; const equipped=state.weaponId===w.uid;
-        const row=document.createElement('div'); row.className='trade-row'+(gunSel===w.uid?' gun-sel':'');
+      // auto-select a weapon so the gunsmith is never empty
+      if(!state.weapons.find(x=>x.uid===gunSel)) gunSel = state.weaponId || (state.weapons[0] && state.weapons[0].uid) || null;
+      trHead(list,'ТВОЁ ОРУЖИЕ — нажми, чтобы выбрать');
+      if(!state.weapons.length) trEmpty(list,'нет оружия — купи у торговца');
+      for(const w of state.weapons){ const W=WEAPONS[w.key]; const equipped=state.weaponId===w.uid; const sel=gunSel===w.uid;
+        const row=document.createElement('div'); row.className='trade-row gun-row'+(sel?' gun-sel':'');
         const l=document.createElement('div'); l.className='trade-name';
-        l.innerHTML='🔫 '+W.name+(equipped?' <span style="color:#7fff9a">•в руках</span>':'')+(w.raid?' <span style="color:#e0a02a">•не сдан</span>':'');
-        l.onclick=()=>{ gunSel=w.uid; renderBench(); };
-        const b=document.createElement('button'); b.className='trade-btn'; b.textContent=equipped?'★':'ВЗЯТЬ';
-        if(equipped){ b.disabled=true; b.classList.add('owned'); } else b.onclick=()=>equipWeaponUid(w.uid);
+        l.innerHTML=(sel?'▸ ':'')+'🔫 '+W.name+(equipped?' <span style="color:#7fff9a">• в руках</span>':'')+(w.raid?' <span style="color:#e0a02a">• не сдан</span>':'');
+        const b=document.createElement('button'); b.className='trade-btn'; b.textContent=equipped?'★ В РУКАХ':'ВЗЯТЬ';
+        if(equipped){ b.disabled=true; b.classList.add('owned'); }
+        else b.onclick=(e)=>{ e.stopPropagation(); equipWeaponUid(w.uid); };
+        row.onclick=()=>{ gunSel=w.uid; renderBench(); };
         row.appendChild(l); row.appendChild(b); list.appendChild(row);
       }
       const w=state.weapons.find(x=>x.uid===gunSel);
@@ -3339,24 +3372,27 @@
         trHead(list,'⚙ '+W.name+' — характеристики');
         const stat=document.createElement('div'); stat.className='gun-stats';
         stat.innerHTML='Урон '+st.dmg.toFixed(0)+(st.pellets>1?'×'+st.pellets:'')+' · Магазин '+st.mag+
-          ' · Темп '+(1/st.rate).toFixed(1)+'/с · Разброс '+(st.spread*100).toFixed(1)+(st.quiet?' · тихий':'');
+          ' · Темп '+(1/st.rate).toFixed(1)+'/с · Разброс '+(st.spread*100).toFixed(1)+(st.quiet?' · 🔇тихий':'');
         list.appendChild(stat);
-        trHead(list,'СЛОТЫ МОДУЛЕЙ');
+        trHead(list,'МОДУЛИ — по слотам');
         for(const slot of W.slots){
           const cur=w.mods[slot];
-          const row=document.createElement('div'); row.className='trade-row';
-          const l=document.createElement('div'); l.className='trade-name';
-          l.innerHTML='<b>'+SLOT_NAMES[slot]+'</b>: '+(cur?MODS[cur].ico+' '+MODS[cur].name:'<span style="color:#6f7d5f">пусто</span>');
-          const wrap=document.createElement('div'); wrap.style.display='flex'; wrap.style.gap='4px';
-          if(cur){ const rb=document.createElement('button'); rb.className='trade-btn sell'; rb.textContent='СНЯТЬ'; rb.onclick=()=>removeMod(w.uid,slot); wrap.appendChild(rb); }
-          // install options from owned mods matching slot
-          const opts=Object.keys(state.modsOwned).filter(mk=>state.modsOwned[mk]>0 && MODS[mk].slot===slot);
-          if(opts.length){ const sel=document.createElement('select'); sel.className='mod-sel';
-            sel.innerHTML='<option value="">+ поставить</option>'+opts.map(mk=>'<option value="'+mk+'">'+MODS[mk].ico+' '+MODS[mk].name+' ×'+state.modsOwned[mk]+'</option>').join('');
-            sel.onchange=()=>{ if(sel.value) installMod(w.uid,slot,sel.value); };
-            wrap.appendChild(sel);
+          // slot header row: current mod + remove
+          const hrow=document.createElement('div'); hrow.className='trade-row slot-row';
+          const hl=document.createElement('div'); hl.className='trade-name';
+          hl.innerHTML='<b style="color:#8fbfe0">'+SLOT_NAMES[slot]+'</b> — '+(cur?'<span style="color:#e6eed8">'+MODS[cur].ico+' '+MODS[cur].name+'</span>':'<span style="color:#6f7d5f">пусто</span>');
+          hrow.appendChild(hl);
+          if(cur){ const rb=document.createElement('button'); rb.className='trade-btn sell'; rb.textContent='СНЯТЬ'; rb.onclick=()=>removeMod(w.uid,slot); hrow.appendChild(rb); }
+          list.appendChild(hrow);
+          // owned mods that fit this slot — tap to install
+          const opts=Object.keys(state.modsOwned).filter(mk=>state.modsOwned[mk]>0 && MODS[mk].slot===slot && mk!==cur);
+          if(!opts.length && !cur){ const e=document.createElement('div'); e.className='trade-empty'; e.style.paddingLeft='12px'; e.textContent='нет модулей — купи у торговца или скрафти'; list.appendChild(e); }
+          for(const mk of opts){ const M=MODS[mk];
+            const r=document.createElement('div'); r.className='trade-row mod-opt';
+            const ml=document.createElement('div'); ml.className='trade-name'; ml.innerHTML='&nbsp;&nbsp;'+M.ico+' '+M.name+' ×'+state.modsOwned[mk];
+            const mb=document.createElement('button'); mb.className='trade-btn'; mb.textContent='ПОСТАВИТЬ'; mb.onclick=()=>installMod(w.uid,slot,mk);
+            r.appendChild(ml); r.appendChild(mb); list.appendChild(r);
           }
-          row.appendChild(l); row.appendChild(wrap); list.appendChild(row);
         }
       }
     }
@@ -3594,13 +3630,15 @@
     else {
       // fresh loadout
       giveWeapon('pm', true); state.ammo['9x18']=40;
-      state.materials={scrap:3,elec:1,chem:2,cloth:2,parts:1};
+      state.modsOwned={reddot:1, mag_ext:1};              // starter mods to try the gunsmith
+      state.materials={scrap:4,elec:2,chem:3,cloth:2,parts:2};
       wipeSave();
     }
     recomputeMods(); state.hp=state.maxHp;
     emStop(); rainLoop(false);
     document.getElementById('emissionBar').classList.add('hide');
     genWorld();
+    goToBase();                     // start at the base hub (like an EFT hideout)
     saveMeta();
     updateHUD();
     invScreen.classList.add('hide');
