@@ -309,6 +309,21 @@
     box-shadow:0 4px 0 #000, 0 0 22px #ffd24a55;
   }
   #btnTrade:active{ transform:translateX(-50%) translateY(2px); box-shadow:0 2px 0 #000; }
+  #btnBench{
+    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 186px);
+    transform:translateX(-50%); z-index:13; pointer-events:auto; display:none;
+    align-items:center; gap:6px; padding:11px 20px; border-radius:26px;
+    background:linear-gradient(#2a4658,#152430); border:2px solid #5cc8ff; color:#cfeaff;
+    font-family:inherit; font-size:14px; letter-spacing:2px; font-weight:bold;
+    box-shadow:0 4px 0 #000, 0 0 20px #5cc8ff44;
+  }
+  #btnBench:active{ transform:translateX(-50%) translateY(2px); box-shadow:0 2px 0 #000; }
+  .bench-mats{ font-size:14px; color:#cbd4bb; letter-spacing:1px; }
+  .gun-stats{ font-size:12px; color:#b7c2a6; background:#0f1409; border:1px solid #33402a;
+    border-radius:6px; padding:8px 10px; line-height:1.5; }
+  .trade-row.gun-sel{ border-color:#5cc8ff; box-shadow:0 0 0 1px #5cc8ff55 inset; }
+  .mod-sel{ pointer-events:auto; background:#12321f; border:1px solid #3fa86a; color:#cfe8d6;
+    font-family:inherit; font-size:11px; padding:5px 6px; border-radius:5px; max-width:150px; }
   .trade-panel{ max-width:520px; }
   .trade-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
   .trade-money{ font-size:18px; color:#ffd24a; font-weight:bold; }
@@ -358,7 +373,7 @@
   <div class="top-right">
     <div class="art-count">✦ <span id="artNum">0</span></div>
     <div style="color:#ffd24a">💰 <span id="moneyNum">0</span></div>
-    <div><span class="k" id="ammoNum">30 / 60</span> патр.</div>
+    <div><span class="k" id="ammoNum">ПМ 8/40</span></div>
     <div><span class="k" id="boltNum">8</span> болтов</div>
     <div style="font-size:11px" id="weightTxt">⚖ 6/45</div>
     <div style="font-size:11px;color:#8a9877" id="distTxt">выход: —</div>
@@ -409,6 +424,25 @@
 
 <!-- Trade button (interior, near trader) -->
 <div id="btnTrade">💰<span>ТОРГ</span></div>
+
+<!-- Workbench button (interior base, near bench) -->
+<div id="btnBench">🔧<span>ВЕРСТАК</span></div>
+
+<!-- Workbench modal -->
+<div class="screen hide" id="benchScreen">
+  <div class="inv-panel trade-panel">
+    <div class="inv-head"><span>ВЕРСТАК</span><button class="inv-close" id="benchClose">✕</button></div>
+    <div class="trade-top">
+      <div class="bench-mats" id="benchMats"></div>
+      <div class="trade-tabs">
+        <button class="ttab on" id="tabCraft">КРАФТ</button>
+        <button class="ttab" id="tabGun">ОРУЖЕЙНИК</button>
+      </div>
+    </div>
+    <div class="trade-msg" id="benchMsg"></div>
+    <div class="trade-list" id="benchList"></div>
+  </div>
+</div>
 
 <!-- Trade modal -->
 <div class="screen hide" id="tradeScreen">
@@ -462,16 +496,19 @@
     Ты — сталкер. Где-то в глубине Зоны, среди аномалий и радиоактивных пятен,
     лежат артефакты. Собери их и найди выход, пока тебя не убила невидимая смерть.
   </div>
-  <button class="cta" id="startBtn">В ЗОНУ →</button>
+  <button class="cta" id="continueBtn" style="display:none">ПРОДОЛЖИТЬ ▶</button>
+  <button class="cta" id="startBtn">НОВАЯ ИГРА →</button>
+  <div id="wipeHint" style="display:none;font-size:11px;color:#8a7d5f;margin-top:8px;">Новая игра сбросит сохранённый прогресс</div>
   <div class="legend">
     <b>Джойстик</b> (левый низ) — движение и прицел &nbsp;·&nbsp; <b>🔫</b> — стрелять (держи для очереди)<br>
     <b>👟</b> — спринт (держи, тратит <span style="color:#4fd0ff">выносливость</span>) &nbsp;·&nbsp; <b>⟳</b> — перезарядка (магазин) &nbsp;·&nbsp; <b>🔩</b> болт · <b>💊</b> аптечка<br>
     <b>🥫 еда</b> · <b>💧 вода</b> — следи за <span style="color:#e0a24a">🍖 сытостью</span>, <span style="color:#4fb8ff">💧 жаждой</span>, <span style="color:#c8a2ff">😴 усталостью</span> · тяжёлый <b>⚖ вес</b> замедляет<br>
     ПК: <b>WASD</b>, <b>F</b> стрелять, <b>Shift</b> спринт, <b>R</b> перезарядка, <b>Q/T</b> еда/вода, <b>Пробел</b>, <b>H</b><br>
-    <span style="color:#c9a227">✦ артефакты</span> у аномалий · неси на <b style="color:#5cc8ff">✚ ЭВАКУАЦИЮ</b> — сохрани лут в <b style="color:#8fbf3f">📦 тайник</b> на базе<br>
-    <span style="color:#e05a4a">☠ смерть = провал рейда</span>: теряешь несданный лут, но тайник цел · <span style="color:#7fff9a">убежища</span> спасают от выброса<br>
-    <span style="color:#ffd24a">🏠 бункер Сидоровича ₴</span> у старта — торговля, <b>задания</b>, <b>тайник</b>, <b>койка</b> (сон) · <b>🗺️ карта</b> (<b>M</b>)<br>
-    <span style="color:#8a9877">цель: с артефактом ✦ добраться до <b style="color:#7fff9a">ЧАЭС</b> и сбежать из Зоны</span>
+    <span style="color:#c9a227">✦ артефакты · 📦 тайники · материалы</span> в рейде · неси на <b style="color:#5cc8ff">✚ ЭВАКУАЦИЮ</b> и сохрани в <b style="color:#8fbf3f">тайник</b><br>
+    <span style="color:#e05a4a">☠ смерть = провал рейда</span>: теряешь несданный лут и оружие, но база и тайник целы<br>
+    <span style="color:#ffd24a">🏠 база Сидоровича</span>: торговля (<b>оружие, моды, патроны</b>), <b>🔧 верстак</b> — крафт и модификация ствола, <b>тайник</b>, <b>койка</b><br>
+    <span style="color:#8fbfe0">Бармен на Ростоке</span> торгует продвинутым оружием и модулями · <b style="color:#7fff9a">весь прогресс сохраняется</b><br>
+    <span style="color:#8a9877">цель: развивайся, добудь снаряжение и дойди до <b style="color:#7fff9a">ЧАЭС</b></span>
   </div>
 </div>
 
@@ -526,14 +563,18 @@
     running:false, over:false,
     px:0, py:0, pvx:0, pvy:0, facing:0, walkPhase:0, moving:false,
     hp:100, rad:0, bolts:8, meds:2, artifacts:0, kills:0,
-    mag:30, magSize:30, ammoReserve:60, reloading:0,
+    mag:0, reloading:0,
+    ammo:{'9x18':0,'9x19':0,'5.45':0,'7.62':0,'12k':0},
+    weapons:[], weaponId:null, _wuid:1, modsOwned:{},
+    materials:{scrap:0,elec:0,chem:0,cloth:0,parts:0}, matDrops:[],
+    raidWeapons:[], raidMods:[],
     stamina:100, maxStamina:100, sprinting:false, exhausted:false,
     weight:0, maxWeight:45, encumbered:false,
     hunger:100, thirst:100, fatigue:100, survT:0,
-    food:2, drink:2, stash:[], maxSlots:10, atStash:false, evacT:0, onEvac:false, raids:0, sleeping:0,
+    food:2, drink:2, stash:[], maxSlots:10, atStash:false, atBench:false, evacT:0, onEvac:false, raids:0, sleeping:0,
     dist:0, lastX:0, lastY:0, shootCD:0, firing:false,
     anomalies:[], artItems:[], radzones:[], props:[], bolts_flying:[], particles:[],
-    bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[], transitions:[],
+    bullets:[], mutants:[], ammoBoxes:[], medKits:[], suitPickups:[], transitions:[], containers:[],
     buildings:[], roads:[], vendor:null, vendorName:'Сидорович', nearVendor:false, interiorKind:'bunker',
     water:[], mud:[], dayT:0.12, weather:'clear', weatherT:18, tracks:[], trackDist:0, trackSide:1,
     shelters:[], evacs:[], emission:'idle', emissionT:0, emissionNext:130, inShelter:false, shake:0,
@@ -720,18 +761,109 @@
   const SUIT_PRICE = {newcomer:0, wanderer:450, antirad:700, merc:600};
   const sellOf = p => Math.round(p*0.5);
   const GOODS = [
-    {key:'ammo', name:'Патроны ×24', amount:24, price:70,  ico:'🔫'},
     {key:'med',  name:'Аптечка ×1',  amount:1,  price:130, ico:'💊'},
     {key:'bolt', name:'Болты ×5',    amount:5,  price:45,  ico:'🔩'},
     {key:'food', name:'Тушёнка ×2',  amount:2,  price:80,  ico:'🥫'},
     {key:'drink',name:'Вода ×2',     amount:2,  price:60,  ico:'💧'},
   ];
+
+  // ===== Extraction-shooter systems: weapons, mods, calibers, crafting =====
+  const CALIBERS = {
+    '9x18':{name:'9×18 ПМ',  col:'#c9a227'},
+    '9x19':{name:'9×19',     col:'#d0b24a'},
+    '5.45':{name:'5.45×39',  col:'#8fbf3f'},
+    '7.62':{name:'7.62×54',  col:'#e0602a'},
+    '12k' :{name:'12 калибр',col:'#b892ff'},
+  };
+  const AMMO_GOODS = {
+    '9x18':{amount:24, price:70},
+    '9x19':{amount:24, price:90},
+    '5.45':{amount:20, price:120},
+    '7.62':{amount:10, price:160},
+    '12k' :{amount:12, price:100},
+  };
+  const WEAPONS = {
+    pm:   {name:'ПМ',       cls:'Пистолет',   dmg:16, rate:0.28,  mag:8,  cal:'9x18', spread:0.10,  spd:640, slots:['mag','sight'],                       price:600,  tier:1, kg:1.0},
+    mp5:  {name:'МП5',      cls:'ПП',         dmg:14, rate:0.085, mag:30, cal:'9x19', spread:0.085, spd:600, slots:['mag','sight','muzzle','grip'],        price:2600, tier:2, kg:2.5},
+    saiga:{name:'Сайга-12', cls:'Дробовик',   dmg:9,  rate:0.7,   mag:6,  cal:'12k',  spread:0.22,  spd:520, slots:['mag','sight'], pellets:6,             price:3200, tier:2, kg:3.4},
+    ak:   {name:'АК-74',    cls:'Автомат',    dmg:26, rate:0.12,  mag:30, cal:'5.45', spread:0.075, spd:720, slots:['mag','sight','muzzle','grip','barrel'], price:5200, tier:3, kg:3.3},
+    svd:  {name:'СВД',      cls:'Снайперская',dmg:64, rate:0.95,  mag:10, cal:'7.62', spread:0.015, spd:920, slots:['sight','muzzle','barrel'],           price:9000, tier:4, kg:4.3},
+  };
+  const MODS = {
+    mag_ext:  {name:'Удлинённый магазин', slot:'mag',    ico:'▮', d:{magMul:1.5},              price:400,  tier:1},
+    mag_drum: {name:'Барабанный магазин', slot:'mag',    ico:'◒', d:{magMul:2.2, rateMul:1.06},price:900,  tier:2},
+    reddot:   {name:'Коллиматор',         slot:'sight',  ico:'⊙', d:{spreadMul:0.72},          price:700,  tier:1},
+    scope:    {name:'Оптика ПСО',         slot:'sight',  ico:'⊕', d:{spreadMul:0.5, spdMul:1.15},price:1500, tier:2},
+    brake:    {name:'Дульный тормоз',     slot:'muzzle', ico:'╪', d:{spreadMul:0.82},          price:600,  tier:1},
+    suppressor:{name:'Глушитель',         slot:'muzzle', ico:'▬', d:{quiet:true, dmgMul:0.9},   price:1200, tier:2},
+    grip:     {name:'Тактическая рукоять',slot:'grip',   ico:'⌐', d:{spreadMul:0.82, rateMul:0.94},price:800,tier:1},
+    barrel:   {name:'Удлинённый ствол',   slot:'barrel', ico:'│', d:{dmgMul:1.16, spdMul:1.1},  price:1100, tier:2},
+  };
+  const SLOT_NAMES={mag:'Магазин', sight:'Прицел', muzzle:'Дуло', grip:'Рукоять', barrel:'Ствол'};
+  const MATERIALS = {
+    scrap:{name:'Металлолом', ico:'🔩'}, elec:{name:'Электроника', ico:'📟'},
+    chem:{name:'Химикаты', ico:'🧪'}, cloth:{name:'Ткань', ico:'🧵'}, parts:{name:'Оруж. детали', ico:'⚙'},
+  };
+  const MAT_KEYS = Object.keys(MATERIALS);
+  const RECIPES = [
+    {id:'a918', name:'Патроны 9×18 ×20', out:{ammo:{'9x18':20}}, cost:{scrap:2,chem:1}},
+    {id:'a919', name:'Патроны 9×19 ×20', out:{ammo:{'9x19':20}}, cost:{scrap:2,chem:2}},
+    {id:'a545', name:'Патроны 5.45 ×20', out:{ammo:{'5.45':20}}, cost:{scrap:3,chem:2}},
+    {id:'a762', name:'Патроны 7.62 ×10', out:{ammo:{'7.62':10}}, cost:{scrap:3,chem:3}},
+    {id:'a12k', name:'Дробь 12к ×12',    out:{ammo:{'12k':12}},  cost:{scrap:2,chem:2}},
+    {id:'med',  name:'Аптечка ×1',       out:{meds:1},           cost:{cloth:2,chem:2}},
+    {id:'bolt', name:'Болты ×6',         out:{bolts:6},          cost:{scrap:1}},
+    {id:'food', name:'Паёк ×1',          out:{food:1},           cost:{cloth:1,chem:1}},
+    {id:'m_grip',name:'Мод: Рукоять',    out:{mod:'grip'},       cost:{parts:2,scrap:2}},
+    {id:'m_red', name:'Мод: Коллиматор', out:{mod:'reddot'},     cost:{parts:2,elec:2}},
+    {id:'m_mag', name:'Мод: Удл.магазин',out:{mod:'mag_ext'},    cost:{parts:3,scrap:3}},
+    {id:'m_supp',name:'Мод: Глушитель',  out:{mod:'suppressor'}, cost:{parts:4,scrap:2}},
+    {id:'m_bar', name:'Мод: Удл.ствол',  out:{mod:'barrel'},     cost:{parts:4,elec:2}},
+  ];
+  const TRADER_STOCK = {
+    'Сидорович':{ weapons:['pm','saiga'], mods:['grip','brake','reddot','mag_ext'], ammo:['9x18','12k'], goods:['med','bolt','food','drink'] },
+    'Бармен':   { weapons:['mp5','ak','svd'], mods:['scope','suppressor','barrel','mag_drum'], ammo:['9x19','5.45','7.62'], goods:['med','food','drink'] },
+  };
+  function weaponStats(w){
+    const B=WEAPONS[w.key];
+    const s={name:B.name, cls:B.cls, cal:B.cal, dmg:B.dmg, rate:B.rate, mag:B.mag, spread:B.spread, spd:B.spd, pellets:B.pellets||1, quiet:false, kg:B.kg};
+    let magMul=1,rateMul=1,dmgMul=1,spreadMul=1,spdMul=1;
+    for(const slot in (w.mods||{})){ const M=MODS[w.mods[slot]]; if(!M) continue; const d=M.d;
+      magMul*=d.magMul||1; rateMul*=d.rateMul||1; dmgMul*=d.dmgMul||1; spreadMul*=d.spreadMul||1; spdMul*=d.spdMul||1; if(d.quiet) s.quiet=true; }
+    s.mag=Math.max(1,Math.round(s.mag*magMul)); s.rate*=rateMul; s.dmg*=dmgMul; s.spread*=spreadMul; s.spd*=spdMul;
+    return s;
+  }
+  function curWeapon(){ return state.weapons.find(w=>w.uid===state.weaponId) || null; }
+  function giveWeapon(key,equip){ const w={uid:state._wuid++, key, mods:{}, loaded:WEAPONS[key].mag}; state.weapons.push(w); if(equip) state.weaponId=w.uid; return w; }
+
+  // ---------- Persistence (localStorage) ----------
+  const SAVE_KEY='zone_save_v2';
+  const META_KEYS=['money','stash','weapons','weaponId','_wuid','modsOwned','materials','ammo',
+    'suits','suit','food','drink','meds','bolts','questsDone','questOffers','raids','kills','maxSlots','maxHp'];
+  function saveMeta(){
+    if(!state.running) return;
+    try{ const m={ts:Date.now()}; for(const k of META_KEYS) m[k]=state[k];
+      localStorage.setItem(SAVE_KEY, JSON.stringify(m)); }catch(e){}
+  }
+  function loadSave(){ try{ const raw=localStorage.getItem(SAVE_KEY); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
+  function hasSave(){ return !!loadSave(); }
+  function wipeSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+  function applyMeta(m){
+    for(const k of META_KEYS){ if(m[k]!==undefined) state[k]=m[k]; }
+    // sanity: strip stray raid flags, ensure a valid equipped weapon, backfill ammo calibers
+    for(const w of state.weapons){ delete w.raid; if(w.loaded==null) w.loaded=0; }
+    if(!state.weapons.find(w=>w.uid===state.weaponId)) state.weaponId = state.weapons.length? state.weapons[0].uid : null;
+    for(const c in CALIBERS){ if(state.ammo[c]==null) state.ammo[c]=0; }
+    for(const mk of MAT_KEYS){ if(state.materials[mk]==null) state.materials[mk]=0; }
+    state.raidWeapons=[]; state.raidMods=[];
+  }
   // interior (trader hideout) dimensions & key positions
   const IW=440, IH=620;
   const TRADER={x:IW/2, y:150};
   const EXITMAT={x:IW/2, y:IH-38};
   const SLEEPMAT={x:IW-70, y:IH-120};   // bunk (base bunker only) — hold to sleep
   const STASHMAT={x:70, y:IH-120};      // stash crate (base bunker only)
+  const BENCHMAT={x:IW/2, y:IH-150};    // workbench (base bunker only) — craft + weapon mods
 
   // building palettes
   const BKIND={
@@ -932,7 +1064,7 @@
     urban:null,
   };
   const LOC_ARRAYS=['anomalies','artItems','radzones','props','bolts_flying','particles',
-                    'bullets','mutants','ammoBoxes','medKits','suitPickups','transitions','water','mud','shelters','evacs'];
+                    'bullets','mutants','ammoBoxes','medKits','suitPickups','transitions','water','mud','shelters','evacs','containers','matDrops'];
   function applyStatics(i){
     const lay=LOCATIONS[i].layout||{};
     state.tracks=[];
@@ -1057,17 +1189,26 @@
       const packN = t==='dog'? 1+((Math.random()*3)|0) : 1;
       for(let k=0;k<packN;k++) spawnMutant(mx+rnd(-40,40), my+rnd(-40,40), t);
     }
+    const commonCal=['9x18','9x19','5.45','12k','7.62'];
     for(let i=0;i<9;i++){
       let bx,by,tries=0;
       do{ bx=rnd(150,W-100); by=rnd(150,H-100); tries++; }
       while((dist(bx,by,state.px,state.py)<200 || inB(bx,by,16)) && tries<30);
-      state.ammoBoxes.push({x:bx,y:by,amount:20,taken:false});
+      state.ammoBoxes.push({x:bx,y:by,amount:16, cal:commonCal[(Math.random()*commonCal.length)|0], taken:false});
     }
     for(let i=0;i<7;i++){
       let bx,by,tries=0;
       do{ bx=rnd(150,W-100); by=rnd(150,H-100); tries++; }
       while((dist(bx,by,state.px,state.py)<180 || inB(bx,by,16)) && tries<30);
       state.medKits.push({x:bx,y:by,amount:1,taken:false});
+    }
+    // loot containers — materials, ammo, rare weapon; harder locations = better loot
+    const nCont = 5 + diff;
+    for(let i=0;i<nCont;i++){
+      let bx,by,tries=0;
+      do{ bx=rnd(150,W-100); by=rnd(150,H-100); tries++; }
+      while((dist(bx,by,state.px,state.py)<220 || inB(bx,by,20)) && tries<30);
+      state.containers.push({x:bx,y:by,taken:false, diff});
     }
     if(L.suit){
       let sx,sy,tries=0;
@@ -1211,17 +1352,20 @@
     if(!state.running||state.over||state.scene!=='zone') return;
     if(state.reloading>0) return;
     if(state.shootCD>0) return;
-    if(state.mag<=0){ reload(); return; }   // auto-reload on empty magazine
-    state.mag--; state.shootCD=SHOOT_RATE;
+    const w=curWeapon(); if(!w){ return; }
+    const st=weaponStats(w);
+    if((w.loaded||0)<=0){ reload(); return; }   // auto-reload on empty magazine
+    w.loaded--; state.mag=w.loaded; state.shootCD=st.rate;
     let dx=Math.cos(state.facing), dy=Math.sin(state.facing);
     if(joyActive && (joyDx||joyDy)){ const d=Math.hypot(joyDx,joyDy); dx=joyDx/d; dy=joyDy/d; }
-    const spread=rnd(-0.05,0.05), ca=Math.cos(spread), sa=Math.sin(spread);
-    const bx=dx*ca-dy*sa, by=dx*sa+dy*ca;
-    const spd=520;
-    state.bullets.push({x:state.px+bx*10, y:state.py-6+by*10, vx:bx*spd, vy:by*spd, life:0.9, dmg:22*state.mods.dmgMul});
+    for(let i=0;i<st.pellets;i++){
+      const spread=rnd(-st.spread,st.spread), ca=Math.cos(spread), sa=Math.sin(spread);
+      const bx=dx*ca-dy*sa, by=dx*sa+dy*ca;
+      state.bullets.push({x:state.px+bx*10, y:state.py-6+by*10, vx:bx*st.spd, vy:by*st.spd, life:0.9, dmg:st.dmg*state.mods.dmgMul});
+    }
     // muzzle flash
-    state.particles.push({x:state.px+bx*14, y:state.py-6+by*14, vx:bx*2, vy:by*2, life:0.06, col:'#ffe066', r:4});
-    beep(240,0.05,'square',0.05); noiseBurst(0.04,0.05);
+    state.particles.push({x:state.px+dx*14, y:state.py-6+dy*14, vx:dx*2, vy:dy*2, life:0.06, col:'#ffe066', r:4});
+    if(st.quiet){ beep(200,0.03,'sine',0.03); } else { beep(240,0.05,'square',0.05); noiseBurst(0.04,0.05); }
     updateHUD();
   }
   // direct damage (used by mutants — no global cooldown, each attacker self-limits)
@@ -1237,15 +1381,18 @@
   // ---------- Reload (magazine) ----------
   function reload(){
     if(state.reloading>0 || state.scene!=='zone') return;
-    if(state.mag>=state.magSize){ return; }
-    if(state.ammoReserve<=0){ toast('Нет патронов в запасе'); beep(150,0.06,'square',0.04); return; }
+    const w=curWeapon(); if(!w) return; const st=weaponStats(w);
+    if((w.loaded||0)>=st.mag) return;
+    if((state.ammo[st.cal]||0)<=0){ toast('Нет патронов '+CALIBERS[st.cal].name); beep(150,0.06,'square',0.04); return; }
     state.reloading=1.7; toast('Перезарядка…'); beep(300,0.05,'square',0.04);
   }
   // ---------- Raid / stamina / survival ----------
   function computeWeight(){
     let w=6;                                   // base gear
     w += state.inventory.length*2.2;           // artifacts are heavy
-    w += (state.mag+state.ammoReserve)*0.02;
+    for(const wp of state.weapons) w += (WEAPONS[wp.key].kg||2);   // guns
+    let rounds=0; for(const c in state.ammo) rounds+=state.ammo[c];
+    w += rounds*0.02;
     w += state.meds*0.4 + state.bolts*0.15 + state.food*0.5 + state.drink*0.5;
     return Math.round(w*10)/10;
   }
@@ -1305,16 +1452,38 @@
       state.evacT=Math.max(0, state.evacT-dt*2);
     }
   }
+  function lootContainer(c){
+    spawnBurst(c.x,c.y,'#c9a227',16);
+    const gains=[];
+    const nT=1+((Math.random()*2)|0);
+    for(let i=0;i<nT;i++){ const t=MAT_KEYS[(Math.random()*MAT_KEYS.length)|0]; const n=1+((Math.random()*(2+c.diff))|0);
+      state.materials[t]=(state.materials[t]||0)+n; gains.push(n+MATERIALS[t].ico); }
+    if(Math.random()<0.6){ const cals=Object.keys(CALIBERS); const cal=cals[(Math.random()*cals.length)|0]; const n=8+((Math.random()*14)|0);
+      state.ammo[cal]=(state.ammo[cal]||0)+n; gains.push(n+' '+CALIBERS[cal].name); }
+    if(Math.random()<0.20){ const mk=Object.keys(MODS)[(Math.random()*Object.keys(MODS).length)|0];
+      state.raidMods.push(mk); gains.push('🔧 '+MODS[mk].name); }
+    if(Math.random()<0.06+c.diff*0.02){ const keys=Object.keys(WEAPONS); const wk=keys[(Math.random()*keys.length)|0];
+      const w={uid:state._wuid++, key:wk, mods:{}, loaded:0, raid:true}; state.weapons.push(w); state.raidWeapons.push(w.uid);
+      gains.push('🔫 '+WEAPONS[wk].name+' (не сдан!)'); }
+    toast('📦 Тайник: '+gains.join(' · '));
+    beep(520,0.06,'square',0.05); setTimeout(()=>beep(700,0.06,'square',0.04),80);
+    updateHUD();
+  }
   function doExtract(){
     const loose=state.inventory.filter(it=>!state.equipped.includes(it.id));
     let cash=0;
     for(const it of loose){ state.stash.push(it); cash+=Math.round((ART_PRICE[it.type.name]||100)*0.15); }
     state.inventory=state.inventory.filter(it=>state.equipped.includes(it.id));
+    // secure raid weapons & mods
+    for(const uid of state.raidWeapons){ const w=state.weapons.find(x=>x.uid===uid); if(w) delete w.raid; }
+    for(const mk of state.raidMods){ state.modsOwned[mk]=(state.modsOwned[mk]||0)+1; }
+    const secured=state.raidWeapons.length, securedMods=state.raidMods.length;
+    state.raidWeapons=[]; state.raidMods=[];
     state.money+=cash; state.evacT=0; state.raids++;
     state.hp=clamp(state.hp+20,0,state.maxHp);
-    toast('✅ Эвакуация: '+loose.length+' арт. в тайник (+'+cash+'₴)');
+    toast('✅ Эвакуация: '+loose.length+' арт., '+secured+' ор., '+securedMods+' мод. в тайник (+'+cash+'₴)');
     beep(660,0.1,'sine',0.06); setTimeout(()=>beep(990,0.12,'sine',0.06),110);
-    recomputeMods(); updateHUD();
+    recomputeMods(); saveMeta(); updateHUD();
   }
   function goToBase(){
     state.locIndex=0; loadLoc(0);                 // ensure Cordon context is live
@@ -1330,12 +1499,18 @@
     const loose=state.inventory.filter(it=>!state.equipped.includes(it.id));
     const lostMoney=Math.round(state.money*0.3);
     state.inventory=state.inventory.filter(it=>state.equipped.includes(it.id));
+    // lose unsecured raid weapons & mods
+    const lostW=state.raidWeapons.length, lostM=state.raidMods.length;
+    for(const uid of state.raidWeapons){ if(state.weaponId===uid) state.weaponId=null;
+      const i=state.weapons.findIndex(x=>x.uid===uid); if(i>=0) state.weapons.splice(i,1); }
+    state.raidWeapons=[]; state.raidMods=[];
+    if(!state.weaponId && state.weapons.length) state.weaponId=state.weapons[0].uid;
     state.money=Math.max(0,state.money-lostMoney);
     state.hp=Math.round(state.maxHp*0.6); state.rad=clamp(state.rad-30,0,100);
     state.hunger=Math.max(state.hunger,40); state.thirst=Math.max(state.thirst,40); state.fatigue=Math.max(state.fatigue,35);
     state.reloading=0; state.sprinting=false; state.evacT=0;
-    goToBase(); recomputeMods();
-    toast('☠ РЕЙД ПРОВАЛЕН ('+cause+'): −'+loose.length+' арт., −'+lostMoney+'₴');
+    goToBase(); recomputeMods(); saveMeta();
+    toast('☠ РЕЙД ПРОВАЛЕН ('+cause+'): −'+loose.length+' арт., −'+lostW+' ор., −'+lostMoney+'₴');
     noiseBurst(0.3,0.08); beep(90,0.4,'sawtooth',0.06);
   }
   // ---------- Emission (выброс) ----------
@@ -1422,7 +1597,7 @@
     const im=Math.hypot(ix,iy);
     state.moving = im>0.08;
     // weight & sprint state
-    state.atStash=false;
+    state.atStash=false; state.atBench=false;
     state.weight=computeWeight(); state.encumbered=state.weight>state.maxWeight;
     state.sprinting = (keys['shift']||state._sprintBtn) && state.moving && !state.encumbered && !state.exhausted && state.stamina>0;
     if(im>0.08){
@@ -1493,8 +1668,9 @@
     if(state.hurtCD>0) state.hurtCD-=dt;
     if(state.shootCD>0) state.shootCD-=dt;
     if(state.reloading>0){ state.reloading-=dt;
-      if(state.reloading<=0){ const need=state.magSize-state.mag, take=Math.min(need,state.ammoReserve);
-        state.mag+=take; state.ammoReserve-=take; beep(520,0.05,'square',0.04); updateHUD(); } }
+      if(state.reloading<=0){ const w=curWeapon(); if(w){ const st=weaponStats(w);
+        const need=st.mag-(w.loaded||0), take=Math.min(need, state.ammo[st.cal]||0);
+        w.loaded=(w.loaded||0)+take; state.ammo[st.cal]-=take; state.mag=w.loaded; beep(520,0.05,'square',0.04); updateHUD(); } } }
     updateSurvival(dt);
     updateEvac(dt);
     if(state.firing) shoot();
@@ -1637,8 +1813,10 @@
         state.kills++;
         questEvent('kill', m.t);
         beep(150,0.18,'sawtooth',0.06); noiseBurst(0.14,0.06);
-        if(Math.random()<0.35) state.ammoBoxes.push({x:m.x,y:m.y,amount:12,taken:false,drop:true});
-        else if(Math.random()<0.18) state.medKits.push({x:m.x,y:m.y,amount:1,taken:false,drop:true});
+        if(Math.random()<0.32) state.ammoBoxes.push({x:m.x,y:m.y,amount:12, cal:(curWeapon()?WEAPONS[curWeapon().key].cal:'9x18'), taken:false,drop:true});
+        else if(Math.random()<0.16) state.medKits.push({x:m.x,y:m.y,amount:1,taken:false,drop:true});
+        if(Math.random()<0.4){ const t=MAT_KEYS[(Math.random()*MAT_KEYS.length)|0];
+          state.matDrops.push({x:m.x+rnd(-8,8),y:m.y+rnd(-8,8),type:t,n:1,taken:false,bob:Math.random()*6}); }
         state.mutants.splice(i,1); continue;
       }
       const d=dist(state.px,state.py,m.x,m.y);
@@ -1676,9 +1854,28 @@
     for(const box of state.ammoBoxes){
       if(box.taken) continue;
       if(dist(state.px,state.py,box.x,box.y)<24){
-        box.taken=true; state.ammoReserve+=box.amount;
-        toast('+'+box.amount+' патронов');
+        box.taken=true;
+        let cal=box.cal; if(!cal){ const w=curWeapon(); cal=w?WEAPONS[w.key].cal:'9x18'; }
+        state.ammo[cal]=(state.ammo[cal]||0)+box.amount;
+        toast('+'+box.amount+' '+CALIBERS[cal].name);
         beep(600,0.06,'square',0.05); beep(760,0.06,'square',0.04);
+      }
+    }
+
+    // ----- loot containers (materials / ammo / rare weapon) -----
+    for(const c of state.containers){
+      if(c.taken) continue;
+      if(dist(state.px,state.py,c.x,c.y)<26){
+        c.taken=true; lootContainer(c);
+      }
+    }
+    // ----- dropped materials -----
+    for(const md of state.matDrops){
+      if(md.taken) continue; md.bob=(md.bob||0)+dt*3;
+      if(dist(state.px,state.py,md.x,md.y)<24){
+        md.taken=true; state.materials[md.type]=(state.materials[md.type]||0)+md.n;
+        toast('+'+md.n+' '+MATERIALS[md.type].ico+' '+MATERIALS[md.type].name);
+        beep(560,0.05,'triangle',0.04);
       }
     }
 
@@ -1774,7 +1971,10 @@
     document.getElementById('staBar').style.width=clamp(state.stamina/state.maxStamina*100,0,100)+'%';
     document.getElementById('artNum').textContent=state.inventory.length;
     document.getElementById('moneyNum').textContent=state.money;
-    document.getElementById('ammoNum').textContent=state.mag+' / '+state.ammoReserve;
+    { const w=curWeapon();
+      if(w){ const st=weaponStats(w); state.mag=w.loaded||0;
+        document.getElementById('ammoNum').textContent=st.name+' '+(w.loaded||0)+'/'+(state.ammo[st.cal]||0);
+      } else { document.getElementById('ammoNum').textContent='нет оружия'; } }
     document.getElementById('boltNum').textContent=state.bolts;
     document.getElementById('btnBoltN').textContent=state.bolts;
     document.getElementById('btnMedN').textContent=state.meds;
@@ -1957,6 +2157,30 @@
     }
 
     // ammo boxes
+    // loot containers (military crates / stashes)
+    for(const c of state.containers){
+      if(c.taken) continue;
+      const sx=c.x+ox, sy=c.y+oy;
+      if(sx<-24||sx>VW+24||sy<-24||sy>VH+24) continue;
+      const glow=0.4+0.3*Math.sin(now()/500+c.x);
+      ctx.fillStyle='rgba(201,162,39,'+(0.10*glow)+')'; ctx.beginPath(); ctx.arc(sx,sy,20,0,6.29); ctx.fill();
+      ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(sx,sy+9,12,4,0,0,6.29); ctx.fill();
+      ctx.fillStyle='#4a3f28'; ctx.fillRect(sx-12,sy-9,24,18);        // crate body
+      ctx.fillStyle='#5c5038'; ctx.fillRect(sx-12,sy-9,24,4);
+      ctx.fillStyle='#33291a'; ctx.fillRect(sx-12,sy+5,24,4);
+      ctx.fillStyle='#2c2416'; ctx.fillRect(sx-12,sy-2,24,2); ctx.fillRect(sx-2,sy-9,4,18);  // straps
+      ctx.fillStyle='#c9a227'; ctx.fillRect(sx-3,sy-1,6,3);           // latch
+      ctx.fillStyle='#8a7a4a'; ctx.font='bold 9px monospace'; ctx.textAlign='center'; ctx.fillText('📦', sx, sy-13);
+    }
+    // dropped materials
+    for(const md of state.matDrops){
+      if(md.taken) continue;
+      const sx=md.x+ox, sy=md.y+(oy)+Math.sin(md.bob||0)*1.5;
+      if(sx<-16||sx>VW+16||sy<-16||sy>VH+16) continue;
+      ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(sx,md.y+oy+7,5,2,0,0,6.29); ctx.fill();
+      ctx.font='12px monospace'; ctx.textAlign='center'; ctx.fillText(MATERIALS[md.type].ico, sx, sy+4);
+    }
+
     for(const box of state.ammoBoxes){
       if(box.taken) continue;
       const sx=box.x+ox, sy=box.y+oy;
@@ -2454,6 +2678,9 @@
     state.pvx=state.pvy=0; state.nearTrader=false;
     state._doorReadyAt=now()+600;   // brief grace so the door doesn't re-trigger
     document.getElementById('btnTrade').style.display='none';
+    document.getElementById('btnBench').style.display='none';
+    state.atStash=false; state.atBench=false;
+    saveMeta();
     beep(300,0.09,'sine',0.05);
   }
   function drawWater(ox,oy){
@@ -2700,6 +2927,8 @@
     // base bunker: sleep on the bunk (hold still) to restore fatigue & advance time
     const isBase = state.interiorKind==='bunker';
     state.atStash = isBase && dist(state.px,state.py,STASHMAT.x,STASHMAT.y)<40;
+    state.atBench = isBase && dist(state.px,state.py,BENCHMAT.x,BENCHMAT.y)<44;
+    document.getElementById('btnBench').style.display = state.atBench ? 'flex' : 'none';
     if(isBase && dist(state.px,state.py,SLEEPMAT.x,SLEEPMAT.y)<26 && !state.moving){
       state.sleeping=Math.min((state.sleeping||0)+dt,2.2);
       if(state.sleeping>=2.2){ state.sleeping=0;
@@ -2787,6 +3016,19 @@
         ctx.beginPath(); ctx.arc(bkx,bky,20,-1.57,-1.57+6.283*(state.sleeping/2.2)); ctx.stroke();
         ctx.fillStyle='#7fd0ff'; ctx.font='10px monospace'; ctx.fillText('💤', bkx, bky+3); }
       else { ctx.fillStyle='#6f7d5f'; ctx.font='9px monospace'; ctx.fillText('встань — спать', bkx, bky+30); }
+      // workbench
+      const wx=BENCHMAT.x+ox, wy=BENCHMAT.y+oy;
+      ctx.fillStyle='rgba(0,0,0,0.32)'; ctx.fillRect(wx-32,wy+12,64,6);
+      ctx.fillStyle='#4a4038'; ctx.fillRect(wx-32,wy-6,64,20);          // bench top
+      ctx.fillStyle='#5c5248'; ctx.fillRect(wx-32,wy-6,64,4);
+      ctx.fillStyle='#2f2822'; ctx.fillRect(wx-30,wy+14,5,10); ctx.fillRect(wx+25,wy+14,5,10); // legs
+      // tools/pegboard
+      ctx.fillStyle='#33302a'; ctx.fillRect(wx-30,wy-24,60,16);
+      ctx.fillStyle='#8a8378'; ctx.fillRect(wx-24,wy-21,3,9); ctx.fillRect(wx-16,wy-21,7,3);
+      ctx.fillStyle='#b0662c'; ctx.fillRect(wx+4,wy-21,10,3); ctx.fillStyle='#7a8a9a'; ctx.fillRect(wx+18,wy-21,3,9);
+      ctx.fillStyle='#c9a227'; ctx.fillRect(wx-8,wy-2,16,7);            // gun part on bench
+      ctx.fillStyle='#8a9877'; ctx.font='bold 8px monospace'; ctx.textAlign='center'; ctx.fillText('ВЕРСТАК', wx, wy-28);
+      if(state.atBench){ ctx.fillStyle='#8fd0a0'; ctx.font='9px monospace'; ctx.fillText('🔧 крафт и моды', wx, wy+34); }
     }
     // aura + player
     if(state.heartEquipped) drawHeartAura(state.px+ox, state.py+oy);
@@ -2891,27 +3133,44 @@
     state.paused=true; state.firing=false; tradeScreen.classList.remove('hide'); renderTrade(); }
   function closeTrade(){ state.paused=false; tradeScreen.classList.add('hide'); }
   function setTradeTab(t){ state.tradeTab=t; renderTrade(); }
-  function buyGood(key){ const g=GOODS.find(x=>x.key===key);
-    if(state.money<g.price){ tradeMsg('Недостаточно монет'); beep(160,0.08,'square',0.05); return; }
+  function afford(p){ if(state.money<p){ tradeMsg('Недостаточно монет'); beep(160,0.08,'square',0.05); return false; } return true; }
+  function buyGood(key){ const g=GOODS.find(x=>x.key===key); if(!afford(g.price)) return;
     state.money-=g.price;
-    if(key==='ammo') state.ammoReserve+=g.amount; else if(key==='med') state.meds+=g.amount; else if(key==='bolt') state.bolts+=g.amount;
+    if(key==='med') state.meds+=g.amount; else if(key==='bolt') state.bolts+=g.amount;
     else if(key==='food') state.food+=g.amount; else if(key==='drink') state.drink+=g.amount;
-    beep(700,0.06,'square',0.05); renderTrade(); updateHUD(); }
-  function buySuit(id){ if(state.suits.includes(id)) return; const price=SUIT_PRICE[id];
-    if(state.money<price){ tradeMsg('Недостаточно монет'); beep(160,0.08,'square',0.05); return; }
-    state.money-=price; state.suits.push(id); beep(600,0.08,'triangle',0.05); tradeMsg('Куплен костюм'); renderTrade(); updateHUD(); }
-  function buyArt(name){ const price=ART_PRICE[name];
-    if(state.money<price){ tradeMsg('Недостаточно монет'); beep(160,0.08,'square',0.05); return; }
-    state.money-=price; state.inventory.push({id:state._invId++, type:ARTS.find(a=>a.name===name)});
-    beep(880,0.08,'sine',0.05); tradeMsg('Куплен артефакт'); renderTrade(); updateHUD(); }
+    beep(700,0.06,'square',0.05); saveMeta(); renderTrade(); updateHUD(); }
+  function buyAmmo(cal){ const g=AMMO_GOODS[cal]; if(!afford(g.price)) return;
+    state.money-=g.price; state.ammo[cal]=(state.ammo[cal]||0)+g.amount;
+    beep(700,0.06,'square',0.05); tradeMsg('+'+g.amount+' '+CALIBERS[cal].name); saveMeta(); renderTrade(); updateHUD(); }
+  function buyWeapon(key){ if(!afford(WEAPONS[key].price)) return;
+    state.money-=WEAPONS[key].price; giveWeapon(key, !state.weaponId);
+    beep(760,0.08,'triangle',0.05); tradeMsg('Куплено: '+WEAPONS[key].name); saveMeta(); renderTrade(); updateHUD(); }
+  function buyMod(mk){ if(!afford(MODS[mk].price)) return;
+    state.money-=MODS[mk].price; state.modsOwned[mk]=(state.modsOwned[mk]||0)+1;
+    beep(700,0.07,'sine',0.05); tradeMsg('Куплен модуль'); saveMeta(); renderTrade(); updateHUD(); }
+  function buySuit(id){ if(state.suits.includes(id)) return; if(!afford(SUIT_PRICE[id])) return;
+    state.money-=SUIT_PRICE[id]; state.suits.push(id); beep(600,0.08,'triangle',0.05); tradeMsg('Куплен костюм'); saveMeta(); renderTrade(); updateHUD(); }
+  function buyArt(name){ if(!afford(ART_PRICE[name])) return;
+    state.money-=ART_PRICE[name]; state.inventory.push({id:state._invId++, type:ARTS.find(a=>a.name===name)});
+    beep(880,0.08,'sine',0.05); tradeMsg('Куплен артефакт'); saveMeta(); renderTrade(); updateHUD(); }
   function sellArt(id){ const idx=state.inventory.findIndex(x=>x.id===id); if(idx<0) return;
     const it=state.inventory[idx]; const eq=state.equipped.indexOf(id); if(eq>=0) state.equipped.splice(eq,1);
     state.inventory.splice(idx,1); state.money+=sellOf(ART_PRICE[it.type.name]||100);
-    recomputeMods(); beep(520,0.07,'square',0.05); renderTrade(); updateHUD(); }
+    recomputeMods(); beep(520,0.07,'square',0.05); saveMeta(); renderTrade(); updateHUD(); }
+  function sellStashArt(idx){ const it=state.stash[idx]; if(!it) return;
+    state.stash.splice(idx,1); state.money+=sellOf(ART_PRICE[it.type.name]||100);
+    beep(520,0.07,'square',0.05); tradeMsg('Продано из тайника'); saveMeta(); renderTrade(); updateHUD(); }
+  function sellWeapon(uid){ const i=state.weapons.findIndex(w=>w.uid===uid); if(i<0) return;
+    const w=state.weapons[i]; if(state.weaponId===uid){ tradeMsg('Сначала снимите с рук'); return; }
+    for(const s in w.mods){ state.modsOwned[w.mods[s]]=(state.modsOwned[w.mods[s]]||0)+1; }
+    state.weapons.splice(i,1); state.money+=sellOf(WEAPONS[w.key].price);
+    beep(520,0.07,'square',0.05); saveMeta(); renderTrade(); updateHUD(); }
+  function sellMod(mk){ if((state.modsOwned[mk]||0)<=0) return; state.modsOwned[mk]--; if(state.modsOwned[mk]<=0) delete state.modsOwned[mk];
+    state.money+=sellOf(MODS[mk].price); beep(520,0.07,'square',0.05); saveMeta(); renderTrade(); updateHUD(); }
   function sellSuit(id){ if(id==='newcomer'||!state.suits.includes(id)) return;
     state.suits.splice(state.suits.indexOf(id),1);
     if(state.suit===id){ state.suit='newcomer'; recomputeMods(); }
-    state.money+=sellOf(SUIT_PRICE[id]||100); beep(520,0.07,'square',0.05); renderTrade(); updateHUD(); }
+    state.money+=sellOf(SUIT_PRICE[id]||100); beep(520,0.07,'square',0.05); saveMeta(); renderTrade(); updateHUD(); }
   function trHead(list,txt){ const d=document.createElement('div'); d.className='trade-head'; d.textContent=txt; list.appendChild(d); }
   function trEmpty(list,txt){ const d=document.createElement('div'); d.className='trade-empty'; d.textContent=txt; list.appendChild(d); }
   function trRow(list,label,price,onClick,enabled,note,sell){
@@ -2962,18 +3221,42 @@
     if(state.tradeTab==='quest'){
       renderQuestTab(list);
     } else if(state.tradeTab==='buy'){
+      const stock=TRADER_STOCK[state.vendorName]||{weapons:[],mods:[],ammo:[],goods:GOODS.map(g=>g.key)};
+      trHead(list,'ОРУЖИЕ');
+      if(!stock.weapons.length) trEmpty(list,'—');
+      for(const wk of stock.weapons){ const W=WEAPONS[wk];
+        trRow(list, '🔫 '+W.name+' · '+W.cls+' ('+CALIBERS[W.cal].name+')', W.price, ()=>buyWeapon(wk), state.money>=W.price); }
+      trHead(list,'МОДУЛИ');
+      for(const mk of stock.mods){ const M=MODS[mk];
+        trRow(list, M.ico+' '+M.name+' · '+SLOT_NAMES[M.slot], M.price, ()=>buyMod(mk), state.money>=M.price); }
+      trHead(list,'ПАТРОНЫ');
+      for(const cal of stock.ammo){ const g=AMMO_GOODS[cal];
+        trRow(list, '🔸 '+CALIBERS[cal].name+' ×'+g.amount, g.price, ()=>buyAmmo(cal), state.money>=g.price); }
       trHead(list,'ПРИПАСЫ');
-      for(const g of GOODS) trRow(list, g.ico+' '+g.name, g.price, ()=>buyGood(g.key), state.money>=g.price);
+      for(const gk of stock.goods){ const g=GOODS.find(x=>x.key===gk); if(!g) continue;
+        trRow(list, g.ico+' '+g.name, g.price, ()=>buyGood(g.key), state.money>=g.price); }
       trHead(list,'КОСТЮМЫ');
       for(const id of SUIT_ORDER){ if(id==='newcomer') continue; const owned=state.suits.includes(id);
         trRow(list, '🧥 '+SUITS[id].name, SUIT_PRICE[id], ()=>buySuit(id), !owned&&state.money>=SUIT_PRICE[id], owned?'есть':null); }
       trHead(list,'АРТЕФАКТЫ');
       for(const a of ARTS) trRow(list, a.icon+' '+a.name, ART_PRICE[a.name], ()=>buyArt(a.name), state.money>=ART_PRICE[a.name]);
     } else {
-      trHead(list,'АРТЕФАКТЫ (продажа)');
+      trHead(list,'ОРУЖИЕ (продажа)');
+      const spareW=state.weapons.filter(w=>w.uid!==state.weaponId);
+      if(!spareW.length) trEmpty(list,'нет лишнего оружия');
+      for(const w of spareW){ const nm=WEAPONS[w.key].name+(Object.keys(w.mods).length?' +мод':'');
+        trRow(list, '🔫 '+nm, sellOf(WEAPONS[w.key].price), ()=>sellWeapon(w.uid), true, null, true); }
+      trHead(list,'МОДУЛИ (продажа)');
+      const mks=Object.keys(state.modsOwned).filter(k=>state.modsOwned[k]>0);
+      if(!mks.length) trEmpty(list,'нет модулей');
+      for(const mk of mks) trRow(list, MODS[mk].ico+' '+MODS[mk].name+' ×'+state.modsOwned[mk], sellOf(MODS[mk].price), ()=>sellMod(mk), true, null, true);
+      trHead(list,'АРТЕФАКТЫ — при себе');
       if(state.inventory.length===0) trEmpty(list,'нет артефактов');
       for(const it of state.inventory){ const price=sellOf(ART_PRICE[it.type.name]||100);
         trRow(list, it.type.icon+' '+it.type.name+(state.equipped.includes(it.id)?' •':''), price, ()=>sellArt(it.id), true, null, true); }
+      if(state.stash.length){ trHead(list,'АРТЕФАКТЫ — тайник');
+        for(let i=0;i<state.stash.length;i++){ const it=state.stash[i];
+          trRow(list, '📦 '+it.type.icon+' '+it.type.name, sellOf(ART_PRICE[it.type.name]||100), ()=>sellStashArt(i), true, null, true); } }
       trHead(list,'КОСТЮМЫ (продажа)');
       const spare=state.suits.filter(s=>s!=='newcomer');
       if(spare.length===0) trEmpty(list,'нет лишних костюмов');
@@ -2987,6 +3270,99 @@
   document.getElementById('tabQuest').addEventListener('click',()=>setTradeTab('quest'));
   window.addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='e'){ audioInit();
     tradeScreen.classList.contains('hide')?openTrade():closeTrade(); } });
+
+  // ---------- Workbench (crafting + gunsmith) ----------
+  const benchScreen=document.getElementById('benchScreen');
+  let benchTab='craft', gunSel=null, benchMsgT=0;
+  function benchMsg(t){ const e=document.getElementById('benchMsg'); e.textContent=t; e.classList.add('show');
+    clearTimeout(benchMsgT); benchMsgT=setTimeout(()=>e.classList.remove('show'),1400); }
+  function openBench(){ if(!(state.scene==='interior'&&state.atBench)) return;
+    state.paused=true; state.firing=false; benchScreen.classList.remove('hide'); renderBench(); }
+  function closeBench(){ state.paused=false; benchScreen.classList.add('hide'); }
+  function canAfford(cost){ for(const k in cost){ if((state.materials[k]||0)<cost[k]) return false; } return true; }
+  function costStr(cost){ return Object.keys(cost).map(k=>MATERIALS[k].ico+cost[k]).join(' '); }
+  function craft(id){ const r=RECIPES.find(x=>x.id===id); if(!r) return;
+    if(!canAfford(r.cost)){ benchMsg('Не хватает материалов'); beep(160,0.08,'square',0.05); return; }
+    for(const k in r.cost) state.materials[k]-=r.cost[k];
+    const o=r.out;
+    if(o.ammo){ for(const c in o.ammo) state.ammo[c]=(state.ammo[c]||0)+o.ammo[c]; }
+    if(o.meds) state.meds+=o.meds; if(o.bolts) state.bolts+=o.bolts; if(o.food) state.food+=o.food;
+    if(o.mod) state.modsOwned[o.mod]=(state.modsOwned[o.mod]||0)+1;
+    beep(680,0.07,'square',0.05); setTimeout(()=>beep(900,0.07,'sine',0.04),70);
+    benchMsg('Изготовлено: '+r.name); saveMeta(); renderBench(); updateHUD();
+  }
+  function equipWeaponUid(uid){ state.weaponId=uid; const w=curWeapon();
+    beep(600,0.06,'triangle',0.05); benchMsg('Оружие в руках: '+WEAPONS[w.key].name); saveMeta(); renderBench(); updateHUD(); }
+  function installMod(uid,slot,mk){ const w=state.weapons.find(x=>x.uid===uid); if(!w) return;
+    if((state.modsOwned[mk]||0)<=0) return;
+    // return currently installed mod of that slot
+    if(w.mods[slot]){ state.modsOwned[w.mods[slot]]=(state.modsOwned[w.mods[slot]]||0)+1; }
+    state.modsOwned[mk]--; if(state.modsOwned[mk]<=0) delete state.modsOwned[mk];
+    w.mods[slot]=mk;
+    const st=weaponStats(w); if((w.loaded||0)>st.mag) w.loaded=st.mag;
+    beep(520,0.05,'square',0.05); benchMsg('Модуль установлен'); saveMeta(); renderBench(); updateHUD();
+  }
+  function removeMod(uid,slot){ const w=state.weapons.find(x=>x.uid===uid); if(!w||!w.mods[slot]) return;
+    state.modsOwned[w.mods[slot]]=(state.modsOwned[w.mods[slot]]||0)+1; delete w.mods[slot];
+    const st=weaponStats(w); if((w.loaded||0)>st.mag) w.loaded=st.mag;
+    beep(360,0.05,'square',0.05); benchMsg('Модуль снят'); saveMeta(); renderBench(); updateHUD();
+  }
+  function renderBench(){
+    document.getElementById('tabCraft').classList.toggle('on', benchTab==='craft');
+    document.getElementById('tabGun').classList.toggle('on', benchTab==='gun');
+    document.getElementById('benchMats').innerHTML = MAT_KEYS.map(k=>MATERIALS[k].ico+(state.materials[k]||0)).join(' ');
+    const list=document.getElementById('benchList'); list.innerHTML='';
+    if(benchTab==='craft'){
+      trHead(list,'РЕЦЕПТЫ');
+      for(const r of RECIPES){ const ok=canAfford(r.cost);
+        const row=document.createElement('div'); row.className='trade-row';
+        const l=document.createElement('div'); l.className='trade-name'; l.innerHTML=r.name+' <span style="color:#8a9877;font-size:11px">· '+costStr(r.cost)+'</span>';
+        const b=document.createElement('button'); b.className='trade-btn'; b.textContent='СОЗДАТЬ'; b.disabled=!ok; if(!ok) b.classList.add('dis'); if(ok) b.onclick=()=>craft(r.id);
+        row.appendChild(l); row.appendChild(b); list.appendChild(row);
+      }
+    } else {
+      trHead(list,'ТВОЁ ОРУЖИЕ — выбери для модификации');
+      if(!state.weapons.length) trEmpty(list,'нет оружия');
+      for(const w of state.weapons){ const W=WEAPONS[w.key]; const equipped=state.weaponId===w.uid;
+        const row=document.createElement('div'); row.className='trade-row'+(gunSel===w.uid?' gun-sel':'');
+        const l=document.createElement('div'); l.className='trade-name';
+        l.innerHTML='🔫 '+W.name+(equipped?' <span style="color:#7fff9a">•в руках</span>':'')+(w.raid?' <span style="color:#e0a02a">•не сдан</span>':'');
+        l.onclick=()=>{ gunSel=w.uid; renderBench(); };
+        const b=document.createElement('button'); b.className='trade-btn'; b.textContent=equipped?'★':'ВЗЯТЬ';
+        if(equipped){ b.disabled=true; b.classList.add('owned'); } else b.onclick=()=>equipWeaponUid(w.uid);
+        row.appendChild(l); row.appendChild(b); list.appendChild(row);
+      }
+      const w=state.weapons.find(x=>x.uid===gunSel);
+      if(w){ const W=WEAPONS[w.key], st=weaponStats(w);
+        trHead(list,'⚙ '+W.name+' — характеристики');
+        const stat=document.createElement('div'); stat.className='gun-stats';
+        stat.innerHTML='Урон '+st.dmg.toFixed(0)+(st.pellets>1?'×'+st.pellets:'')+' · Магазин '+st.mag+
+          ' · Темп '+(1/st.rate).toFixed(1)+'/с · Разброс '+(st.spread*100).toFixed(1)+(st.quiet?' · тихий':'');
+        list.appendChild(stat);
+        trHead(list,'СЛОТЫ МОДУЛЕЙ');
+        for(const slot of W.slots){
+          const cur=w.mods[slot];
+          const row=document.createElement('div'); row.className='trade-row';
+          const l=document.createElement('div'); l.className='trade-name';
+          l.innerHTML='<b>'+SLOT_NAMES[slot]+'</b>: '+(cur?MODS[cur].ico+' '+MODS[cur].name:'<span style="color:#6f7d5f">пусто</span>');
+          const wrap=document.createElement('div'); wrap.style.display='flex'; wrap.style.gap='4px';
+          if(cur){ const rb=document.createElement('button'); rb.className='trade-btn sell'; rb.textContent='СНЯТЬ'; rb.onclick=()=>removeMod(w.uid,slot); wrap.appendChild(rb); }
+          // install options from owned mods matching slot
+          const opts=Object.keys(state.modsOwned).filter(mk=>state.modsOwned[mk]>0 && MODS[mk].slot===slot);
+          if(opts.length){ const sel=document.createElement('select'); sel.className='mod-sel';
+            sel.innerHTML='<option value="">+ поставить</option>'+opts.map(mk=>'<option value="'+mk+'">'+MODS[mk].ico+' '+MODS[mk].name+' ×'+state.modsOwned[mk]+'</option>').join('');
+            sel.onchange=()=>{ if(sel.value) installMod(w.uid,slot,sel.value); };
+            wrap.appendChild(sel);
+          }
+          row.appendChild(l); row.appendChild(wrap); list.appendChild(row);
+        }
+      }
+    }
+  }
+  document.getElementById('btnBench').addEventListener('click',()=>{ audioInit(); openBench(); });
+  document.getElementById('benchClose').addEventListener('click',closeBench);
+  document.getElementById('tabCraft').addEventListener('click',()=>{ benchTab='craft'; renderBench(); });
+  document.getElementById('tabGun').addEventListener('click',()=>{ benchTab='gun'; renderBench(); });
 
   // ---------- Map (PDA) ----------
   const mapScreen=document.getElementById('mapScreen');
@@ -3189,15 +3565,18 @@
   // ---------- Start / End ----------
   const startScreen=document.getElementById('startScreen');
   const endScreen=document.getElementById('endScreen');
-  function startGame(){
+  function startGame(cont){
     audioInit(); if(AC&&AC.state==='suspended') AC.resume();
     Object.assign(state,{
       running:true, over:false, hp:100, rad:0, bolts:8, meds:2, artifacts:0,
-      mag:30, magSize:30, ammoReserve:60, reloading:0, kills:0, shootCD:0, firing:false,
+      mag:0, reloading:0, kills:0, shootCD:0, firing:false,
+      ammo:{'9x18':0,'9x19':0,'5.45':0,'7.62':0,'12k':0},
+      weapons:[], weaponId:null, _wuid:1, modsOwned:{},
+      materials:{scrap:0,elec:0,chem:0,cloth:0,parts:0}, matDrops:[], raidWeapons:[], raidMods:[],
       stamina:100, maxStamina:100, sprinting:false, exhausted:false, _sprintBtn:false,
       weight:0, maxWeight:45, encumbered:false,
       hunger:100, thirst:100, fatigue:100, survT:0,
-      food:2, drink:2, stash:[], maxSlots:10, atStash:false, evacT:0, onEvac:false, raids:0, sleeping:0,
+      food:2, drink:2, stash:[], maxSlots:10, atStash:false, atBench:false, evacT:0, onEvac:false, raids:0, sleeping:0,
       dist:0, hurtCD:0, detNext:0, hpDrain:0, _exitHintT:0,
       inventory:[], equipped:[], _invId:1, maxHp:100, paused:false, heartEquipped:false,
       suit:'newcomer', suits:['newcomer'],
@@ -3208,9 +3587,19 @@
       quests:[], questOffers:{}, questsDone:0, _questId:1, thunderT:6,
       mods:{regen:0,radPassive:0,dmgMul:1,spdMul:1,radResist:0,maxHpBonus:0,resist:0},
     });
+    const save = cont ? loadSave() : null;
+    if(save){ applyMeta(save); toast('Прогресс загружен'); }
+    else {
+      // fresh loadout
+      giveWeapon('pm', true); state.ammo['9x18']=40;
+      state.materials={scrap:3,elec:1,chem:2,cloth:2,parts:1};
+      wipeSave();
+    }
+    recomputeMods(); state.hp=state.maxHp;
     emStop(); rainLoop(false);
     document.getElementById('emissionBar').classList.add('hide');
     genWorld();
+    saveMeta();
     updateHUD();
     invScreen.classList.add('hide');
     tradeScreen.classList.add('hide');
@@ -3241,8 +3630,16 @@
     else { noiseBurst(0.4,0.1); beep(90,0.5,'sawtooth',0.07); }
     endScreen.classList.remove('hide');
   }
-  document.getElementById('startBtn').addEventListener('click',startGame);
-  document.getElementById('restartBtn').addEventListener('click',startGame);
+  function newGameConfirm(){ if(hasSave() && !confirm('Начать новую игру? Сохранённый прогресс будет удалён.')) return; startGame(false); }
+  document.getElementById('startBtn').addEventListener('click',newGameConfirm);
+  document.getElementById('continueBtn').addEventListener('click',()=>startGame(true));
+  document.getElementById('restartBtn').addEventListener('click',()=>startGame(hasSave()));
+  // reveal Continue if a save exists
+  if(hasSave()){ document.getElementById('continueBtn').style.display='';
+    document.getElementById('wipeHint').style.display=''; document.getElementById('startBtn').textContent='НОВАЯ ИГРА (сброс)'; }
+  // autosave on tab hide / unload
+  window.addEventListener('visibilitychange',()=>{ if(document.hidden) saveMeta(); });
+  window.addEventListener('pagehide',saveMeta);
 
   // prevent scroll/zoom gestures
   document.addEventListener('gesturestart',e=>e.preventDefault());
